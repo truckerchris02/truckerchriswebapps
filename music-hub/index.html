@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="theme-color" content="#ffc107">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Music">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Music Hub</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0b10;color:#f3eff7;font:17px system-ui,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+h1{font-size:32px;margin:0}
+.ver{color:#a39bad;margin:4px 0 12px}
+p{color:#c8bfd2;line-height:1.45}
+a.card{display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit;background:#1a1620;border:1px solid #2c2633;border-radius:16px;padding:14px;margin:10px 0;min-height:72px}
+a.card b{display:block;font-size:18px}
+a.card span{color:#a39bad;font-size:14px}
+.ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#2a2233;flex:none}
+</style>
+</head>
+<body>
+<h1>Music Hub</h1>
+<p class="ver">v1.4.0</p>
+<p>Saved playlists, podcasts, and songs stay on this device. YouTube Music, Amazon Music, and SiriusXM open in the browser.</p>
+<a class="card" href="youtube.html"><div class="ico">▶</div><div><b>YouTube Music</b><span>Playlists and search</span></div></a>
+<a class="card" href="amazon.html"><div class="ico">🎧</div><div><b>Amazon Music</b><span>Library shortcuts and favorites</span></div></a>
+<a class="card" href="sirius.html"><div class="ico">📻</div><div><b>SiriusXM</b><span>Stations you save</span></div></a>
+<a class="card" href="podcasts.html"><div class="ico">🎙</div><div><b>Podcasts</b><span>Search, subscribe, and stream</span></div></a>
+<a class="card" href="library.html"><div class="ico">♪</div><div><b>My Music</b><span>Songs you add from Files</span></div></a>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body>
+</html>

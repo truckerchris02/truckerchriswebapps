@@ -1,0 +1,101 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#3b8cff">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cab Food">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Truck Cab Nutrition</title><style>
+body{margin:0;font-family:system-ui,sans-serif;background:#111418;color:#eef;}
+.w{max-width:680px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}h1{font-size:26px;margin:8px 0}h2{font-size:21px;margin:26px 0 10px}
+.sub,.cap{color:#9aa}.cap{font-size:14px}.row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
+.bt{height:18px;border-radius:9px;background:#2a2f36;overflow:hidden;margin:6px 0 16px}.bf{height:100%;background:#3b8cff;border-radius:9px}
+button{min-height:56px;min-width:64px;padding:10px 18px;font-size:18px;border-radius:12px;border:1px solid #39414b;background:#1c2128;color:#eef}
+button.p{background:#3b8cff;color:#fff}.food{display:block;width:100%;text-align:left;padding:14px;margin-bottom:10px}
+.food .m{font-size:14px;color:#9aa;margin-top:4px}input{width:100%;box-sizing:border-box;font-size:18px;padding:12px;border-radius:10px;border:1px solid #39414b;background:#1c2128;color:#eef}
+label{display:block;font-size:14px;color:#9aa;margin:8px 0}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.seg button{min-height:44px;padding:6px 12px;font-size:16px;margin:4px 4px 0 0}.seg .on{background:#3b8cff;color:#fff}
+.over{color:#ff6b6b}.li{padding:10px;border-bottom:1px solid #2a2f36;align-items:center}.note{background:#1d2a3d;padding:12px;border-radius:10px}
+</style></head><body><div class="w" id="app"></div><script>
+const FOODS=[
+{ id: "egg2", name: "Hard-boiled eggs (2)", where: "Cooler / truck stop cooler", cat: "breakfast", noCook: true, cal: 155, p: 13, c: 1, f: 11, na: 124 },
+{ id: "oat", name: "Instant oatmeal, plain packet", where: "Hot water / microwave", cat: "breakfast", noCook: false, cal: 100, p: 4, c: 19, f: 2, na: 75 },
+{ id: "gyog", name: "Plain nonfat Greek yogurt cup", where: "Cooler", cat: "breakfast", noCook: true, cal: 100, p: 17, c: 6, f: 0, na: 60 },
+{ id: "emuff", name: "Egg McMuffin", where: "McDonald's", cat: "breakfast", noCook: true, cal: 310, p: 17, c: 30, f: 13, na: 770 },
+{ id: "pbtort", name: "Peanut butter + banana wrap", where: "Lunchbox, no cook", cat: "breakfast", noCook: true, cal: 425, p: 12, c: 56, f: 19, na: 441 },
+{ id: "tuna", name: "Tuna pouch (2.5 oz)", where: "Cab pantry", cat: "meal", noCook: true, cal: 70, p: 17, c: 0, f: 1, na: 300 },
+{ id: "rotis", name: "Rotisserie chicken breast (3 oz, no skin)", where: "Grocery / truck stop deli", cat: "meal", noCook: true, cal: 140, p: 26, c: 0, f: 3, na: 330 },
+{ id: "stove", name: "Chicken, rice + veggies bowl", where: "12V lunchbox stove", cat: "meal", noCook: false, cal: 450, p: 40, c: 45, f: 10, na: 500 },
+{ id: "potato", name: "Baked potato + chili (1/2 cup)", where: "Truck stop microwave", cat: "meal", noCook: false, cal: 320, p: 13, c: 50, f: 7, na: 560 },
+{ id: "sub", name: "Subway 6-inch turkey, veggies", where: "Subway at Pilot / Love's / TA", cat: "meal", noCook: true, cal: 280, p: 18, c: 46, f: 4, na: 760 },
+{ id: "tbowl", name: "Taco Bell chicken power bowl", where: "Taco Bell at Love's / TA", cat: "meal", noCook: true, cal: 460, p: 26, c: 48, f: 19, na: 1200 },
+{ id: "arbys", name: "Arby's Classic Roast Beef", where: "Arby's at Pilot / Love's", cat: "meal", noCook: true, cal: 360, p: 23, c: 37, f: 14, na: 970 },
+{ id: "wendy", name: "Wendy's grilled chicken sandwich", where: "Wendy's", cat: "meal", noCook: true, cal: 370, p: 34, c: 38, f: 10, na: 790 },
+{ id: "cfa", name: "Chick-fil-A grilled nuggets (8)", where: "Chick-fil-A", cat: "meal", noCook: true, cal: 130, p: 25, c: 1, f: 3, na: 440 },
+{ id: "salad", name: "Grab-and-go chicken salad (light dressing)", where: "Pilot / Flying J / Love's cooler", cat: "meal", noCook: true, cal: 300, p: 25, c: 15, f: 15, na: 800 },
+{ id: "jerky", name: "Beef jerky (1 oz)", where: "Any truck stop", cat: "snack", noCook: true, cal: 80, p: 11, c: 6, f: 1, na: 590 },
+{ id: "cheese", name: "String cheese (1)", where: "Cooler", cat: "snack", noCook: true, cal: 80, p: 7, c: 1, f: 6, na: 200 },
+{ id: "almond", name: "Almonds, unsalted (1 oz)", where: "Any truck stop", cat: "snack", noCook: true, cal: 164, p: 6, c: 6, f: 14, na: 0 },
+{ id: "banana", name: "Banana", where: "Truck stop fruit basket", cat: "snack", noCook: true, cal: 105, p: 1, c: 27, f: 0, na: 1 },
+{ id: "apple", name: "Apple", where: "Truck stop fruit basket", cat: "snack", noCook: true, cal: 95, p: 0, c: 25, f: 0, na: 2 },
+{ id: "hummus", name: "Baby carrots + hummus cup", where: "Pilot / Love's cooler", cat: "snack", noCook: true, cal: 100, p: 3, c: 11, f: 5, na: 170 },
+{ id: "cottage", name: "Low-fat cottage cheese (1/2 cup)", where: "Cooler", cat: "snack", noCook: true, cal: 90, p: 12, c: 5, f: 2, na: 360 },
+{ id: "fruitcup", name: "Fresh fruit cup", where: "Pilot / Love's / TA cooler", cat: "snack", noCook: true, cal: 70, p: 1, c: 18, f: 0, na: 10 },
+{ id: "premier", name: "Premier Protein shake", where: "Any truck stop", cat: "drink", noCook: true, cal: 160, p: 30, c: 5, f: 3, na: 370 },
+{ id: "corepow", name: "Fairlife Core Power (26g)", where: "Truck stop cooler", cat: "drink", noCook: true, cal: 170, p: 26, c: 8, f: 5, na: 240 },
+{ id: "milk", name: "2% milk (1 cup)", where: "Truck stop cooler", cat: "drink", noCook: true, cal: 122, p: 8, c: 12, f: 5, na: 115 },
+{ id: "coffee", name: "Black coffee (16 oz)", where: "Any truck stop", cat: "drink", noCook: true, cal: 5, p: 0, c: 0, f: 0, na: 10 },
+{ id: "gatz", name: "Gatorade Zero (20 oz)", where: "Any truck stop", cat: "drink", noCook: true, cal: 10, p: 0, c: 2, f: 0, na: 270 },
+];
+const DEF={cal:2200,p:140,na:2300,water:8};
+const day=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let D=day(),log=load("tn-log-"+D,[]),water=load("tn-water-"+D,0),goals=load("tn-goals",DEF),custom=load("tn-custom",[]);
+let q="",cat="all",noCook=false,flash="",goalsOpen=false;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=s=>Math.max(0,Math.round(Number(s)||0));
+function persist(){save("tn-log-"+D,log);save("tn-water-"+D,water);save("tn-goals",goals);save("tn-custom",custom)}
+function bar(l,v,g,u,lim){const pct=g>0?Math.min(100,v/g*100):0,o=lim&&v>g;
+return `<div class="row" style="font-size:18px"><span>${l}</span><span class="${o?'over':'sub'}">${v.toLocaleString()} / ${g.toLocaleString()} ${u}${o?' (over)':''}</span></div><div class="bt"><div class="bf" style="width:${pct}%;${o?'background:#ff6b6b':''}"></div></div>`}
+function add(x){const n=new Date();log.push({id:x.id+n.getTime(),name:x.name,cal:x.cal,p:x.p,c:x.c,f:x.f,na:x.na,time:n.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})});flash="Added: "+x.name;persist();render()}
+function all(){return custom.concat(FOODS)}
+function foodList(){const ql=q.toLowerCase();return all().filter(x=>(cat=="all"||x.cat==cat)&&(!noCook||x.noCook)&&(!q||(x.name+" "+x.where).toLowerCase().includes(ql))).map(x=>
+`<button class="food" data-add="${esc(x.id)}"><div class="row"><span>${esc(x.name)}</span><span style="color:#6fb1ff">+ Log</span></div><div class="m">${esc(x.where)}${x.noCook?' · no cook':''}</div><div class="m">${x.cal} cal · ${x.p}g protein · ${x.c}g carbs · ${x.f}g fat · ${x.na}mg sodium</div></button>`).join("")||'<p class="sub">No matches.</p>'}
+const TIPS=[["Pack the cooler on reset day","Eggs, yogurt, cheese, cut veggies and cooked chicken cover most of a week."],["Protein first","It keeps you full longer and helps stop the snack-bin grazing."],["Watch the sodium","Jerky, deli meat and fast food add up fast. Pick unsalted nuts and fresh fruit."],["Drink water, not soda","Keep a bottle in the cup holder. Thirst often feels like hunger."],["Grill or bowl, skip the fryer","Grilled chicken, bowls and salads beat fried combos at any chain."],["Don't eat right before sleep","A lighter last meal makes the sleeper berth more restful."],["Move at every stop","A 10-minute walk around the lot during fuel-ups helps a lot."]];
+function render(){if(day()!=D){D=day();log=load("tn-log-"+D,[]);water=load("tn-water-"+D,0)}
+const t=log.reduce((a,e)=>({cal:a.cal+e.cal,p:a.p+e.p,c:a.c+e.c,f:a.f+e.f,na:a.na+e.na}),{cal:0,p:0,c:0,f:0,na:0});
+const cats=[["all","All"],["breakfast","Breakfast"],["meal","Lunch/Dinner"],["snack","Snack"],["drink","Drink"]];
+document.getElementById("app").innerHTML=`<h1>Truck Cab Nutrition</h1><div class="sub">v1.0</div><div class="sub">Tap a food to log it, watch today's totals against your goals, and track water. Your log stays saved on this device.</div>
+<h2>Today</h2>${bar("Calories",t.cal,goals.cal,"cal",1)}${bar("Protein",t.p,goals.p,"g",0)}${bar("Sodium (limit)",t.na,goals.na,"mg",1)}<div>Carbs ${t.c} g, fat ${t.f} g, ${log.length} items logged.</div>
+<h2>Water</h2>${bar("Bottles (16 oz)",water,goals.water,"",0)}<div class="row" style="justify-content:flex-start"><button class="p" data-a="w+">+1 bottle</button><button data-a="w-">-1</button></div>
+<h2>Food library</h2><div class="cap">Nutrition values are approximate, from published brand and USDA figures. Recipes vary by location.</div>
+<label>Search</label><input id="q" value="${esc(q)}" placeholder="jerky, Subway, eggs...">
+<div class="seg">${cats.map(c=>`<button data-cat="${c[0]}" class="${cat==c[0]?'on':''}">${c[1]}</button>`).join("")}</div>
+<label style="font-size:18px;color:#eef"><input type="checkbox" id="nc" ${noCook?'checked':''} style="width:24px;height:24px;vertical-align:middle"> No-cook only</label>
+${flash?`<p>${esc(flash)}</p>`:""}<div id="fl">${foodList()}</div>
+${log.length?`<h2>Today's log</h2>${log.map(e=>`<div class="row li"><span>${esc(e.time)} · ${esc(e.name)} · ${e.cal} cal</span><button data-rm="${esc(e.id)}">Remove</button></div>`).join("")}<p><button data-a="clear">Clear today</button></p>`:""}
+<h2>Add my own food</h2><label>Name</label><input id="nf-name" placeholder="Mom's chili">
+<div class="g">${[["cal","Calories"],["p","Protein g"],["na","Sodium mg"],["c","Carbs g"],["f","Fat g"]].map(f=>`<div><label>${f[1]}</label><input type="number" inputmode="numeric" id="nf-${f[0]}"></div>`).join("")}</div>
+<p><button class="p" data-a="addc">Save and log it</button></p>
+<h2><button data-a="goals" style="width:100%;text-align:left">My goals ${goalsOpen?'▲':'▼'}</button></h2>
+${goalsOpen?`<div class="g">${[["cal","Calories"],["p","Protein g"],["na","Sodium mg"],["water","Water bottles"]].map(f=>`<div><label>${f[1]}</label><input type="number" inputmode="numeric" data-goal="${f[0]}" value="${goals[f[0]]}"></div>`).join("")}</div><p><button data-a="reset">Reset to defaults</button></p>`:""}
+<h2>Eating well on the road</h2><ol>${TIPS.map(x=>`<li style="margin-bottom:10px"><b>${x[0]}</b><br><span class="sub">${x[1]}</span></li>`).join("")}</ol>
+<div class="note">General tips, not medical advice. If you have diabetes, high blood pressure or a DOT medical concern, check goals with your doctor.</div><div style="height:40px"></div>`;
+document.getElementById("q").oninput=e=>{q=e.target.value;document.getElementById("fl").innerHTML=foodList()};
+document.getElementById("nc").onchange=e=>{noCook=e.target.checked;render()};
+document.querySelectorAll("[data-goal]").forEach(i=>i.onchange=()=>{goals={...goals,[i.dataset.goal]:num(i.value)};persist();render()});}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+if(d.add){const x=all().find(f=>f.id==d.add);if(x)add(x);return}
+if(d.cat){cat=d.cat;render();return}
+if(d.rm){log=log.filter(y=>y.id!=d.rm);persist();render();return}
+const a=d.a;if(a=="w+")water++;else if(a=="w-")water=Math.max(0,water-1);else if(a=="clear")log=[];else if(a=="goals")goalsOpen=!goalsOpen;else if(a=="reset")goals={...DEF};
+else if(a=="addc"){const v=k=>document.getElementById("nf-"+k).value;const name=v("name").trim();if(!name)return;
+const fd={id:"c"+Date.now(),name,where:"My food",cat:"snack",noCook:true,cal:num(v("cal")),p:num(v("p")),c:num(v("c")),f:num(v("f")),na:num(v("na"))};custom.unshift(fd);add(fd);return}
+persist();render()});
+render();
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

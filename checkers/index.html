@@ -1,0 +1,140 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#e9b872">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Checkers">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="viewport-fit=cover,width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Checkers v1.0</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#1d1612;color:#f3e6d3;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{width:100%;max-width:620px;display:flex;justify-content:space-between;align-items:center;padding:10px 12px}
+h1{font-size:20px;margin:0;color:#e9b872}h1 small{font-size:11px;color:#a89580;font-weight:normal;margin-left:6px}
+#status{font-size:16px;margin:4px 0 8px;min-height:22px;text-align:center}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px;border:1px solid #000}
+#wrap{width:min(94vw,600px);padding:12px;background:linear-gradient(135deg,#5a3418,#3b200d);border-radius:10px;box-shadow:0 6px 24px #0009}
+#board{position:relative;width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);border:2px solid #24120a}
+.sq{position:relative}.l{background:linear-gradient(135deg,#e8c99a,#d6b07a)}.d{background:linear-gradient(135deg,#7a4a26,#5e3519)}
+.sq.hl::after{content:"";position:absolute;inset:34%;border-radius:50%;background:#7dd87d;opacity:.85}
+.sq.cap::after{background:#ff7a59}.sq.src{box-shadow:inset 0 0 0 3px #7dd87d}.sq.last{box-shadow:inset 0 0 0 3px #e9b87299}
+.pc{position:absolute;width:12.5%;height:12.5%;padding:1.2%;transition:transform .22s ease;pointer-events:none;z-index:2}
+.pc div{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:min(5vw,30px)}
+.pc.b div{background:radial-gradient(circle at 35% 30%,#555,#111 70%);box-shadow:0 3px 4px #000a,inset 0 0 0 3px #2a2a2a,inset 0 0 0 5px #000}
+.pc.r div{background:radial-gradient(circle at 35% 30%,#ff6a5a,#a3150c 70%);box-shadow:0 3px 4px #000a,inset 0 0 0 3px #c22a1d,inset 0 0 0 5px #7a0e07}
+.pc .k::before{content:"♛";color:#ffd54a;text-shadow:0 1px 2px #000}.pc.sel div{outline:3px solid #7dd87d;outline-offset:1px}.pc.gone{opacity:0;transition:opacity .25s}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+button,select{background:#3a2a1f;color:#f3e6d3;border:1px solid #6b5140;border-radius:8px;padding:10px 14px;font-size:15px}
+button:active{background:#5a4030}select option{background:#3a2a1f;color:#f3e6d3}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10}
+.card{background:#2a1f18;border:1px solid #6b5140;border-radius:12px;padding:18px;width:min(90vw,380px)}
+.card h2{margin:0 0 12px;color:#e9b872}.row{display:flex;justify-content:space-between;align-items:center;margin:10px 0;gap:10px}
+.stats{font-size:14px;color:#cdb9a2;text-align:center}
+</style></head><body>
+<header><h1>Checkers<small>v1.0</small></h1><button id="menuB">☰ Menu</button></header>
+<div id="status"></div>
+<div id="wrap"><div id="board"></div></div>
+<div class="bar"><button id="undoB">↶ Undo</button><button id="newB">New game</button><button id="sndB"></button></div>
+<div class="stats" id="stats"></div>
+<div class="modal" id="menu"><div class="card"><h2>New game</h2>
+<div class="row"><span>Mode</span><select id="mode"><option value="ai">vs Computer</option><option value="pp">2 players (pass &amp; play)</option></select></div>
+<div class="row" id="lvR"><span>Difficulty</span><select id="lv"><option value="0">Easy</option><option value="1">Medium</option><option value="2">Hard</option></select></div>
+<div class="row" id="colR"><span>You play</span><select id="col"><option value="1">Black (moves first)</option><option value="-1">Red</option></select></div>
+<div class="row"><button id="startB" style="flex:1">Start</button><button id="closeB">Close</button></div>
+<div class="row"><button id="resetS" style="flex:1;font-size:13px">Reset stats</button></div>
+<p class="stats">American rules: captures are mandatory, multi-jumps continue, reaching the far row crowns a king (kings move both ways). Draw after 40 moves each with no capture or man move.</p></div></div>
+<div class="modal" id="over"><div class="card" style="text-align:center"><h2 id="overT"></h2><button id="againB">Play again</button></div></div>
+<script>// Checkers engine: board[64], 1=black man,2=black king,-1=red man,-2=red king. Black at top moves down? No: BLACK at bottom (rows 5-7) moves up, moves first.
+var CK=(function(){
+function init(){var b=new Array(64).fill(0);for(var r=0;r<8;r++)for(var c=0;c<8;c++)if((r+c)%2==1){if(r<3)b[r*8+c]=-1;else if(r>4)b[r*8+c]=1;}return b;}
+function side(p){return p>0?1:p<0?-1:0}
+function dirs(p){if(Math.abs(p)==2)return[[-1,-1],[-1,1],[1,-1],[1,1]];return p>0?[[-1,-1],[-1,1]]:[[1,-1],[1,1]];}
+function jumpsFrom(b,i,p,path,caps,out){var r=i>>3,c=i&7,found=false,ds=dirs(p);
+ for(var k=0;k<ds.length;k++){var mr=r+ds[k][0],mc=c+ds[k][1],tr=r+2*ds[k][0],tc=c+2*ds[k][1];
+  if(tr<0||tr>7||tc<0||tc>7)continue;var m=mr*8+mc,t=tr*8+tc;
+  if(side(b[m])==-side(p)&&b[t]==0&&caps.indexOf(m)<0){found=true;
+   var nb=b.slice();nb[t]=p;nb[i]=0;var np=p;var crown=(p==1&&tr==0)||(p==-1&&tr==7);
+   if(crown){out.push({from:path[0],path:path.concat(t),caps:caps.concat(m),crown:true});continue;} // crowning ends move
+   nb[m]=0;jumpsFrom(nb,t,np,path.concat(t),caps.concat(m),out);}}
+ if(!found&&caps.length)out.push({from:path[0],path:path,caps:caps,crown:false});}
+function moves(b,s){var J=[],S=[];for(var i=0;i<64;i++){var p=b[i];if(side(p)!=s)continue;
+  var t=[];jumpsFrom(b,i,p,[i],[],t);J=J.concat(t);
+  if(!J.length){var r=i>>3,c=i&7,ds=dirs(p);for(var k=0;k<ds.length;k++){var tr=r+ds[k][0],tc=c+ds[k][1];if(tr<0||tr>7||tc<0||tc>7)continue;var to=tr*8+tc;
+   if(b[to]==0)S.push({from:i,path:[i,to],caps:[],crown:Math.abs(p)==1&&(tr==0||tr==7)});}}}
+ return J.length?J:S;}
+function apply(b,m){var nb=b.slice(),p=nb[m.from];nb[m.from]=0;m.caps.forEach(function(x){nb[x]=0});var to=m.path[m.path.length-1];var r=to>>3;
+ if(p==1&&r==0)p=2;if(p==-1&&r==7)p=-2;nb[to]=p;return nb;}
+function evalB(b){var s=0;for(var i=0;i<64;i++){var p=b[i];if(!p)continue;var r=i>>3,c=i&7,v=Math.abs(p)==2?175:100;
+ if(Math.abs(p)==1)v+=(p>0?(7-r):r)*4;if(c>1&&c<6&&r>1&&r<6)v+=6;if(Math.abs(p)==1&&((p>0&&r==7)||(p<0&&r==0)))v+=8;s+=side(p)*v;}return s;}
+function search(b,s,d,a,be){var ms=moves(b,s);if(!ms.length)return -100000-d;if(d==0)return s*evalB(b);
+ ms.sort(function(x,y){return y.caps.length-x.caps.length});
+ for(var k=0;k<ms.length;k++){var v=-search(apply(b,ms[k]),-s,d-1,-be,-a);if(v>a)a=v;if(a>=be)break;}return a;}
+function best(b,s,level){var ms=moves(b,s);if(!ms.length)return null;
+ if(level==0&&Math.random()<0.5)return ms[Math.floor(Math.random()*ms.length)];
+ var d=[2,4,7][level],bv=-1e9,bm=[];
+ for(var k=0;k<ms.length;k++){var v=-search(apply(b,ms[k]),-s,d-1,-1e9,1e9);if(level<2)v+=Math.random()*(level?15:40);if(v>bv+0.001){bv=v;bm=[ms[k]];}else if(Math.abs(v-bv)<0.001)bm.push(ms[k]);}
+ return bm[Math.floor(Math.random()*bm.length)];}
+return{init:init,moves:moves,apply:apply,best:best,side:side};})();
+if(typeof module!='undefined')module.exports=CK;
+</script>
+<script>
+var $=function(i){return document.getElementById(i)};var BD=$('board');
+var S=JSON.parse(localStorage.getItem('ck_set')||'{"mode":"ai","lv":1,"col":1,"snd":true}');
+var ST=JSON.parse(localStorage.getItem('ck_stats')||'{"w":0,"l":0,"d":0}');
+var G,sel=null,busy=false,ids;
+for(var i=0;i<64;i++){var d=document.createElement('div');var r=i>>3,c=i&7;d.className='sq '+(((r+c)&1)?'d':'l');d.dataset.i=i;BD.appendChild(d);}
+function flip(){return S.mode=='ai'&&S.col==-1}
+function vi(i){return flip()?63-i:i}
+function newGame(){G={b:CK.init(),turn:1,hist:[],quiet:0,last:null,over:null};sel=null;save();draw(true);maybeAI();}
+function save(){localStorage.setItem('ck_game',JSON.stringify(G));localStorage.setItem('ck_set',JSON.stringify(S));}
+var AC;function snd(f,t){if(!S.snd)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(.25,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(t||.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(t||.12));}catch(e){}}
+function pos(el,i){var v=vi(i);el.style.left=((v&7)*12.5)+'%';el.style.top=((v>>3)*12.5)+'%';}
+var pcs={};
+function draw(full){if(full){BD.querySelectorAll('.pc').forEach(function(e){e.remove()});pcs={};
+  G.b.forEach(function(p,i){if(p)pcs[i]=mk(p,i);});}
+ var ms=legal();var srcs={};ms.forEach(function(m){srcs[m.from]=1});
+ BD.querySelectorAll('.sq').forEach(function(q){var i=vi(+q.dataset.i);q.className=q.className.replace(/ (hl|cap|src|last)/g,'');
+  if(G.last&&G.last.indexOf(i)>=0)q.className+=' last';
+  if(sel!=null){ms.forEach(function(m){if(m.from==sel&&m.path[m.path.length-1]==i)q.className+=' hl'+(m.caps.length?' cap':'');});if(i==sel)q.className+=' src';}});
+ Object.keys(pcs).forEach(function(k){pcs[k].classList.toggle('sel',+k==sel)});
+ var nm=function(s){return s>0?'Black':'Red'};var dot='<span class="dot" style="background:'+(G.turn>0?'#222':'#c22a1d')+'"></span>';
+ $('status').innerHTML=G.over?G.over:dot+(S.mode=='ai'?(G.turn==S.col?'Your move':'Computer thinking…'):nm(G.turn)+' to move')+(ms.length&&ms[0].caps.length?' — capture required':'');
+ $('stats').textContent='vs Computer — Wins: '+ST.w+'  Losses: '+ST.l+'  Draws: '+ST.d;$('sndB').textContent=S.snd?'🔊 Sound':'🔇 Sound';}
+function mk(p,i){var e=document.createElement('div');e.className='pc '+(p>0?'b':'r');e.innerHTML='<div class="'+(Math.abs(p)==2?'k':'')+'"></div>';
+ e.style.left=0;e.style.top=0;BD.appendChild(e);place(e,i);return e;}
+function place(e,i){var v=vi(i);e.style.transform='translate('+((v&7)*100)+'%,'+((v>>3)*100)+'%)';}
+function legal(){return G.over?[]:CK.moves(G.b,G.turn)}
+function human(){return !G.over&&(S.mode=='pp'||G.turn==S.col)}
+BD.addEventListener('click',function(ev){if(busy||!human())return;var q=ev.target.closest('.sq');if(!q)return;var i=vi(+q.dataset.i);var ms=legal();
+ if(sel!=null){var m=ms.filter(function(m){return m.from==sel&&m.path[m.path.length-1]==i});if(m.length){play(m[0]);return;}}
+ if(ms.some(function(m){return m.from==i})){sel=i;snd(520,.05);}else sel=null;draw();});
+function play(m){busy=true;sel=null;G.hist.push({b:G.b.slice(),turn:G.turn,quiet:G.quiet,last:G.last});var e=pcs[m.from];delete pcs[m.from];var step=1;
+ function hop(){if(step<m.path.length){place(e,m.path[step]);snd(m.caps.length?330:440,.08);
+   if(m.caps[step-1]!=null){var c=pcs[m.caps[step-1]];if(c){c.classList.add('gone');(function(c){setTimeout(function(){c.remove()},260)})(c);delete pcs[m.caps[step-1]];}}
+   step++;setTimeout(hop,240);return;}
+  var to=m.path[m.path.length-1];var wasMan=Math.abs(G.b[m.from])==1;G.b=CK.apply(G.b,m);pcs[to]=e;
+  if(Math.abs(G.b[to])==2)e.firstChild.className='k';if(m.crown)snd(880,.3);
+  G.quiet=(m.caps.length||wasMan)?0:G.quiet+1;G.last=m.path.slice();G.turn=-G.turn;busy=false;check();save();draw();maybeAI();}
+ hop();}
+function check(){var ms=CK.moves(G.b,G.turn);var nm=function(s){return s>0?'Black':'Red'};
+ if(!ms.length){var w=-G.turn;G.over=nm(w)+' wins! 🏆';if(S.mode=='ai'){if(w==S.col){ST.w++;G.over='You win! 🏆'}else{ST.l++;G.over='Computer wins'}}}
+ else if(G.quiet>=80){G.over='Draw (40 moves without progress)';if(S.mode=='ai')ST.d++;}
+ if(G.over){localStorage.setItem('ck_stats',JSON.stringify(ST));snd(G.over.indexOf('You')==0?660:220,.5);setTimeout(function(){$('overT').textContent=G.over;$('over').style.display='flex'},500);}}
+function maybeAI(){if(G.over||S.mode!='ai'||G.turn==S.col)return;busy=true;setTimeout(function(){var m=CK.best(G.b,G.turn,+S.lv);busy=false;if(m)play(m);},350);}
+$('undoB').onclick=function(){if(busy||!G.hist.length)return;var n=(S.mode=='ai')?1:1;
+ do{var h=G.hist.pop();G.b=h.b;G.turn=h.turn;G.quiet=h.quiet;G.last=h.last;}while(S.mode=='ai'&&G.turn!=S.col&&G.hist.length);
+ if(S.mode=='ai'&&G.turn!=S.col){draw(true);maybeAI();}G.over=null;sel=null;save();draw(true);};
+$('newB').onclick=$('menuB').onclick=function(){$('mode').value=S.mode;$('lv').value=S.lv;$('col').value=S.col;upd();$('menu').style.display='flex'};
+function upd(){var ai=$('mode').value=='ai';$('lvR').style.display=$('colR').style.display=ai?'':'none'}$('mode').onchange=upd;
+$('closeB').onclick=function(){$('menu').style.display='none'};
+$('startB').onclick=function(){S.mode=$('mode').value;S.lv=+$('lv').value;S.col=+$('col').value;$('menu').style.display='none';newGame();};
+$('againB').onclick=function(){$('over').style.display='none';newGame()};
+$('resetS').onclick=function(){if(confirm('Reset win/loss stats?')){ST={w:0,l:0,d:0};localStorage.setItem('ck_stats','{"w":0,"l":0,"d":0}');draw();}};
+$('sndB').onclick=function(){S.snd=!S.snd;save();draw()};
+window.__back=function(){var o=false;['menu','over'].forEach(function(m){if($(m).style.display=='flex'){$(m).style.display='none';o=true}});return o};
+try{G=JSON.parse(localStorage.getItem('ck_game'))}catch(e){G=null}
+if(G&&G.b){draw(true);maybeAI();}else newGame();
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

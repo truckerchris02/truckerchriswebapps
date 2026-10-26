@@ -1,0 +1,174 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#7B3FE4">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BandFit">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>BandFit</title>
+<style>
+*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:#120e1a;color:#efe9fb;font:17px system-ui,Roboto,sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+header{background:#7B3FE4;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px;flex:1}main{padding:12px}
+.card{background:#1c1628;border:1px solid #2f2643;border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}.muted{color:#a99cc4;font-size:14px}
+button{background:#7B3FE4;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-size:16px;font-weight:600}button.sec{background:#3a2d57}button.del{background:#7a2b3b}button.go{background:#FF6B35}
+input,select,textarea{background:#120e1a!important;color:#efe9fb!important;border:1px solid #43365f;border-radius:9px;padding:10px;font-size:16px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+select option,optgroup{background:#120e1a!important;color:#efe9fb!important}input::placeholder{color:#7d6f99}input[type=checkbox]{width:22px;height:22px;-webkit-appearance:auto;appearance:auto}
+label{display:block;margin:10px 0 4px;font-size:14px;color:#a99cc4}
+.ov{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;z-index:9}.ov.on{display:flex}
+.sheet{background:#1c1628;width:100%;max-height:calc(92vh - env(safe-area-inset-top));overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+.t{display:inline-block;background:#33264d;border-radius:8px;padding:3px 8px;margin:2px;font-size:13px}.t.c{background:#5a2a1a;color:#ffc2a8}.t.b{background:#2c2350;color:#cbb8ff}
+footer{text-align:center;color:#7d6f99;font-size:13px;margin:16px}h2{margin:2px 0 10px}h3{margin:0 0 4px}
+nav{position:fixed;left:0;right:0;bottom:0;background:#1c1628;border-top:1px solid #2f2643;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;background:none;border-radius:0;padding:10px 2px;font-size:13px;color:#a99cc4}nav button.on{color:#fff;background:#2c2244}nav b{display:block;font-size:20px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1}
+.stat{flex:1;text-align:center}.stat b{display:block;font-size:26px;color:#c9a8ff}
+#wo{position:fixed;inset:0;background:#120e1a;z-index:20;display:none;flex-direction:column;padding:calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));overflow:auto}#wo.on{display:flex}
+.big{font-size:76px;font-weight:800;text-align:center;margin:8px 0;font-variant-numeric:tabular-nums}.phase{text-align:center;font-weight:700;letter-spacing:2px;color:#FF6B35}
+.bar{height:8px;background:#2f2643;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#FF6B35}
+.wb{display:flex;gap:8px;margin-top:auto;padding-top:14px}.wb button{flex:1;padding:15px 6px}
+.ex{padding:8px 0;border-bottom:1px solid #2f2643}.ex:last-child{border:0}
+</style></head><body>
+<header><h1>💪 BandFit</h1><span id="hs" class="muted" style="color:#f1e8ff"></span></header>
+<main id="m"></main>
+<footer>BandFit v1.0</footer>
+<nav id="nav"></nav>
+<div class="ov" id="ov" onclick="if(event.target==this)closeS()"><div class="sheet" id="sh"></div></div>
+<div id="wo"></div>
+<input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="doImp(this)">
+<script>
+var AB=window.AndroidBridge;
+// type c=cardio(timed), b=band. mode t=time(sec) r=reps
+var EX=[
+{id:'march',n:'Marching in Place',k:'c',m:'t',v:60,s:1,mus:'Legs, heart',band:'None',how:'Stand tall. Lift one knee toward hip height, then the other, swinging your arms. Keep a steady pace and breathe normally. Hold a counter or the truck door if you need balance.'},
+{id:'steptouch',n:'Step Touches',k:'c',m:'t',v:60,s:1,mus:'Legs, hips, heart',band:'None',how:'Step your right foot out to the side and tap your left foot next to it. Repeat to the left. Add arm swings or claps to raise your heart rate.'},
+{id:'armcircles',n:'Arm Circles',k:'c',m:'t',v:40,s:1,mus:'Shoulders',band:'None',how:'Hold your arms straight out to the sides. Make small circles forward for 20 seconds, then backward. Make the circles bigger as you warm up.'},
+{id:'lowjacks',n:'Low-Impact Jacks',k:'c',m:'t',v:45,s:1,mus:'Full body, heart',band:'None',how:'Step your right foot out while raising both arms overhead, then return. Repeat to the left. No jumping, so it is easy on knees.'},
+{id:'heeldigs',n:'Heel Digs',k:'c',m:'t',v:45,s:1,mus:'Calves, hamstrings',band:'None',how:'Tap one heel out in front of you, toes up, then switch. Punch your arms forward with each tap.'},
+{id:'kneelift',n:'Standing Knee to Elbow',k:'c',m:'t',v:45,s:1,mus:'Core, hips',band:'None',how:'Hands behind your head. Lift your right knee and bring your left elbow toward it. Alternate sides at a steady pace.'},
+{id:'butt',n:'Butt Kicks (walking)',k:'c',m:'t',v:45,s:1,mus:'Hamstrings, heart',band:'None',how:'Walk in place while bringing each heel toward your seat. Keep it low-impact by staying on the balls of your feet without hopping.'},
+{id:'shadow',n:'Shadow Boxing',k:'c',m:'t',v:45,s:1,mus:'Arms, shoulders, core',band:'None',how:'Feet staggered, knees soft. Throw light jabs and crosses, turning your torso slightly. Keep your hands up and breathe out with each punch.'},
+{id:'calfraise',n:'Calf Raises',k:'c',m:'r',v:15,s:2,mus:'Calves',band:'None',how:'Stand with feet hip width, holding something for balance. Rise up onto your toes, pause, and lower slowly. Great for circulation after long hours driving.'},
+{id:'sidebend',n:'Standing Side Bends',k:'c',m:'t',v:40,s:1,mus:'Obliques, back',band:'None',how:'Feet hip width, one hand on hip. Reach the other arm overhead and lean gently to the side. Alternate sides slowly.'},
+{id:'row',n:'Band Seated or Standing Row',k:'b',m:'r',v:12,s:3,mus:'Upper back, lats, biceps',band:'Medium',how:'Anchor the band around your feet (seated) or a sturdy post at chest height. Hold an end in each hand, arms straight. Pull your elbows back close to your sides and squeeze your shoulder blades. Return slowly.'},
+{id:'chest',n:'Band Chest Press',k:'b',m:'r',v:12,s:3,mus:'Chest, shoulders, triceps',band:'Medium',how:'Wrap the band around your upper back, holding an end in each hand at chest level. Press both hands straight forward until arms are extended, then return slowly with control.'},
+{id:'curl',n:'Band Bicep Curls',k:'b',m:'r',v:12,s:3,mus:'Biceps',band:'Light to Medium',how:'Stand on the middle of the band, feet hip width. Hold the ends with palms forward. Keep elbows pinned at your sides and curl your hands toward your shoulders. Lower slowly.'},
+{id:'tricep',n:'Band Overhead Tricep Extension',k:'b',m:'r',v:12,s:3,mus:'Triceps',band:'Light',how:'Stand on one end of the band and hold the other end behind your head with both hands, elbows pointing up. Straighten your arms overhead, then bend back down slowly.'},
+{id:'lateral',n:'Band Lateral Raises',k:'b',m:'r',v:12,s:3,mus:'Shoulders',band:'Light',how:'Stand on the band, holding an end in each hand at your sides. With a slight bend in the elbows, raise your arms out to shoulder height. Lower slowly.'},
+{id:'press',n:'Band Shoulder Press',k:'b',m:'r',v:10,s:3,mus:'Shoulders, triceps',band:'Light to Medium',how:'Stand on the band, hands at shoulder height, palms forward. Press straight up overhead without arching your back. Lower back to shoulders.'},
+{id:'pullapart',n:'Band Pull-Aparts',k:'b',m:'r',v:15,s:3,mus:'Rear shoulders, upper back, posture',band:'Light',how:'Hold the band in front of you at shoulder height, hands shoulder width apart. Pull the band apart by moving your hands out to the sides until it touches your chest. Return slowly. Great for undoing hunched driving posture.'},
+{id:'facepull',n:'Band Face Pulls',k:'b',m:'r',v:12,s:3,mus:'Rear shoulders, upper back',band:'Light',how:'Anchor the band at face height. Pull the ends toward your face, elbows high and wide, until your hands are beside your ears. Squeeze, then return.'},
+{id:'squat',n:'Band Squats',k:'b',m:'r',v:12,s:3,mus:'Thighs, glutes',band:'Medium to Heavy',how:'Stand on the band with feet shoulder width, ends at your shoulders. Sit your hips back and down like sitting in a chair, chest up. Push through your heels to stand.'},
+{id:'bridge',n:'Band Glute Bridges',k:'b',m:'r',v:15,s:3,mus:'Glutes, hamstrings',band:'Loop band, Medium',how:'Lie on your back, knees bent, loop band just above the knees. Push your knees slightly out against the band and lift your hips until your body is straight from knees to shoulders. Lower slowly. Can be done on the bunk.'},
+{id:'walk',n:'Band Lateral Walks',k:'b',m:'r',v:10,s:2,mus:'Hips, glutes',band:'Loop band, Light to Medium',how:'Loop band above knees or ankles. Bend knees slightly and step sideways 10 steps, keeping tension on the band. Step back the other way.'},
+{id:'kickback',n:'Band Glute Kickbacks',k:'b',m:'r',v:12,s:2,mus:'Glutes',band:'Loop band, Light',how:'Loop band around ankles, hold something for balance. Kick one leg straight back, squeeze the glute, return slowly. Do all reps then switch legs.'},
+{id:'deadlift',n:'Band Romanian Deadlift',k:'b',m:'r',v:12,s:3,mus:'Hamstrings, glutes, lower back',band:'Medium to Heavy',how:'Stand on the band, ends in hands. Soft knees, push your hips back and lower your hands along your legs with a flat back. Squeeze your glutes to stand tall.'},
+{id:'legpress',n:'Band Seated Leg Press',k:'b',m:'r',v:12,s:2,mus:'Thighs, glutes',band:'Medium',how:'Sit on the edge of a seat or bunk. Loop the band around one foot, holding the ends. Pull the knee in, then press the foot straight out against the band. Switch legs. Cab friendly.'},
+{id:'woodchop',n:'Band Wood Chop',k:'b',m:'r',v:10,s:2,mus:'Core, obliques',band:'Light',how:'Anchor band high to one side. Hold with both hands and pull it diagonally down across your body to the opposite hip, turning your torso. Do all reps then switch sides.'},
+{id:'pallof',n:'Band Pallof Press',k:'b',m:'t',v:30,s:2,mus:'Core',band:'Light to Medium',how:'Anchor the band at chest height to your side. Hold it at your chest and press straight out, resisting the band pulling you sideways. Hold, then switch sides.'}
+];
+var BUILT=[
+{id:'r1',n:'15-Min Light Cardio',d:'Easy heart-pumping moves, no band needed.',work:'t',items:['march','steptouch','armcircles','lowjacks','heeldigs','kneelift','butt','shadow','sidebend','march','steptouch','lowjacks'],rest:20,secs:50},
+{id:'r2',n:'Upper Body Bands',d:'Back, chest, arms and shoulders.',items:['armcircles','row','chest','curl','tricep','lateral','pullapart'],rest:45},
+{id:'r3',n:'Lower Body Bands',d:'Legs and glutes.',items:['march','squat','deadlift','bridge','walk','kickback','calfraise'],rest:45},
+{id:'r4',n:'Full Body Bands',d:'A bit of everything.',items:['steptouch','squat','row','chest','bridge','press','pullapart','woodchop'],rest:40},
+{id:'r5',n:'Truck-Stop Quickie (10 min)',d:'Small space, next to the rig or in the cab.',items:['march','pullapart','row','calfraise','legpress','pallof'],rest:30},
+{id:'r6',n:'Posture Fix After Driving',d:'Undo hours of sitting.',items:['armcircles','pullapart','facepull','row','bridge','sidebend'],rest:30}
+];
+var K='bandfit_db',db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}if(!db||!db.log)db={log:[],custom:[],rem:{on:false,t:'17:00'},beep:true,vib:true,rest:0};
+function save(){localStorage.setItem(K,JSON.stringify(db))}
+function today(d){d=d||new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ex(id){return EX.find(function(e){return e.id==id})}
+function allR(){return BUILT.concat(db.custom||[])}
+function rt(id){return allR().find(function(r){return r.id==id})}
+function amt(e){return e.m=='t'?e.v+' sec':e.v+' reps'}
+function sug(e){return (e.s>1?e.s+' × ':'')+amt(e)}
+var tab='home';
+function nav(){var T=[['home','🏠','Home'],['routines','📋','Routines'],['lib','📖','Exercises'],['log','📈','History'],['set','⚙️','Settings']];
+document.getElementById('nav').innerHTML=T.map(function(t){return '<button class="'+(tab==t[0]?'on':'')+'" onclick="go(\''+t[0]+'\')"><b>'+t[1]+'</b>'+t[2]+'</button>'}).join('')}
+function go(t){tab=t;render();scrollTo(0,0)}
+function streak(){var days={};db.log.forEach(function(l){days[l.d]=1});var s=0,d=new Date();if(!days[today(d)])d.setDate(d.getDate()-1);while(days[today(d)]){s++;d.setDate(d.getDate()-1)}return s}
+function stats(){var wk=new Date();wk.setDate(wk.getDate()-6);var w=today(wk),n7=0,m7=0,tot=0;db.log.forEach(function(l){tot+=l.min||0;if(l.d>=w){n7++;m7+=l.min||0}});return{n7:n7,m7:Math.round(m7),tot:Math.round(tot),n:db.log.length}}
+function rCard(r){var mins=Math.round(estSec(r)/60);return '<div class="card"><h3>'+esc(r.n)+'</h3><div class="muted">'+esc(r.d||'')+' · '+r.items.length+' exercises · about '+mins+' min</div><div class="row" style="margin-top:10px"><button class="go" onclick="start(\''+r.id+'\')">▶ Start</button><button class="sec" onclick="viewR(\''+r.id+'\')">Details</button>'+(r.custom?'<button class="sec" onclick="editR(\''+r.id+'\')">Edit</button>':'')+'</div></div>'}
+function steps(r){var out=[];r.items.forEach(function(id){var e=ex(id);if(!e)return;var sets=r.secs?1:e.s;for(var i=1;i<=sets;i++)out.push({e:e,set:i,sets:sets,secs:r.secs&&e.m=='t'?r.secs:(e.m=='t'?e.v:0),reps:e.m=='r'?e.v:0})});return out}
+function estSec(r){var rest=db.rest||r.rest||30;return steps(r).reduce(function(a,s){return a+(s.secs||s.reps*3.5)+rest},0)}
+function render(){nav();var h='',st=stats(),sk=streak();document.getElementById('hs').textContent=sk?'🔥 '+sk+' day'+(sk>1?'s':''):'';
+if(tab=='home'){var done=db.log.some(function(l){return l.d==today()});
+ h+='<div class="card"><div class="row"><div class="stat"><b>'+sk+'</b><span class="muted">day streak</span></div><div class="stat"><b>'+st.n7+'</b><span class="muted">workouts this week</span></div><div class="stat"><b>'+st.m7+'</b><span class="muted">minutes this week</span></div></div></div>';
+ h+='<div class="card" style="'+(done?'border-color:#2e7d4f':'border-color:#FF6B35')+'">'+(done?'✅ <b>You worked out today.</b> Nice job!':'<b>No workout yet today.</b><div class="muted">Pick a routine below. Even 10 minutes counts.</div>')+'</div>';
+ h+='<h2>Quick start</h2>'+BUILT.map(rCard).join('');}
+else if(tab=='routines'){h+='<div class="row" style="margin-bottom:10px"><h2 style="flex:1;margin:0">Routines</h2><button onclick="editR()">+ New routine</button></div>';
+ if((db.custom||[]).length)h+='<h3 style="margin:8px 0">My routines</h3>'+db.custom.map(rCard).join('');
+ h+='<h3 style="margin:8px 0">Built-in</h3>'+BUILT.map(rCard).join('');}
+else if(tab=='lib'){window.lf=window.lf||'all';h+='<div class="tabs">'+[['all','All'],['c','Cardio'],['b','Bands']].map(function(f){return '<button class="'+(lf==f[0]?'':'sec')+'" onclick="lf=\''+f[0]+'\';render()">'+f[1]+'</button>'}).join('')+'</div>';
+ EX.filter(function(e){return lf=='all'||e.k==lf}).forEach(function(e){h+='<div class="card" onclick="viewE(\''+e.id+'\')"><h3>'+esc(e.n)+'</h3><span class="t '+e.k+'">'+(e.k=='c'?'Light cardio':'Band')+'</span><span class="t">'+sug(e)+'</span>'+(e.k=='b'?'<span class="t">'+esc(e.band)+'</span>':'')+'<div class="muted" style="margin-top:4px">'+esc(e.mus)+'</div></div>'});}
+else if(tab=='log'){h+='<div class="card"><div class="row"><div class="stat"><b>'+sk+'</b><span class="muted">streak</span></div><div class="stat"><b>'+st.n+'</b><span class="muted">total workouts</span></div><div class="stat"><b>'+st.tot+'</b><span class="muted">total minutes</span></div></div></div>';
+ var bars='',mx=1,dd=[];for(var i=13;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var k=today(d),m=db.log.filter(function(l){return l.d==k}).reduce(function(a,l){return a+(l.min||0)},0);dd.push([k,m]);mx=Math.max(mx,m)}
+ h+='<div class="card"><div class="muted">Minutes, last 14 days</div><div style="display:flex;align-items:flex-end;gap:3px;height:90px;margin-top:8px">'+dd.map(function(x){return '<div title="'+x[0]+'" style="flex:1;background:'+(x[1]?'#FF6B35':'#2f2643')+';height:'+Math.max(4,x[1]/mx*88)+'px;border-radius:3px"></div>'}).join('')+'</div></div>';
+ h+='<div class="row" style="margin-bottom:10px"><h2 style="flex:1;margin:0">History</h2><button class="sec" onclick="addLog()">+ Log manually</button></div>';
+ if(!db.log.length)h+='<div class="card muted">No workouts logged yet.</div>';
+ db.log.slice().reverse().slice(0,100).forEach(function(l,i){h+='<div class="card"><div class="row"><div style="flex:1"><b>'+esc(l.n)+'</b><div class="muted">'+l.d+(l.tm?' '+l.tm:'')+' · '+Math.round(l.min||0)+' min'+(l.cnt?' · '+l.cnt+' exercises':'')+'</div></div><button class="del" onclick="delLog('+(db.log.length-1-i)+')">✕</button></div></div>'});}
+else if(tab=='set'){var r=db.rem||{};
+ h+='<div class="card"><h3>Daily workout reminder</h3><div class="row" style="margin-top:8px"><input type="checkbox" id="ron" '+(r.on?'checked':'')+' onchange="setRem()"><span>Remind me every day</span></div><label>Time</label><input type="time" id="rt" value="'+esc(r.t||'17:00')+'" onchange="setRem()"><div class="muted" style="margin-top:6px">Skipped if you already worked out. On iPhone this can notify only while BandFit is open, or after you allow notifications for the Home Screen app.</div><button class="sec" style="margin-top:8px" onclick="webTestNotif()">Test notification</button></div>';
+ h+='<div class="card"><h3>Workout sounds</h3><div class="row" style="margin-top:8px"><input type="checkbox" '+(db.beep?'checked':'')+' onchange="db.beep=this.checked;save()"><span>Beep on countdown</span></div>'+(AB?'<div class="row" style="margin-top:8px"><input type="checkbox" '+(db.vib?'checked':'')+' onchange="db.vib=this.checked;save()"><span>Vibrate</span></div>':'')+'<label>Rest between sets</label><select onchange="db.rest=+this.value;save()">'+[[0,'Routine default'],[15,'15 sec'],[30,'30 sec'],[45,'45 sec'],[60,'60 sec'],[90,'90 sec']].map(function(o){return '<option value="'+o[0]+'"'+(db.rest==o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
+ h+='<div class="card"><h3>Backup</h3><div class="muted">'+(AB?'Save opens the share menu. Pick Google Drive.':'On iPhone, choose Save to Files or send it to yourself.')+'</div><div class="row" style="margin-top:10px"><button onclick="exp()">Back up</button><button class="sec" onclick="document.getElementById(\'imp\').click()">Restore</button></div></div>';
+ h+='<div class="card muted">Check with your doctor before starting a new exercise program. Stop if you feel pain, dizziness or shortness of breath. Check bands for tears before use.</div>';}
+document.getElementById('m').innerHTML=h}
+function setRem(){db.rem={on:document.getElementById('ron').checked,t:document.getElementById('rt').value||'17:00'};save();if(db.rem.on&&window.webAskNotif)webAskNotif();}
+function webTestNotif(){if(window.webAskNotif)webAskNotif();if(window.webPing)webPing('BandFit','This is a test reminder');}
+function sheet(h){document.getElementById('sh').innerHTML=h;document.getElementById('ov').classList.add('on')}
+function closeS(){document.getElementById('ov').classList.remove('on')}
+function viewE(id){var e=ex(id);sheet('<h2>'+esc(e.n)+'</h2><span class="t '+e.k+'">'+(e.k=='c'?'Light cardio':'Resistance band')+'</span><span class="t">'+sug(e)+'</span><p><b>Works:</b> '+esc(e.mus)+'</p><p><b>Band:</b> '+esc(e.band)+'</p><p><b>How to:</b> '+esc(e.how)+'</p><button class="sec" style="width:100%" onclick="closeS()">Close</button>')}
+function viewR(id){var r=rt(id);sheet('<h2>'+esc(r.n)+'</h2><div class="muted">'+esc(r.d||'')+'</div>'+r.items.map(function(i,n){var e=ex(i);return e?'<div class="ex" onclick="viewE(\''+i+'\')"><b>'+(n+1)+'. '+esc(e.n)+'</b><div class="muted">'+(r.secs&&e.m=='t'?r.secs+' sec':sug(e))+' · '+esc(e.mus)+'</div></div>':''}).join('')+'<div class="row" style="margin-top:12px"><button class="go" style="flex:1" onclick="closeS();start(\''+id+'\')">▶ Start</button><button class="sec" onclick="closeS()">Close</button></div>')}
+var ed=null;
+function editR(id){var r=id?rt(id):null;ed={id:r?r.id:'c'+Date.now(),n:r?r.n:'',d:r?r.d:'',items:r?r.items.slice():[],rest:r?r.rest:30,custom:true,isNew:!r};drawEd()}
+function drawEd(){sheet('<h2>'+(ed.isNew?'New':'Edit')+' routine</h2><label>Name</label><input id="en" value="'+esc(ed.n)+'" placeholder="My band workout" oninput="ed.n=this.value"><label>Rest between sets (seconds)</label><input type="number" id="er" value="'+ed.rest+'" oninput="ed.rest=+this.value||30"><label>Exercises ('+ed.items.length+')</label>'+
+ed.items.map(function(i,n){var e=ex(i);return '<div class="row ex"><span style="flex:1">'+(n+1)+'. '+esc(e.n)+'</span><button class="sec" onclick="mv('+n+',-1)">↑</button><button class="sec" onclick="mv('+n+',1)">↓</button><button class="del" onclick="ed.items.splice('+n+',1);drawEd()">✕</button></div>'}).join('')+
+'<label>Add exercise</label><select id="ea">'+['c','b'].map(function(k){return '<optgroup label="'+(k=='c'?'Light cardio':'Bands')+'">'+EX.filter(function(e){return e.k==k}).map(function(e){return '<option value="'+e.id+'">'+esc(e.n)+'</option>'}).join('')+'</optgroup>'}).join('')+'</select><button class="sec" style="width:100%;margin-top:6px" onclick="ed.items.push(document.getElementById(\'ea\').value);drawEd()">+ Add to routine</button>'+
+'<div class="row" style="margin-top:14px"><button style="flex:1" onclick="saveR()">Save</button>'+(ed.isNew?'':'<button class="del" onclick="delR()">Delete</button>')+'<button class="sec" onclick="closeS()">Cancel</button></div>')}
+function mv(n,d){var j=n+d;if(j<0||j>=ed.items.length)return;var t=ed.items[n];ed.items[n]=ed.items[j];ed.items[j]=t;drawEd()}
+function saveR(){if(!ed.n.trim()){alert('Give the routine a name');return}if(!ed.items.length){alert('Add at least one exercise');return}var r={id:ed.id,n:ed.n.trim(),d:'My routine',items:ed.items,rest:ed.rest||30,custom:true};db.custom=(db.custom||[]).filter(function(x){return x.id!=r.id});db.custom.push(r);save();closeS();tab='routines';render()}
+function delR(){if(!confirm('Delete this routine?'))return;db.custom=db.custom.filter(function(x){return x.id!=ed.id});save();closeS();render()}
+function addLog(){sheet('<h2>Log a workout</h2><label>What did you do?</label><input id="ln" placeholder="Walk around the truck stop"><label>Date</label><input type="date" id="ld" value="'+today()+'"><label>Minutes</label><input type="number" id="lm" value="20"><div class="row" style="margin-top:14px"><button style="flex:1" onclick="db.log.push({n:document.getElementById(\'ln\').value||\'Workout\',d:document.getElementById(\'ld\').value||today(),min:+document.getElementById(\'lm\').value||0});db.log.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});save();markDone();closeS();render()">Save</button><button class="sec" onclick="closeS()">Cancel</button></div>')}
+function delLog(i){if(confirm('Remove this entry?')){db.log.splice(i,1);save();render()}}
+function markDone(){if(AB&&AB.markDone&&db.log.some(function(l){return l.d==today()}))AB.markDone(today())}
+// ---- guided workout ----
+var W=null,ac=null;
+function beep(f,ms){if(!db.beep)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.25,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);o.start();o.stop(ac.currentTime+ms/1000)}catch(e){}}
+function buzz(ms){if(db.vib&&AB&&AB.vibrate)AB.vibrate(ms);else if(db.vib&&navigator.vibrate)navigator.vibrate(ms)}
+function start(id){var r=rt(id);W={r:r,st:steps(r),i:0,ph:'ready',left:5,t0:Date.now(),pause:false,rest:db.rest||r.rest||30};beep(660,120);try{if(navigator.wakeLock&&navigator.wakeLock.request)navigator.wakeLock.request('screen').then(function(w){window.__wl=w}).catch(function(){})}catch(e){}document.getElementById('wo').classList.add('on');clearInterval(W.iv);W.iv=setInterval(tick,1000);draw()}
+function tick(){if(!W||W.pause)return;if(W.ph=='work'&&!W.cur.secs)return;W.left--;if(W.left<=3&&W.left>0){beep(880,120)}if(W.left<=0)adv();else draw()}
+function adv(){if(W.ph=='ready'||W.ph=='rest'){W.ph='work';W.cur=W.st[W.i];W.left=W.cur.secs||0;beep(1200,350);buzz(400)}
+ else{W.i++;if(W.i>=W.st.length)return finish();W.ph='rest';W.left=W.rest;beep(500,300);buzz(200)}draw()}
+function skip(){if(W.ph=='work'){adv()}else{W.left=0;adv()}}
+function prev(){if(W.i>0){W.i--;W.ph='rest';W.left=3;draw()}}
+function finish(){clearInterval(W.iv);var min=(Date.now()-W.t0)/60000,n=new Date();db.log.push({n:W.r.n,d:today(),tm:('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2),min:Math.max(1,Math.round(min)),cnt:W.r.items.length});save();markDone();beep(1000,200);setTimeout(function(){beep(1300,400)},250);buzz(600);
+ document.getElementById('wo').innerHTML='<div style="text-align:center;margin-top:20vh"><div style="font-size:70px">🎉</div><h2>Workout complete!</h2><p class="muted">'+esc(W.r.n)+' · '+Math.round(min)+' min</p><p>🔥 Streak: <b>'+streak()+' day'+(streak()==1?'':'s')+'</b></p></div><div class="wb"><button onclick="quit(1)">Done</button></div>'}
+function quit(ok){if(W)clearInterval(W.iv);if(!ok&&W&&W.i>0&&confirm('Log the part you finished?')){var min=(Date.now()-W.t0)/60000;db.log.push({n:W.r.n+' (partial)',d:today(),min:Math.max(1,Math.round(min)),cnt:W.i});save();markDone()}W=null;try{if(window.__wl){window.__wl.release();window.__wl=null}}catch(e){}document.getElementById('wo').classList.remove('on');render()}
+function fmt(s){return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+function draw(){if(!W)return;var nx=W.st[W.ph=='work'?W.i+1:W.i],c=W.ph=='work'?W.cur:null,h='<div class="row"><button class="sec" onclick="if(confirm(\'Stop workout?\'))quit()">✕ Stop</button><div style="flex:1;text-align:right" class="muted">'+esc(W.r.n)+'<br>'+(Math.min(W.i+1,W.st.length))+' of '+W.st.length+'</div></div><div class="bar" style="margin:12px 0"><i style="width:'+(W.i/W.st.length*100)+'%"></i></div>';
+ if(W.ph=='ready')h+='<div class="phase">GET READY</div><div class="big">'+W.left+'</div>';
+ else if(W.ph=='rest')h+='<div class="phase" style="color:#7fd1a6">REST</div><div class="big">'+fmt(W.left)+'</div><div class="row" style="justify-content:center"><button class="sec" onclick="W.left+=15;draw()">+15 sec</button></div>';
+ else{h+='<div class="phase">'+(c.e.k=='c'?'CARDIO':'BANDS')+(c.sets>1?' · SET '+c.set+' OF '+c.sets:'')+'</div><h2 style="text-align:center;margin-top:8px">'+esc(c.e.n)+'</h2>'+(c.secs?'<div class="big">'+fmt(W.left)+'</div>':'<div class="big">'+c.reps+'<span style="font-size:24px"> reps</span></div><div class="muted" style="text-align:center">Tap “Done set” when finished</div>')+'<div class="card" style="margin-top:10px"><div class="muted">'+esc(c.e.mus)+(c.e.k=='b'?' · Band: '+esc(c.e.band):'')+'</div><div style="margin-top:6px">'+esc(c.e.how)+'</div></div>'}
+ if(nx&&W.ph!='work'){h+='<div class="card"><div class="muted">'+(W.ph=='ready'?'First':'Up next')+'</div><b>'+esc(nx.e.n)+'</b>'+(nx.sets>1?' · set '+nx.set+'/'+nx.sets:'')+' · '+(nx.secs?nx.secs+' sec':nx.reps+' reps')+'<div class="muted" style="margin-top:6px">'+esc(nx.e.how)+'</div></div>'}
+ else if(nx)h+='<div class="muted" style="text-align:center">Next: '+esc(nx.e.n)+'</div>';
+ h+='<div class="wb"><button class="sec" onclick="prev()">⏮</button><button class="sec" onclick="W.pause=!W.pause;draw()">'+(W.pause?'▶ Resume':'⏸ Pause')+'</button><button class="go" onclick="skip()">'+(W.ph=='work'&&!c.secs?'✓ Done set':'⏭ Skip')+'</button></div>';
+ document.getElementById('wo').innerHTML=h}
+window.__back=function(){if(W){if(confirm('Stop workout?'))quit();return true}if(document.getElementById('ov').classList.contains('on')){closeS();return true}if(tab!='home'){go('home');return true}return false};
+window.__resume=function(){render()};
+function exp(){var s=JSON.stringify(db,null,1),fn='BandFit-backup-'+(today())+'.json';
+ try{var f=new File([s],fn,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'BandFit backup'}).catch(function(e){if(e&&e.name!=='AbortError')dl(s,fn)});return;}}catch(e){}
+ if(!dl(s,fn))alert('Could not save the backup file');}
+function dl(s,fn){try{var u=URL.createObjectURL(new Blob([s],{type:'application/json'}));var a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);return true;}catch(e){return false}}
+function doImp(inp){var f=inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o.log)throw 0;if(!confirm('Replace current data with this backup ('+o.log.length+' workouts, '+(o.custom||[]).length+' custom routines)?'))return;db=o;save();if(AB&&db.rem)AB.setReminder(!!db.rem.on,db.rem.t||'17:00');markDone();alert('Backup restored');render()}catch(e){alert('That file is not a BandFit backup')}};rd.readAsText(f);inp.value=''}
+if(AB&&db.rem)try{AB.setReminder(!!db.rem.on,db.rem.t||'17:00')}catch(e){}
+markDone();render();
+</script><script src="webping.js"></script><script>
+webWatch(function(){var r=db.rem||{};if(!r.on)return;var d=new Date(),hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);if(hm!==(r.t||'17:00'))return;if(db.log.some(function(l){return l.d===today()}))return;webOnce('bf-'+today(),function(){webPing('BandFit','Time for a workout');});});
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#3dba6c">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Solitaire">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="viewport-fit=cover,width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Solitaire</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b2a1a;font-family:system-ui,Roboto,sans-serif;color:#d8e8dc}
+body{background:radial-gradient(ellipse at 50% 30%,#14472c 0%,#0d331f 55%,#081f13 100%)}
+#bar{position:fixed;top:0;left:0;right:0;height:calc(44px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);display:flex;align-items:center;justify-content:space-around;background:rgba(0,0,0,.35);font-size:15px;z-index:5}
+#bar b{color:#f3e7b3;font-weight:600}
+#table{position:absolute;top:calc(44px + env(safe-area-inset-top));left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));touch-action:none}
+#tools{position:fixed;bottom:0;left:0;right:0;height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:rgba(0,0,0,.45);z-index:5}
+#tools button{flex:1;background:none;border:0;color:#d8e8dc;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#tools button span{font-size:22px}#tools button:active{background:rgba(255,255,255,.08)}
+.slot{position:absolute;border:2px solid rgba(255,255,255,.14);border-radius:7px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);font-size:26px}
+.card{position:absolute;border-radius:7px;background:#ece6d6;box-shadow:0 1px 3px rgba(0,0,0,.6);transition:left .16s,top .16s;overflow:hidden}
+.card.drag{transition:none;z-index:999!important;box-shadow:0 8px 18px rgba(0,0,0,.7)}
+.card.down{background:repeating-linear-gradient(45deg,#7a1f24 0 6px,#651a1e 6px 12px);border:2px solid #d9c9a0}
+.card .r{position:absolute;left:3px;top:0;font-weight:800;line-height:1.05}
+.card .s{position:absolute;right:3px;top:1px;line-height:1.05}
+.card .c{position:absolute;left:0;right:0;bottom:2px;text-align:center;line-height:1}
+.red{color:#b3141c}.blk{color:#16161a}
+.card.hint{outline:3px solid #f3d36b}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+#ov.on{display:flex}
+.panel{background:#10261a;border:1px solid #2c5c3e;border-radius:14px;padding:20px;width:86%;max-width:380px;font-size:16px}
+.panel h2{margin:0 0 12px;color:#f3e7b3}.panel button{width:100%;padding:13px;margin-top:10px;border-radius:10px;border:0;background:#2a6b45;color:#fff;font-size:16px}
+.panel button.alt{background:#2a3a30}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1f3d2b}
+.seg{display:flex;gap:8px}.seg button{margin-top:6px}.seg button.sel{background:#c9a43a;color:#111}
+.ver{text-align:center;font-size:12px;opacity:.5;margin-top:12px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
+</style></head><body>
+<div id="bar"><div style="opacity:.75;font-size:12px">v1.0</div><div>Moves <b id="mv">0</b></div><div>Time <b id="tm">0:00</b></div><div>Score <b id="sc">0</b></div></div>
+<div id="table"></div>
+<div id="tools"><button id="bNew"><span>✚</span>New</button><button id="bUndo"><span>↶</span>Undo</button><button id="bAuto" style="display:none"><span>⚡</span>Finish</button><button id="bMenu"><span>☰</span>Menu</button></div>
+<canvas id="confetti"></canvas><div id="ov"><div class="panel" id="pan"></div></div>
+<script>
+/*LOGIC*/
+var Sol=(function(){
+var SU=['♠','♥','♦','♣'],RK=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+function red(c){return c.s==1||c.s==2}
+function deal(draw,rnd){rnd=rnd||Math.random;var d=[];for(var s=0;s<4;s++)for(var r=1;r<=13;r++)d.push({s:s,r:r,up:false});
+ for(var i=d.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=d[i];d[i]=d[j];d[j]=t}
+ var g={stock:[],waste:[],found:[[],[],[],[]],tab:[[],[],[],[],[],[],[]],draw:draw||1,moves:0,score:0,time:0,won:false,passes:0};
+ for(var c=0;c<7;c++)for(var k=0;k<=c;k++){var x=d.pop();x.up=(k==c);g.tab[c].push(x)}
+ g.stock=d;return g}
+function top(a){return a[a.length-1]}
+function canFound(g,c,i){var f=g.found[i];if(!f.length)return c.r==1;var t=top(f);return t.s==c.s&&c.r==t.r+1}
+function canTab(g,c,i){var p=g.tab[i];if(!p.length)return c.r==13;var t=top(p);return t.up&&red(t)!=red(c)&&c.r==t.r-1}
+function pile(g,src){return src.t=='w'?g.waste:src.t=='f'?g.found[src.i]:g.tab[src.i]}
+function cards(g,src){var p=pile(g,src);if(src.t=='t'){var k=src.k==null?p.length-1:src.k;return p.slice(k)}return p.length?[top(p)]:[]}
+function legal(g,src,dst){var cs=cards(g,src);if(!cs.length||!cs[0].up)return false;
+ if(src.t==dst.t&&src.i==dst.i)return false;
+ if(dst.t=='f')return cs.length==1&&canFound(g,cs[0],dst.i);
+ if(dst.t=='t'){for(var j=1;j<cs.length;j++){if(red(cs[j])==red(cs[j-1])||cs[j].r!=cs[j-1].r-1)return false}return canTab(g,cs[0],dst.i)}
+ return false}
+function clone(g){return JSON.parse(JSON.stringify(g))}
+function move(g,src,dst){if(!legal(g,src,dst))return false;var p=pile(g,src),n=cards(g,src).length;var cs=p.splice(p.length-n,n);
+ var tg=dst.t=='f'?g.found[dst.i]:g.tab[dst.i];Array.prototype.push.apply(tg,cs);
+ if(dst.t=='f')g.score+=10;else if(src.t=='w')g.score+=5;else if(src.t=='f')g.score=Math.max(0,g.score-15);
+ if(src.t=='t'&&p.length&&!top(p).up){top(p).up=true;g.score+=5}
+ g.moves++;checkWin(g);return true}
+function drawStock(g){if(g.stock.length){var n=Math.min(g.draw,g.stock.length);for(var i=0;i<n;i++){var c=g.stock.pop();c.up=true;g.waste.push(c)}g.moves++;return true}
+ if(g.waste.length){while(g.waste.length){var c=g.waste.pop();c.up=false;g.stock.push(c)}g.passes++;if(g.draw==1)g.score=Math.max(0,g.score-100);else if(g.passes>3)g.score=Math.max(0,g.score-20);g.moves++;return true}return false}
+function bestDst(g,src){var cs=cards(g,src);if(!cs.length||!cs[0].up)return null;
+ if(cs.length==1&&src.t!='f')for(var i=0;i<4;i++)if(legal(g,src,{t:'f',i:i}))return{t:'f',i:i};
+ var empty=null;for(var i=0;i<7;i++){if(legal(g,src,{t:'t',i:i})){if(g.tab[i].length)return{t:'t',i:i};if(empty==null)empty=i}}
+ if(empty!=null){ if(!(src.t=='t'&&src.k===0&&cs[0].r==13))return{t:'t',i:empty}}
+ return null}
+function checkWin(g){var n=0;for(var i=0;i<4;i++)n+=g.found[i].length;if(n==52&&!g.won){g.won=true;return true}return g.won}
+function canAuto(g){if(g.stock.length||g.waste.length)return false;for(var i=0;i<7;i++)for(var j=0;j<g.tab[i].length;j++)if(!g.tab[i][j].up)return false;return !g.won}
+function autoStep(g){var srcs=[{t:'w'}];for(var i=0;i<7;i++)srcs.push({t:'t',i:i});
+ var best=null;srcs.forEach(function(s){var c=cards(g,s)[0];if(!c)return;for(var f=0;f<4;f++)if(legal(g,s,{t:'f',i:f})&&(!best||c.r<best.r))best={r:c.r,s:s,f:f}});
+ if(best){move(g,best.s,{t:'f',i:best.f});return true}
+ if(g.stock.length||g.waste.length){drawStock(g);return true}return false}
+return {SU:SU,RK:RK,red:red,deal:deal,legal:legal,move:move,drawStock:drawStock,bestDst:bestDst,checkWin:checkWin,canAuto:canAuto,autoStep:autoStep,clone:clone,cards:cards}
+})();
+if(typeof module!='undefined')module.exports=Sol;
+/*ENDLOGIC*/
+</script>
+<script>
+var G,hist=[],timer=null,el={},T=document.getElementById('table');
+var ST=JSON.parse(localStorage.getItem('sol_stats')||'{"played":0,"won":0,"best":0,"bestScore":0}');
+var PREF=JSON.parse(localStorage.getItem('sol_pref')||'{"draw":1}');
+function saveStats(){localStorage.setItem('sol_stats',JSON.stringify(ST))}
+function save(){try{localStorage.setItem('sol_game',JSON.stringify({g:G,h:hist.slice(-60)}))}catch(e){}}
+function newGame(){if(G&&G.moves>0&&!G.won){}G=Sol.deal(PREF.draw);hist=[];ST.played++;saveStats();save();layout();render();startTimer()}
+function startTimer(){clearInterval(timer);timer=setInterval(function(){if(!G.won&&G.moves>0&&!document.hidden){G.time++;hud();if(G.time%5==0)save()}},1000)}
+function fmt(t){return Math.floor(t/60)+':'+('0'+t%60).slice(-2)}
+function hud(){mv.textContent=G.moves;tm.textContent=fmt(G.time);sc.textContent=G.score;document.getElementById('bAuto').style.display=Sol.canAuto(G)?'flex':'none'}
+var L={};
+function layout(){var W=T.clientWidth,H=T.clientHeight,gap=Math.max(4,W*0.012);var cw=Math.floor((W-gap*8)/7);var ch=Math.floor(cw*1.4);
+ L={W:W,H:H,gap:gap,cw:cw,ch:ch,top:gap+4,ty:gap+4+ch+gap*2.5};L.x=function(i){return gap+i*(cw+gap)}}
+function key(c){return c.s+'_'+c.r}
+function mkCard(c){var d=document.createElement('div');d.className='card';var fs=Math.round(L.cw*0.36);
+ d.innerHTML='<div class="r" style="font-size:'+fs+'px"></div><div class="s" style="font-size:'+Math.round(fs*0.85)+'px"></div><div class="c" style="font-size:'+Math.round(L.cw*0.62)+'px"></div>';
+ T.appendChild(d);d._c=c;attach(d);return d}
+function slots(){T.querySelectorAll('.slot').forEach(function(s){s.remove()});
+ function S(x,y,txt,id){var s=document.createElement('div');s.className='slot';s.style.cssText+='left:'+x+'px;top:'+y+'px;width:'+L.cw+'px;height:'+L.ch+'px';s.textContent=txt;s.dataset.p=id;T.appendChild(s);return s}
+ var st=S(L.x(0),L.top,'↻','s');st.onclick=doDraw;
+ for(var i=0;i<4;i++)S(L.x(3+i),L.top,Sol.SU[i],'f'+i);for(var i=0;i<7;i++)S(L.x(i),L.ty,'','t'+i)}
+var slotsDone=0;
+function render(){if(slotsDone!==L.W+'x'+L.H){T.querySelectorAll('.card').forEach(function(x){x.remove()});el={};slots();slotsDone=L.W+'x'+L.H}
+ var seen={},z=1;function place(c,x,y,src){var k=key(c);var d=el[k]||(el[k]=mkCard(c));d._c=c;d._src=src;seen[k]=1;
+  d.className='card '+(c.up?(Sol.red(c)?'red':'blk'):'down');
+  if(c.up){d.children[0].textContent=Sol.RK[c.r];d.children[1].textContent=Sol.SU[c.s];d.children[2].textContent=Sol.SU[c.s]}else{d.children[0].textContent=d.children[1].textContent=d.children[2].textContent=''}
+  d.style.width=L.cw+'px';d.style.height=L.ch+'px';d.style.left=x+'px';d.style.top=y+'px';d.style.zIndex=z++}
+ G.stock.forEach(function(c){place(c,L.x(0),L.top,{t:'s'})});
+ var ws=G.waste,n=G.draw==3?Math.min(3,ws.length):1,fo=L.cw*0.38;
+ ws.forEach(function(c,i){var vis=i-(ws.length-n);place(c,L.x(1)+(vis>0?vis*fo:0),L.top,{t:'w'})});
+ G.found.forEach(function(f,i){f.forEach(function(c){place(c,L.x(3+i),L.top,{t:'f',i:i})})});
+ var avail=L.H-L.ty-L.ch-6;
+ G.tab.forEach(function(p,i){var dn=0,upn=0;p.forEach(function(c){c.up?upn++:dn++});var od=L.ch*0.14,ou=L.ch*0.30;
+  var need=dn*od+Math.max(0,upn-1)*ou;if(need>avail&&need>0){var f=avail/need;od*=f;ou*=f}
+  var y=L.ty;p.forEach(function(c,k){place(c,L.x(i),y,{t:'t',i:i,k:k});y+=c.up?ou:od})});
+ for(var k in el)if(!seen[k]){el[k].remove();delete el[k]}
+ hud()}
+function push(){hist.push(JSON.stringify(G));if(hist.length>200)hist.shift()}
+function undo(){if(!hist.length||G.won)return;var t=G.time;G=JSON.parse(hist.pop());G.time=t;G.moves++;render();save()}
+function doDraw(){push();if(!Sol.drawStock(G))hist.pop();render();save()}
+function after(){render();save();if(G.won)win()}
+function tryMove(src,dst){var b=JSON.stringify(G);if(Sol.move(G,src,dst)){hist.push(b);after();return true}return false}
+function flash(d){d.style.transform='translateX(-4px)';setTimeout(function(){d.style.transform='translateX(4px)'},70);setTimeout(function(){d.style.transform=''},140)}
+var drag=null;
+function attach(d){d.addEventListener('pointerdown',function(e){var s=d._src;if(G.won)return;
+  if(s.t=='s'){doDraw();return}if(!d._c.up)return;
+  if(s.t=='w'&&d!==el[key(G.waste[G.waste.length-1])])return;
+  if(s.t=='f'&&d!==el[key(G.found[s.i][G.found[s.i].length-1])])return;
+  var grp=[d];if(s.t=='t')grp=G.tab[s.i].slice(s.k).map(function(c){return el[key(c)]});
+  drag={src:s,grp:grp,x0:e.clientX,y0:e.clientY,moved:false,orig:grp.map(function(g){return[g.offsetLeft,g.offsetTop]})};d.setPointerCapture(e.pointerId);e.preventDefault()});
+ d.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<9)return;
+  drag.moved=true;drag.grp.forEach(function(g,i){g.classList.add('drag');g.style.zIndex=900+i;g.style.left=(drag.orig[i][0]+dx)+'px';g.style.top=(drag.orig[i][1]+dy)+'px'})});
+ function end(e){if(!drag)return;var dr=drag;drag=null;dr.grp.forEach(function(g){g.classList.remove('drag')});
+  if(!dr.moved){var dst=Sol.bestDst(G,dr.src);if(!dst||!tryMove(dr.src,dst)){flash(d);render()}return}
+  var cx=dr.grp[0].offsetLeft+L.cw/2,cy=dr.grp[0].offsetTop+L.ch/3,best=null,bd=1e9;
+  var cands=[];for(var i=0;i<4;i++)cands.push({t:'f',i:i,x:L.x(3+i),y:L.top});
+  for(var i=0;i<7;i++){var p=G.tab[i];var y=p.length?el[key(p[p.length-1])].offsetTop:L.ty;if(dr.src.t=='t'&&dr.src.i==i)continue;cands.push({t:'t',i:i,x:L.x(i),y:y})}
+  cands.forEach(function(c){if(!Sol.legal(G,dr.src,c))return;var dd=Math.hypot(c.x+L.cw/2-cx,c.y+L.ch/2-cy);if(dd<bd&&dd<L.cw*1.6){bd=dd;best=c}});
+  if(!best||!tryMove(dr.src,{t:best.t,i:best.i}))render()}
+ d.addEventListener('pointerup',end);d.addEventListener('pointercancel',end)}
+var autoT=null;function autoFinish(){if(autoT)return;push();autoT=setInterval(function(){if(!Sol.autoStep(G)||G.won){clearInterval(autoT);autoT=null}render();if(G.won){save();win()}},90)}
+function win(){ST.won++;if(!ST.best||G.time<ST.best)ST.best=G.time;if(G.score>ST.bestScore)ST.bestScore=G.score;saveStats();localStorage.removeItem('sol_game');confetti();
+ setTimeout(function(){panel('<h2>🎉 You won!</h2><div class="row"><span>Time</span><b>'+fmt(G.time)+'</b></div><div class="row"><span>Moves</span><b>'+G.moves+'</b></div><div class="row"><span>Score</span><b>'+G.score+'</b></div><button onclick="closeP();newGame()">Deal again</button>')},900)}
+function confetti(){var c=document.getElementById('confetti'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;var P=[];for(var i=0;i<140;i++)P.push({x:Math.random()*c.width,y:-Math.random()*c.height,v:2+Math.random()*4,h:Math.random()*360,s:4+Math.random()*6,w:Math.random()*6});
+ var t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(function(p){p.y+=p.v;p.x+=Math.sin((t+p.w)*.05)*1.5;x.fillStyle='hsl('+p.h+',80%,60%)';x.fillRect(p.x,p.y,p.s,p.s*.6)});if(++t<260)requestAnimationFrame(f);else x.clearRect(0,0,c.width,c.height)})()}
+function panel(h){pan.innerHTML=h;ov.classList.add('on')}function closeP(){ov.classList.remove('on')}
+ov.onclick=function(e){if(e.target===ov)closeP()};
+function menu(){var r=ST.played?Math.round(ST.won/ST.played*100):0;
+ panel('<h2>Menu</h2><div>Draw</div><div class="seg"><button class="'+(PREF.draw==1?'sel':'alt')+'" onclick="setDraw(1)">Draw 1</button><button class="'+(PREF.draw==3?'sel':'alt')+'" onclick="setDraw(3)">Draw 3</button></div>'+
+ '<h2 style="margin-top:16px">Stats</h2><div class="row"><span>Games played</span><b>'+ST.played+'</b></div><div class="row"><span>Games won</span><b>'+ST.won+' ('+r+'%)</b></div><div class="row"><span>Best time</span><b>'+(ST.best?fmt(ST.best):'—')+'</b></div><div class="row"><span>Best score</span><b>'+ST.bestScore+'</b></div>'+
+ '<button class="alt" onclick="if(confirm(\'Reset stats?\')){ST={played:0,won:0,best:0,bestScore:0};saveStats();menu()}">Reset stats</button><button onclick="closeP()">Close</button><div class="ver">Solitaire v1.0</div>')}
+function setDraw(n){PREF.draw=n;localStorage.setItem('sol_pref',JSON.stringify(PREF));panel('<h2>Draw '+n+'</h2><p>Applies to the next game. Start a new game now?</p><button onclick="closeP();newGame()">New game</button><button class="alt" onclick="menu()">Later</button>')}
+bNew.onclick=function(){if(G.moves>0&&!G.won)panel('<h2>New game?</h2><p>Current game will count as a loss.</p><button onclick="closeP();newGame()">Deal</button><button class="alt" onclick="closeP()">Cancel</button>');else newGame()};
+bUndo.onclick=undo;bMenu.onclick=menu;bAuto.onclick=autoFinish;
+window.__back=function(){if(ov.classList.contains('on')){closeP();return true}return false};
+addEventListener('resize',function(){layout();render()});
+document.addEventListener('visibilitychange',function(){if(document.hidden)save()});
+(function(){layout();var s=localStorage.getItem('sol_game');if(s){try{var o=JSON.parse(s);if(o.g&&!o.g.won){G=o.g;hist=o.h||[];render();startTimer();return}}catch(e){}}newGame()})();
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

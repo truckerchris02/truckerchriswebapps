@@ -1,0 +1,232 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta name="theme-color" content="#c9a45c">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Runes">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="viewport-fit=cover,width=device-width,initial-scale=1,maximum-scale=1">
+<title>Rune Lore</title><style>
+:root{color-scheme:dark;--bg:#12100e;--card:#1d1a17;--card2:#26221d;--line:#3a332a;--gold:#c9a45c;--gold2:#e6c88a;--txt:#ece4d6;--mut:#a89c88;--red:#b5523b;--grn:#6f9a5a}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Georgia,'DejaVu Serif',serif;font-size:16px}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(#1b1712,#14110e);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+header h1{margin:0;font-size:20px;color:var(--gold2);letter-spacing:1px}header .v{color:var(--mut);font-size:12px;margin-left:auto}
+nav{display:flex;overflow-x:auto;gap:6px;padding:8px 10px;background:#15120f;border-bottom:1px solid var(--line);position:sticky;top:45px;z-index:4}
+nav button{flex:none}
+button,select,input{font:inherit;color:var(--txt);background:#2a251f;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+button{cursor:pointer}button.on,button.pri{background:var(--gold);color:#1a1510;border-color:var(--gold);font-weight:bold}
+input,select{background:#1a1714 !important;color:var(--txt) !important;-webkit-appearance:none;appearance:none}
+select{padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%) !important;background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55% !important;background-size:5px 5px !important;background-repeat:no-repeat !important}
+option{background:#1a1714;color:var(--txt)}input::placeholder{color:#7d7262}
+main{padding:12px 12px calc(12px + env(safe-area-inset-bottom));max-width:900px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{color:var(--gold2);font-size:19px;margin:4px 0 10px}h3{color:var(--gold);font-size:16px;margin:14px 0 6px}
+.mut{color:var(--mut)}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.tile{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;position:relative}
+.tile .n{font-size:13px}.tile .s{font-size:11px;color:var(--mut)}.tile .star{position:absolute;top:4px;right:6px;color:var(--grn);font-size:13px}
+svg.g line,svg.g polyline,svg.g polygon{stroke:var(--gold2);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.big{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.big svg{background:radial-gradient(#2c261e,#1a1612);border:1px solid var(--line);border-radius:12px}
+.uni{font-size:28px;color:var(--gold)}.tag{display:inline-block;background:#2a251f;border:1px solid var(--line);border-radius:20px;padding:2px 10px;font-size:13px;margin:2px}
+.poem{border-left:3px solid var(--gold);padding:4px 10px;margin:8px 0;background:#191613}.poem i{color:var(--gold2)}.poem .src{font-size:12px;color:var(--mut)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:12px}
+.opt.ok{background:#2f4427;border-color:var(--grn)}.opt.bad{background:#4a2219;border-color:var(--red)}
+.fc{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.bar{height:8px;background:#2a251f;border-radius:4px;overflow:hidden}.bar div{height:100%;background:var(--gold)}
+.warn{color:#e0a080;font-size:14px}a{color:var(--gold2)}
+</style></head><body>
+<header><svg width="28" height="28" viewBox="0 0 60 100" class="g"><line x1="30" y1="5" x2="30" y2="95" stroke-width="9"/><polyline points="10,30 30,5 50,30" stroke-width="9"/></svg><h1>Rune Lore</h1><span class="v">v1.0</span></header>
+<nav id="nav"></nav><main id="m"></main>
+<script>
+const VER='1.0';
+// [key,name,uni,sound,alt,literal,aett,strokes,reversible,deity,element,meaning,upright,reversed,explain,poems]
+const S={
+fehu:[[20,5,20,95],[20,35,46,10],[20,58,46,33]],uruz:[[15,95,15,5,45,32,45,95]],thurisaz:[[18,5,18,95],[18,28,44,50,18,72]],
+ansuz:[[20,5,20,95],[20,8,46,30],[20,33,46,55]],raidho:[[16,95,16,5,42,25,16,48,46,95]],kenaz:[[42,25,18,50,42,75]],
+gebo:[[10,10,50,90],[50,10,10,90]],wunjo:[[16,95,16,5,42,25,16,48]],hagalaz:[[12,5,12,95],[48,5,48,95],[12,38,48,62]],
+naudiz:[[30,5,30,95],[14,38,46,62]],isa:[[30,5,30,95]],jera:[[28,18,12,38,28,58],[32,42,48,62,32,82]],
+eihwaz:[[30,5,30,95],[30,5,46,22],[30,95,14,78]],perthro:[[16,5,16,95],[16,5,36,25,48,12],[16,95,36,75,48,88]],
+algiz:[[30,95,30,5],[30,40,10,12],[30,40,50,12]],sowilo:[[42,8,16,40,44,60,18,92]],tiwaz:[[30,5,30,95],[10,32,30,5,50,32]],
+berkano:[[16,5,16,95],[16,5,42,27,16,50,42,73,16,95]],ehwaz:[[12,95,12,5,30,32,48,5,48,95]],mannaz:[[12,95,12,5,48,42],[48,95,48,5,12,42]],
+laguz:[[20,5,20,95],[20,5,46,32]],ingwaz:[[30,22,50,50,30,78,10,50,30,22]],dagaz:[[10,10,10,90,50,10,50,90,10,10]],
+othala:[[30,5,50,35,12,92],[30,5,10,35,48,92]]};
+const OE='Old English Rune Poem',NO='Norwegian Rune Poem',IS='Icelandic Rune Poem';
+const R=[
+['fehu','Fehu','ᚠ','f','Feoh (OE), Fé (ON)','Cattle; wealth',0,1,'Freyr, Freyja','Fire',
+'Wealth, earned prosperity, abundance, energy put to work.','New income, success, reward for effort, generosity.','Loss of property or money, greed, wasted effort.',
+'Cattle were the main form of wealth for early Germanic peoples, so Fehu means "money." The poems warn that wealth must be shared or it causes fighting between family.',
+[[OE,'Feoh byþ frofur fira gehwylcum','Wealth is a comfort to all men (but each must share it freely to win honour before the Lord).'],[NO,'Fé vældr frænda róge','Wealth is a source of discord among kinsmen.'],[IS,'Fé er frænda róg ok flæðar viti ok grafseiðs gata','Wealth is source of discord among kinsmen, fire of the sea, and path of the serpent.']]],
+['uruz','Uruz','ᚢ','u','Ur (OE), Úr (ON)','Aurochs (wild ox); also drizzle / slag',0,1,'—','Earth',
+'Raw strength, vitality, endurance, health, untamed power.','Strength, good health, courage, a burst of energy.','Weakness, illness, misdirected force, lost opportunity.',
+'The aurochs was a huge, fierce wild ox, now extinct. The rune stands for wild, physical strength. The Norse poems use the word differently (slag from iron, or drizzle).',
+[[OE,'Ur byþ anmod ond oferhyrned','The aurochs is proud and has great horns; it is a very savage beast and fights with its horns.'],[NO,'Úr er af illu jarne','Dross comes from bad iron.'],[IS,'Úr er skýja grátr ok skára þverrir ok hirðis hatr','Shower is lamentation of the clouds, ruin of the hay-harvest, and abomination of the shepherd.']]],
+['thurisaz','Thurisaz','ᚦ','th (as in "thing")','Thorn (OE), Þurs (ON)','Giant; thorn',0,1,'Thor; the giants (þursar)','Fire',
+'Defense, conflict, a hard force that breaks through, a gateway.','Protection, a breakthrough, facing a challenge head on.','Danger, rash action, spite, being defenseless.',
+'In Norse it means a giant, the enemies of the gods; the Anglo-Saxons renamed it "thorn." Both point to something sharp that hurts whoever grabs it, but can also guard you.',
+[[OE,'Ðorn byþ ðearle scearp','The thorn is exceedingly sharp, an evil thing for any knight to touch, uncommonly severe on all who sit among them.'],[NO,'Þurs vældr kvinna kvillu','The giant causes anguish to women.'],[IS,'Þurs er kvenna kvöl ok kletta íbúi ok varðrúnar verr','Giant is torture of women, cliff-dweller, and husband of a giantess.']]],
+['ansuz','Ansuz','ᚨ','a','Os (OE), Óss (ON)','A god (one of the Æsir); mouth',0,1,'Odin','Air',
+'Speech, wisdom, inspiration, messages, divine insight.','Good advice, communication, learning, a sign or message.','Misunderstanding, lies, bad advice, manipulation.',
+'Ansuz means one of the Æsir, the main family of gods, usually taken as Odin, who won the runes. The Old English poem changes it to "mouth," the source of speech.',
+[[OE,'Os byþ ordfruma ælcre spræce','The mouth is the source of all language, a pillar of wisdom and a comfort to wise men.'],[NO,'Óss er flestra ferða fǫr; en skalpr er sverða','Estuary is the way of most journeys; but a scabbard is of swords.'],[IS,'Óss er aldingautr ok ásgarðs jöfurr ok valhallar vísi','God is aged Gautr (Odin), prince of Ásgarðr, and lord of Valhalla.']]],
+['raidho','Raidho','ᚱ','r','Rad (OE), Reið (ON)','Ride; journey',0,1,'Thor (traveller); also Forseti in modern lore','Air',
+'Travel, journeys, movement, right order and rhythm.','A good trip, progress, things moving the right way.','Delays, a bad trip, breakdown, being stuck.',
+'A rune about riding and the road, a good one for a trucker. The poems joke that riding seems easy sitting indoors, but is hard work on a long road.',
+[[OE,'Rad byþ on recyde rinca gehwylcum sefte','Riding seems easy to every warrior while he is indoors, and very courageous to him who traverses the high-roads on the back of a stout horse.'],[NO,'Ræið kveða rossom væsta','Riding is said to be the worst thing for horses.'],[IS,'Reið er sitjandi sæla ok snúðig ferð ok jórs erfiði','Riding is joy of the horseman, speedy journey, and toil of the steed.']]],
+['kenaz','Kenaz','ᚲ','k (hard c)','Cen (OE), Kaun (ON)','Torch (OE); ulcer, sore (ON)',0,1,'—','Fire',
+'Knowledge, light, skill, creativity, insight.','Understanding, a new idea, craftsmanship.','Confusion, a closed door, illness, something ending.',
+'The Anglo-Saxon name means torch, a light in the hall. The Norse name means a sore or ulcer instead, so it has a "fire that burns" side too.',
+[[OE,'Cen byþ cwicera gehwam cuþ on fyre','The torch is known to every living man by its pale, bright flame; it always burns where princes sit within.'],[NO,'Kaun er barna bǫlvan','Ulcer is fatal to children.'],[IS,'Kaun er barna böl ok bardaga för ok holdfúa hús','Ulcer is disease fatal to children, painful spot, and abode of mortification.']]],
+['gebo','Gebo','ᚷ','g (hard)','Gyfu (OE)','Gift',0,0,'Odin, Freyja (gift-givers in modern lore)','Air',
+'Gifts, generosity, partnership, balanced exchange.','A gift, a fair deal, friendship, love, help given and received.','',
+'A gift in old Norse culture always created a bond, since a gift asked for a gift back. Gebo is about that balance between people. It has no Norse poem verse because it was dropped from the Younger Futhark.',
+[[OE,'Gyfu gumena byþ gleng and herenys','Generosity brings credit and honour, which support one\'s dignity; it furnishes help and subsistence to all broken men who are devoid of aught else.']]],
+['wunjo','Wunjo','ᚹ','w','Wynn (OE)','Joy',0,1,'Odin; Frigg (modern lore)','Earth',
+'Joy, comfort, harmony, belonging, success.','Happiness, good news, a happy home or crew.','Sorrow, strife, being alone, frustration.',
+'Wunjo is plain joy, comfort and well-being. The Anglo-Saxons used it as their letter W, which is why it sometimes shows up in Old English books.',
+[[OE,'Wenne bruceþ ðe can weana lyt','Bliss he enjoys who knows not suffering, sorrow nor anxiety, and has prosperity and happiness and a good enough house.']]],
+['hagalaz','Hagalaz','ᚺ','h','Hægl (OE), Hagall (ON)','Hail',1,0,'Ymir; Hel (modern lore)','Ice',
+'Disruption, destruction from nature, hardship that clears the way.','',
+'',
+'Hail is ice falling from the sky that wrecks crops, then melts into water. That is the idea: a storm you can\'t control that becomes something new. It begins the second ætt.',
+[[OE,'Hægl byþ hwitust corna','Hail is the whitest of grain; it is whirled from the vault of heaven and is tossed about by gusts of wind, and then it melts into water.'],[NO,'Hagall er kaldastr korna','Hail is the coldest of grain.'],[IS,'Hagall er kaldakorn ok krapadrífa ok snáka sótt','Hail is cold grain, shower of sleet, and sickness of serpents.']]],
+['naudiz','Naudiz','ᚾ','n','Nyd (OE), Nauð/Nauðr (ON)','Need; constraint',1,0,'The Norns (fate)','Fire (need-fire)',
+'Need, hardship, constraint, endurance, patience.','',
+'',
+'Naudiz is need and hard times. The Old English poem says it can still help a person if they heed it in time; going through need teaches you what you really need. Many readers say it can\'t be reversed; some do read it reversed.',
+[[OE,'Nyd byþ nearu on breostan','Trouble is oppressive to the heart; yet often it proves a source of help and salvation to the children of men, to everyone who heeds it betimes.'],[NO,'Nauðr gerer næppa koste','Constraint gives scant choice.'],[IS,'Nauð er þýjar þrá ok þungr kostr ok vássamlig verk','Constraint is grief of the bond-maid, state of oppression, and toilsome work.']]],
+['isa','Isa','ᛁ','i','Is (OE), Íss (ON)','Ice',1,0,'Skadi (modern lore)','Ice',
+'Stillness, standstill, waiting, focus, a freeze.','','',
+'A single straight line of ice. Things are frozen in place: a time to wait it out, like a road iced over. Beautiful to look at but treacherous.',
+[[OE,'Is byþ ofereald, ungemetum slidor','Ice is very cold and immeasurably slippery; it glistens as clear as glass and most like to gems; it is a floor wrought by the frost, fair to look upon.'],[NO,'Ís kǫllum brú bræiða','Ice we call the broad bridge.'],[IS,'Íss er árbörkr ok unnar þak ok feigra manna fár','Ice is bark of rivers, roof of the wave, and destruction of the doomed.']]],
+['jera','Jera','ᛃ','j (as "y" in "year")','Ger (OE), Ár (ON)','Year; good harvest',1,0,'Freyr','Earth',
+'Harvest, reward for patient work, cycles, the turning year.','','',
+'The year turning round to harvest. You reap what you sow, after waiting through the seasons. The Norse form Ár means "plenty."',
+[[OE,'Ger byþ gumena hiht','Summer is a joy to men, when God, the holy King of Heaven, suffers the earth to bring forth shining fruits for rich and poor alike.'],[NO,'Ár er gumna góðe','Plenty is a boon to men.'],[IS,'Ár er gumna góði ok gott sumar algróinn akr','Plenty is boon to men, good summer, and thriving crops.']]],
+['eihwaz','Eihwaz','ᛇ','ei / ï (uncertain)','Eoh (OE), Iwaz','Yew tree',1,0,'Ullr; Yggdrasil (often linked)','All',
+'Endurance, defense, the link between life and death, steadiness.','','',
+'The yew is evergreen, lives for centuries, and its wood made the best bows. It stands for toughness and for the boundary between life and death. Its exact sound is still debated.',
+[[OE,'Eoh byþ utan unsmeþe treow','The yew is a tree with rough bark, hard and fast in the earth, supported by its roots, a guardian of flame and a joy upon an estate.']]],
+['perthro','Perthro','ᛈ','p','Peorð (OE)','Unknown (maybe dice cup, lot-box, or a fruit tree)',1,1,'Frigg; the Norns (modern lore)','Water',
+'Mystery, fate, chance, hidden things, luck.','Something revealed, a lucky break, secrets.','Bad luck, a nasty surprise, stagnation.',
+'Nobody knows for certain what Perthro meant. Its poem talks about play and laughter in the beer hall, so many think it was a dice cup or game. That\'s why it became the rune of luck and fate.',
+[[OE,'Peorð byþ symble plega and hlehter','Peorth is a source of recreation and amusement to the great, where warriors sit blithely together in the banqueting-hall.']]],
+['algiz','Algiz','ᛉ','z (later R)','Eolh / Eolhx (OE), Elhaz; Ýr (ON, the later form)','Elk; protection (meaning uncertain)',1,1,'Heimdall (modern lore)','Air',
+'Protection, defense, higher self, sanctuary, warning instinct.','Protection, a shield around you, good instincts.','Hidden danger, being vulnerable, a warning.',
+'Looks like an elk\'s antlers or a raised hand. The Old English poem calls it a sharp sedge grass that cuts anyone who grabs it, so it is a guard rune. In the Younger Futhark its shape was flipped and it became Ýr, "yew."',
+[[OE,'Eolhx seccard hæfþ oftust on fenne','The Eolh-sedge is mostly to be found in a marsh; it grows in the water and makes a ghastly wound, covering with blood every warrior who touches it.'],[NO,'Ýr er vetrgrønstr viða','Yew is the greenest of trees in winter. (Ýr is the Younger rune that grew out of this one.)'],[IS,'Ýr er bendr bogi ok brotgjarnt járn ok fífu fárbauti','Yew is bent bow, brittle iron, and giant of the arrow. (Ýr, the Younger rune.)']]],
+['sowilo','Sowilo','ᛊ','s','Sigel (OE), Sól (ON)','Sun',1,0,'Sól (Sunna); Baldr (modern lore)','Fire',
+'Success, the sun, victory, health, guidance.','','',
+'The sun, a joy to sailors navigating home. It\'s a rune of winning and of clear guidance. It ends the second ætt.',
+[[OE,'Sigel semannum symble biþ on hihte','The sun is ever a joy in the hopes of seafarers when they journey away over the fishes\' bath, until the courser of the deep bears them to land.'],[NO,'Sól er landa ljóme','Sun is the light of the world.'],[IS,'Sól er skýja skjöldr ok skínandi röðull ok ísa aldrtregi','Sun is shield of the clouds, shining ray, and destroyer of ice.']]],
+['tiwaz','Tiwaz','ᛏ','t','Tir (OE), Týr (ON)','The god Tyr',2,1,'Tyr','Air',
+'Justice, honour, courage, self-sacrifice, leadership.','Victory, doing the right thing, keeping your word.','Injustice, defeat, cowardice, a conflict going badly.',
+'Named for Tyr, the god who gave up his hand so the gods could bind the wolf Fenrir. The Old English poem calls it a guiding star that never fails. Starts the third ætt, which is named after him.',
+[[OE,'Tir biþ tacna sum, healdeð trywa wel wiþ æþelingas','Tiw is a guiding star; well does it keep faith with princes; it is ever on its course over the mists of night and never fails.'],[NO,'Týr er æinendr ása','Tyr is a one-handed god.'],[IS,'Týr er einhendr áss ok ulfs leifar ok hofa hilmir','Tyr is a one-handed god, leavings of the wolf, and prince of temples.']]],
+['berkano','Berkano','ᛒ','b','Beorc (OE), Bjarkan (ON)','Birch tree',2,1,'Frigg; Nerthus (modern lore)','Earth',
+'Birth, growth, new beginnings, family, healing, care.','Growth, a new start, family blessings.','Family trouble, a stalled project, worry at home.',
+'The birch is the first tree to leaf out in spring, so it stands for new life and growing things. (The Old English poem may actually mean a poplar.)',
+[[OE,'Beorc byþ bleda leas','The poplar bears no fruit; yet without seed it brings forth suckers, for it is generated from its leaves; splendid are its branches.'],[NO,'Bjarkan er laufgrønster líma','Birch has the greenest leaves of any shrub.'],[IS,'Bjarkan er laufgat lim ok lítit tré ok ungsamligr viðr','Birch is leafy twig, little tree, and fresh young shrub.']]],
+['ehwaz','Ehwaz','ᛖ','e','Eh (OE)','Horse',2,1,'Sleipnir (Odin\'s horse); the divine twins (modern lore)','Earth',
+'Partnership, trust, teamwork, movement, loyalty.','Teamwork, a trusty ride, steady progress.','Mistrust, a bad partnership, restlessness.',
+'The horse and rider working as one. A good rune for anyone who depends on their machine; the horse was the old version of the rig.',
+[[OE,'Eh byþ for eorlum æþelinga wyn','The horse is a joy to princes in the presence of warriors, a steed in the pride of its hoofs, when rich men on horseback bandy words about it; it is ever a source of comfort to the restless.']]],
+['mannaz','Mannaz','ᛗ','m','Man (OE), Maðr (ON)','Human being; man',2,1,'Heimdall (as father of mankind, modern lore)','Air',
+'Humanity, the self, friends, community, mortality.','Help from others, self-awareness, cooperation.','Isolation, self-deception, enemies, selfishness.',
+'Mannaz is "a person." The poems say people are dear to their kin, yet all are mortal and "an increase of the dust."',
+[[OE,'Man byþ on myrgþe his magan leof','The joyous man is dear to his kinsman; yet every man is doomed to fail his fellow, since the Lord by his decree will commit the vile carrion to the earth.'],[NO,'Maðr er moldar auki','Man is an augmentation of the dust.'],[IS,'Maðr er manns gaman ok moldar auki ok skipa skreytir','Man is delight of man, augmentation of the earth, and adorner of ships.']]],
+['laguz','Laguz','ᛚ','l','Lagu (OE), Lǫgr (ON)','Water; lake; sea',2,1,'Njord','Water',
+'Flow, water, intuition, emotions, the unknown depths.','Going with the flow, trusting your gut, healing.','Fear, poor judgment, being overwhelmed.',
+'Water and the sea, which feels endless and scary to those in a rocking boat. It\'s also the rune of intuition and feelings.',
+[[OE,'Lagu byþ leodum langsum geþuht','The ocean seems interminable to men, if they venture on the rolling bark and the waves of the sea terrify them and the courser of the deep heed not its bridle.'],[NO,'Lǫgr er, fællr ór fjalle foss','A waterfall is a river which falls from a mountain-side.'],[IS,'Lögr er vellanda vatn ok víðr ketill ok glömmungr grund','Water is eddying stream, broad geysir, and land of the fish.']]],
+['ingwaz','Ingwaz','ᛜ','ng (as in "king")','Ing (OE)','The god Ing (Yngvi-Freyr)',2,0,'Ing / Freyr','Earth / Water',
+'Fertility, rest, inner growth, completion, home.','','',
+'Ing was an old name for the god Freyr, honored as ancestor of the Swedish kings. The rune is a seed that grows quietly, a time of gestation and peace.',
+[[OE,'Ing wæs ærest mid East-Denum gesewen secgun','Ing was first seen by men among the East-Danes, till, followed by his chariot, he departed eastwards over the waves.']]],
+['dagaz','Dagaz','ᛞ','d','Dæg (OE)','Day',2,0,'Dellingr; Heimdall (modern lore)','Fire / Air',
+'Daylight, breakthrough, awakening, hope, transformation.','','',
+'Dawn, and the full light of day which is good for everyone, rich and poor. It\'s the rune of a breakthrough, like the sun coming up after a long night drive.',
+[[OE,'Dæg byþ drihtnes sond','Day, the glorious light of the Creator, is sent by the Lord; it is beloved of men, a source of hope and happiness to rich and poor, and of service to all.']]],
+['othala','Othala','ᛟ','o','Eþel (OE), Odal','Inherited land; homeland',2,1,'Odin (as ancestor, modern lore)','Earth',
+'Home, heritage, inheritance, ancestry, belonging.','Home, family legacy, security, what you build to keep.','Homelessness, prejudice, loss of heritage, family fights.',
+'Othala is the family land handed down to children, a man\'s home where he can enjoy what\'s his. Note: some hate groups have misused a winged form of this rune; the rune itself is an ordinary letter with a long, peaceful history.',
+[[OE,'Eþel byþ oferleof æghwylcum men','An estate is very dear to every man, if he can enjoy there in his house whatever is right and proper in constant prosperity.']]]
+].map(a=>({k:a[0],name:a[1],u:a[2],snd:a[3],alt:a[4],lit:a[5],aett:a[6],rev:!!a[7],deity:a[8],el:a[9],mean:a[10],up:a[11],down:a[12],exp:a[13],poems:a[14]}));
+const AETT=["Freyr's Ætt","Heimdall's Ætt","Tyr's Ætt"];
+function svg(k,h,w){h=h||100;const sw=h>60?7:9;let s=`<svg class="g" viewBox="0 0 60 100" height="${h}" width="${h*0.6}">`;
+for(const p of S[k]){s+=p.length==4?`<line x1="${p[0]}" y1="${p[1]}" x2="${p[2]}" y2="${p[3]}" stroke-width="${sw}"/>`:`<polyline points="${p.join(',').replace(/(\d+),(\d+),?/g,'$1,$2 ')}" stroke-width="${sw}"/>`}return s+'</svg>'}
+let st=JSON.parse(localStorage.getItem('rl')||'{}');st.m=st.m||{};st.seen=st.seen||{};st.q=st.q||{right:0,total:0};
+const save=()=>localStorage.setItem('rl',JSON.stringify(st));
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const TABS=[['home','Today'],['runes','Runes'],['learn','Learn'],['cards','Flashcards'],['quiz','Quiz'],['name','Your Name'],['prog','Progress']];
+let cur='home',hist=[];
+function nav(){document.getElementById('nav').innerHTML=TABS.map(t=>`<button class="${cur==t[0]?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
+function go(t,a){if(cur!==t||a!==undefined)hist.push([cur]);cur=t;nav();V[t](a);scrollTo(0,0)}
+window.__back=()=>{if(!hist.length)return false;cur=hist.pop()[0];nav();V[cur]();return true};
+const m=()=>document.getElementById('m');
+function dayIdx(){const d=new Date();return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5))%24}
+const V={
+home(){const r=R[dayIdx()];const n=Object.keys(st.m).length;
+m().innerHTML=`<div class="card"><h2>Rune of the Day</h2><div class="big" onclick="go('rune','${r.k}')" style="cursor:pointer">${svg(r.k,120)}<div><div style="font-size:24px;color:var(--gold2)">${r.name} <span class="uni">${r.u}</span></div><div class="mut">"${esc(r.lit)}" · sound: ${esc(r.snd)}</div><p>${esc(r.mean)}</p><button class="pri">Read more</button></div></div></div>
+<div class="card"><h2>Your progress</h2><div class="bar"><div style="width:${n/24*100}%"></div></div><p class="mut">${n} of 24 runes mastered · Quiz score ${st.q.total?Math.round(st.q.right/st.q.total*100):0}% (${st.q.right}/${st.q.total})</p>
+<div class="row"><button onclick="go('cards')">Flashcards</button><button onclick="go('quiz')">Take a quiz</button><button onclick="go('learn')">Learn the basics</button></div></div>`},
+runes(){let h='';for(let a=0;a<3;a++){h+=`<div class="card"><h2>${AETT[a]}</h2><div class="grid">`+R.filter(r=>r.aett==a).map(r=>`<div class="tile" onclick="go('rune','${r.k}')">${st.m[r.k]?'<span class="star">✔</span>':''}${svg(r.k,60)}<div class="n">${r.name}</div><div class="s">${r.u} · ${esc(r.snd.split(' ')[0])}</div></div>`).join('')+'</div></div>'}m().innerHTML=h},
+rune(k){const i=R.findIndex(r=>r.k==k),r=R[i];st.seen[k]=1;save();
+m().innerHTML=`<div class="card"><div class="big">${svg(k,170)}<div><div style="font-size:28px;color:var(--gold2)">${r.name}</div><div class="uni">${r.u}</div>
+<div><span class="tag">Sound: ${esc(r.snd)}</span><span class="tag">${AETT[r.aett]} #${i%8+1}</span></div><div class="mut" style="margin-top:6px">Also called: ${esc(r.alt)}</div></div></div>
+<h3>Literal meaning</h3><p>${esc(r.lit)}</p><h3>In plain words</h3><p>${esc(r.exp)}</p>
+<h3>Traditional / divinatory meaning</h3><p>${esc(r.mean)}</p>
+${r.rev?`<p><b>Upright:</b> ${esc(r.up)}</p><p><b>Reversed (merkstave):</b> ${esc(r.down)}</p>`:`<p><span class="tag">Cannot be reversed</span> <span class="mut">This rune looks the same upside down, so it has no reversed meaning.</span></p>`}
+<p class="mut" style="font-size:13px">Note: divination meanings come mostly from 20th-century rune readers, not from Viking-age records.</p>
+<h3>Associations</h3><p><span class="tag">Deity: ${esc(r.deity)}</span><span class="tag">Element: ${esc(r.el)}</span></p><p class="mut" style="font-size:13px">Elements and many deity links are modern; links named in the poems themselves (Tyr, Ing, Os) are old.</p>
+<h3>Rune poems</h3>${r.poems.map(p=>`<div class="poem"><div class="src">${p[0]}</div><i>${esc(p[1])}</i><div>${esc(p[2])}</div></div>`).join('')}
+<p class="mut" style="font-size:13px">Translations after Bruce Dickins, <i>Runic and Heroic Poems</i> (1915). Norwegian and Icelandic poems only cover the 16 Younger Futhark runes.</p>
+<div class="row" style="margin-top:12px"><button class="${st.m[k]?'on':''}" onclick="st.m['${k}']?delete st.m['${k}']:st.m['${k}']=1;save();V.rune('${k}')">${st.m[k]?'✔ Mastered':'Mark as mastered'}</button>
+<button onclick="go('rune','${R[(i+23)%24].k}')">‹ ${R[(i+23)%24].name}</button><button onclick="go('rune','${R[(i+1)%24].k}')">${R[(i+1)%24].name} ›</button></div></div>`},
+learn(){m().innerHTML=`<div class="card"><h2>What are runes?</h2><p>Runes are the letters the Germanic peoples of northern Europe used before (and for a while alongside) the Latin alphabet. Each rune stood for a sound, like our letters, but also had a name that was a real word, such as Fehu "cattle" or Sowilo "sun." Because they were carved into wood, bone and stone, runes are made of straight lines and avoid curves and horizontal strokes, which would split along the wood grain.</p>
+<p>The rune row is called a <b>futhark</b>, after its first six letters: F U Th A R K, just as "alphabet" comes from alpha and beta. The Elder Futhark's 24 runes are grouped into three families of eight, called <b>ættir</b> (singular ætt): Freyr's, Heimdall's (or Hagal's) and Tyr's. These names come from later tradition.</p>
+<p>In Norse myth, Odin hung for nine nights on the world-tree Yggdrasil, wounded by a spear, to win the runes (the poem <i>Hávamál</i>).</p></div>
+<div class="card"><h2>History</h2><h3>Elder Futhark (c. 150–800 AD)</h3><p>The oldest form, 24 runes, used across Scandinavia and by Germanic tribes on the continent. Most inscriptions are short: names, owner marks, charms. This is the set taught in this app and used by most modern rune readers.</p>
+<h3>Younger Futhark (c. 800–1100, the Viking Age)</h3><p>Scandinavians cut the row down to just 16 runes, even though their language had more sounds, so one rune did several jobs. Most Viking rune stones, like the thousands in Sweden, are in Younger Futhark. The Norwegian and Icelandic rune poems describe these 16.</p>
+<h3>Anglo-Saxon Futhorc (c. 400–1100, England & Frisia)</h3><p>The Anglo-Saxons went the other way and added runes, eventually 26–33, to match Old English sounds. The A rune split into several (that's why it's "futhorc"). The Old English Rune Poem covers 29 of them. Two runes, þorn (þ) and wynn (ƿ), even became letters in written Old English.</p>
+<h3>Later</h3><p>Runes faded as Christianity brought the Latin alphabet, though they lingered in rural Scandinavia for centuries (Dalarna runes into the 1900s). Rune-casting for fortune-telling as done today mostly dates from the 20th century.</p></div>
+<div class="card"><h2>The three ættir</h2>${[0,1,2].map(a=>`<h3>${AETT[a]}</h3><div class="row">${R.filter(r=>r.aett==a).map(r=>`<span onclick="go('rune','${r.k}')" style="cursor:pointer;text-align:center">${svg(r.k,44)}<br><small>${r.name}</small></span>`).join('')}</div>`).join('')}</div>`},
+cards(){let deck=R.map((r,i)=>i);let mode=st.cm||'g';let only=st.co||0;
+let pool=deck.filter(i=>!only||!st.m[R[i].k]);if(!pool.length)pool=deck;let idx=pool[Math.floor(Math.random()*pool.length)],flip=false;
+function draw(){const r=R[idx];const front=mode=='g'?`${svg(r.k,150)}<div class="mut">Which rune is this?</div>`:`<div style="font-size:26px;color:var(--gold2)">${r.name}</div><div class="mut">"${esc(r.lit)}" · What does it look like?</div>`;
+const back=`${svg(r.k,110)}<div style="font-size:24px;color:var(--gold2)">${r.name} <span class="uni">${r.u}</span></div><div>Sound: <b>${esc(r.snd)}</b></div><div class="mut">"${esc(r.lit)}"</div><p>${esc(r.mean)}</p>`;
+m().innerHTML=`<div class="card"><div class="row"><select id="cm"><option value="g" ${mode=='g'?'selected':''}>Show glyph first</option><option value="n" ${mode=='n'?'selected':''}>Show name first</option></select>
+<label class="row"><input type="checkbox" id="co" ${only?'checked':''} style="width:20px;height:20px;-webkit-appearance:checkbox;appearance:auto"> Only unmastered</label></div></div>
+<div class="card fc" id="fc">${flip?back:front}<div class="mut" style="margin-top:8px;font-size:13px">${flip?'':'Tap to flip'}</div></div>
+<div class="row"><button onclick="window._fc(0)">Still learning</button><button class="pri" onclick="window._fc(1)">I know it ✔</button></div>`;
+document.getElementById('fc').onclick=()=>{flip=!flip;draw()};
+document.getElementById('cm').onchange=e=>{st.cm=mode=e.target.value;save();flip=false;draw()};
+document.getElementById('co').onchange=e=>{st.co=only=e.target.checked?1:0;save();V.cards()};}
+window._fc=k=>{const r=R[idx];st.c=st.c||{};st.c[r.k]=(k?(st.c[r.k]||0)+1:0);if(st.c[r.k]>=3)st.m[r.k]=1;if(!k)delete st.m[r.k];save();V.cards()};draw();
+},
+quiz(){const types=[['g2n','Glyph → Name'],['n2m','Name → Meaning'],['s2g','Sound → Glyph']];let t=st.qt||'g2n';
+const r=R[Math.floor(Math.random()*24)];let opts=[r];while(opts.length<4){const x=R[Math.floor(Math.random()*24)];if(!opts.includes(x))opts.push(x)}opts.sort(()=>Math.random()-.5);
+let q,lab;if(t=='g2n'){q=svg(r.k,140)+'<p>What is this rune called?</p>';lab=o=>o.name}else if(t=='n2m'){q=`<div style="font-size:26px;color:var(--gold2)">${r.name}</div><p>What does it mean?</p>`;lab=o=>esc(o.lit)}else{q=`<div style="font-size:26px;color:var(--gold2)">"${esc(r.snd)}"</div><p>Which rune makes this sound?</p>`;lab=o=>svg(o.k,56)}
+m().innerHTML=`<div class="card"><select id="qt">${types.map(x=>`<option value="${x[0]}" ${x[0]==t?'selected':''}>${x[1]}</option>`).join('')}</select> <span class="mut">Score: ${st.q.right}/${st.q.total}</span></div>
+<div class="card" style="text-align:center">${q}</div><div id="op">${opts.map((o,i)=>`<button class="opt" data-i="${i}" style="${t=='s2g'?'text-align:center':''}">${lab(o)}</button>`).join('')}</div><div id="fb"></div>`;
+document.getElementById('qt').onchange=e=>{st.qt=e.target.value;save();V.quiz()};
+document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(document.getElementById('fb').innerHTML)return;const o=opts[+b.dataset.i],ok=o===r;st.q.total++;if(ok)st.q.right++;
+st.qs=st.qs||{};st.qs[r.k]=ok?(st.qs[r.k]||0)+1:0;if(st.qs[r.k]>=3)st.m[r.k]=1;save();
+document.querySelectorAll('.opt').forEach(x=>{if(opts[+x.dataset.i]===r)x.classList.add('ok')});if(!ok)b.classList.add('bad');
+document.getElementById('fb').innerHTML=`<div class="card"><b>${ok?'Correct!':'Not quite.'}</b> ${r.name} ${r.u}: sound "${esc(r.snd)}", meaning "${esc(r.lit)}".<div class="row" style="margin-top:8px"><button class="pri" onclick="V.quiz()">Next question</button><button onclick="go('rune','${r.k}')">Study ${r.name}</button></div></div>`})},
+name(){m().innerHTML=`<div class="card"><h2>Write your name in runes</h2><p class="mut">Runes spell by sound, not by English spelling. This tool uses the Elder Futhark with common substitutions: C/K/Q → Kenaz, V → Uruz (or Wunjo for a "w" sound), X → K+S, Y → Jera or Isa, TH → Thurisaz, NG → Ingwaz. Double letters are written once, as on real inscriptions.</p>
+<input id="nm" placeholder="Type a name, e.g. Chris" style="width:100%" value="${esc(st.nm||'Chris')}"><div id="out" style="margin-top:14px"></div></div>`;
+const map={a:'ansuz',b:'berkano',c:'kenaz',d:'dagaz',e:'ehwaz',f:'fehu',g:'gebo',h:'hagalaz',i:'isa',j:'jera',k:'kenaz',l:'laguz',m:'mannaz',n:'naudiz',o:'othala',p:'perthro',q:'kenaz',r:'raidho',s:'sowilo',t:'tiwaz',u:'uruz',v:'uruz',w:'wunjo',y:'jera',z:'algiz'};
+const f=()=>{const v=document.getElementById('nm').value;st.nm=v;save();let s=v.toLowerCase(),out=[],i=0;
+while(i<s.length){const two=s.substr(i,2);let k;if(two=='th'){k=['thurisaz'];i+=2}else if(two=='ng'){k=['ingwaz'];i+=2}else if(s[i]=='x'){k=['kenaz','sowilo'];i++}else if(map[s[i]]){k=[map[s[i]]];i++}else{if(s[i]==' ')out.push(' ');i++;continue}
+for(const x of k){if(out[out.length-1]!==x)out.push(x)}}
+document.getElementById('out').innerHTML=`<div class="row" style="background:#191613;padding:10px;border-radius:10px;min-height:80px">${out.map(x=>x==' '?'<span style="width:20px"></span>':`<span style="text-align:center;cursor:pointer" onclick="go('rune','${x}')">${svg(x,70)}<br><small>${R.find(r=>r.k==x).name}</small></span>`).join('')}</div>
+<p class="uni" style="word-break:break-all">${out.map(x=>x==' '?' ':R.find(r=>r.k==x).u).join('')}</p><p class="mut" style="font-size:13px">Tap a rune to read about it.</p>`};
+document.getElementById('nm').oninput=f;f()},
+prog(){const n=Object.keys(st.m).length;m().innerHTML=`<div class="card"><h2>Progress</h2><div class="bar"><div style="width:${n/24*100}%"></div></div><p>${n} of 24 mastered. Quiz: ${st.q.right} right of ${st.q.total}.</p><p class="mut">A rune is marked mastered when you tap "I know it" 3 times in a row on flashcards, get it right 3 times in a row in the quiz, or mark it yourself.</p>
+<div class="grid">${R.map(r=>`<div class="tile" onclick="go('rune','${r.k}')" style="${st.m[r.k]?'border-color:var(--grn)':''}">${st.m[r.k]?'<span class="star">✔</span>':''}${svg(r.k,44)}<div class="n">${r.name}</div><div class="s">${st.m[r.k]?'Mastered':st.seen[r.k]?'Studied':'New'}</div></div>`).join('')}</div>
+<p style="margin-top:14px"><button onclick="if(confirm('Reset all progress?')){st={m:{},seen:{},q:{right:0,total:0}};save();V.prog()}">Reset progress</button></p><p class="mut" style="font-size:12px">Rune Lore v${VER}</p></div>`}
+};
+nav();V.home();
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

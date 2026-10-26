@@ -1,0 +1,89 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#FF7300">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pokes">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pokes Football</title><style>
+:root{--o:#FF7300;--bg:#0b0b0b;--c:#181818;--l:#2a2a2a;--t:#f2f2f2;--m:#9a9a9a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font-family:system-ui,Roboto,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+header{background:#000;border-bottom:3px solid var(--o);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header img{width:40px;height:40px}header h1{font-size:19px;margin:0;color:var(--o);flex:1}header small{display:block;color:var(--m);font-size:12px;font-weight:400}
+button{background:var(--o);color:#000;border:0;border-radius:8px;padding:8px 12px;font-weight:700;font-size:14px}
+nav{display:flex;background:#111;position:sticky;top:63px;z-index:4}nav a{flex:1;text-align:center;padding:12px 2px;color:var(--m);font-weight:600;font-size:14px;border-bottom:3px solid transparent}
+nav a.on{color:var(--o);border-color:var(--o)}main{padding:10px}
+.card{background:var(--c);border-radius:10px;padding:12px;margin-bottom:10px}.card h3{margin:0 0 8px;color:var(--o);font-size:15px}
+.g{display:flex;align-items:center;gap:10px}.g img{width:38px;height:38px;object-fit:contain}.g .n{flex:1}.g .n b{display:block;font-size:15px}.g .n span{color:var(--m);font-size:12.5px}
+.res{font-weight:800;text-align:right;font-size:15px}.W{color:#4cd964}.L{color:#ff5a5a}.big{font-size:30px;font-weight:800;color:var(--o)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;border-bottom:1px solid var(--l);text-align:left}th{color:var(--m);font-weight:600;font-size:12px}
+td.r,th.r{text-align:right}tr.me td{background:rgba(255,115,0,.18);color:var(--o);font-weight:700}td img{width:22px;height:22px;vertical-align:middle;margin-right:6px}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--l);font-size:14px}.row span:last-child{font-weight:700}
+.muted{color:var(--m);font-size:12.5px}.ft{text-align:center;color:var(--m);font-size:12px;padding:14px}.err{background:#3a1a00;color:#ffb27a;padding:9px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.sum{display:flex;gap:8px}.sum .card{flex:1;text-align:center;margin:0 0 10px}.sum .card div:first-child{font-size:12px;color:var(--m)}
+</style></head><body>
+<header><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23FF7300'/%3E%3Cellipse cx='50' cy='42' rx='34' ry='20' fill='%23111' transform='rotate(-25 50 42)'/%3E%3Cpath d='M36 46 L64 38' stroke='%23fff' stroke-width='3'/%3E%3Cpath d='M44 38l3 10M50 36l3 10M56 34l3 10' stroke='%23fff' stroke-width='3'/%3E%3Ctext x='50' y='88' font-family='Arial Black,Arial' font-weight='900' font-size='24' text-anchor='middle' fill='%23111'%3EOSU%3C/text%3E%3C/svg%3E">
+<h1>Pokes Football<small id="upd">Loading…</small></h1><button id="rf">⟳ Refresh</button></header>
+<nav><a data-t="sch" class="on">Schedule</a><a data-t="std">Big 12</a><a data-t="rk">Rankings</a><a data-t="st">Stats</a></nav>
+<main id="m"></main><div class="ft">Pokes Football v1.0 · Data from ESPN</div>
+<script>
+const TID='197',SEASON=2026,E='https://site.api.espn.com/apis/site/v2/sports/football/college-football',C='https://sports.core.api.espn.com/v2/sports/football/leagues/college-football';
+const U={team:E+'/teams/'+TID,sched:E+'/teams/'+TID+'/schedule?season='+SEASON,std:'https://site.web.api.espn.com/apis/v2/sports/football/college-football/standings?group=4&season='+SEASON,rank:E+'/rankings',stats:E+'/teams/'+TID+'/statistics',lead:C+'/seasons/'+SEASON+'/types/2/teams/'+TID+'/leaders'};
+let D=JSON.parse(localStorage.getItem('pf_data')||'{}'),tab=localStorage.getItem('pf_tab')||'sch',err='';
+const cb={};let seq=0;window.__got=(id,ok,b)=>{const c=cb[id];delete cb[id];c&&(ok?c.res(b):c.rej(new Error(b)))};
+function get(u){u=u.replace(/^http:/,'https:');
+  if(window.AndroidBridge&&AndroidBridge.get)return new Promise((res,rej)=>{const id=++seq;cb[id]={res,rej};AndroidBridge.get(id,u)}).then(JSON.parse);
+  return fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function load(){document.getElementById('upd').textContent='Updating…';err='';const nd={};
+  const ks=Object.keys(U);const rs=await Promise.allSettled(ks.map(k=>get(U[k])));
+  rs.forEach((r,i)=>{if(r.status==='fulfilled')nd[ks[i]]=r.value});
+  if(nd.lead){try{const cats=nd.lead.categories||[];await Promise.all(cats.map(async c=>{const L=c.leaders&&c.leaders[0];if(L&&L.athlete&&L.athlete.$ref){try{const a=await get(L.athlete.$ref);L.name=a.displayName;L.pos=a.position&&a.position.abbreviation;L.jersey=a.jersey}catch(e){}}}))}catch(e){}}
+  const ok=Object.keys(nd).length;if(ok){Object.assign(D,nd);D.ts=Date.now();try{localStorage.setItem('pf_data',JSON.stringify(D))}catch(e){}}
+  if(ok<ks.length)err=ok?'Some data could not be updated – showing saved data for those parts.':'Live scores did not load. ESPN blocks this request in the browser (Safari and Chrome). Saved data still shows if you had any.';render()}
+const ct=(d,o)=>new Date(d).toLocaleString('en-US',Object.assign({timeZone:'America/Chicago'},o));
+function rec(){const t=D.team&&D.team.team;if(!t)return{};return{ov:t.record&&t.record.items&&t.record.items[0]&&t.record.items[0].summary,ss:t.standingSummary,rank:t.rank}}
+function sched(){const ev=(D.sched&&D.sched.events)||[];if(!ev.length)return'<div class="card">No schedule data yet. Tap Refresh.</div>';const r=rec();
+  let h=`<div class="sum"><div class="card"><div>Record</div><div class="big">${esc(r.ov||'-')}</div></div><div class="card"><div>Big 12</div><div class="big" style="font-size:18px;padding-top:8px">${esc(r.ss||'-')}</div></div></div>`;
+  for(const e of ev){const c=e.competitions[0],me=c.competitors.find(x=>x.id===TID||x.team.id===TID),op=c.competitors.find(x=>x!==me);const home=me.homeAway==='home';
+    const st=c.status.type,done=st.completed,tv=(c.broadcasts||[]).map(b=>b.media&&b.media.shortName).filter(Boolean).join(', ');
+    const tv0=e.timeValid!==false&&c.timeValid!==false;const dt=ct(e.date,{weekday:'short',month:'short',day:'numeric'})+(tv0?' · '+ct(e.date,{hour:'numeric',minute:'2-digit'})+' CT':' · Time TBD');
+    const sc=x=>x.score&&(x.score.displayValue||x.score);let res='';
+    if(done){const w=me.winner;res=`<span class="${w?'W':'L'}">${w?'W':'L'} ${esc(sc(me))}-${esc(sc(op))}</span>`}else if(st.state==='in')res=`<span>${esc(sc(me))}-${esc(sc(op))}</span><div class="muted">${esc(st.shortDetail)}</div>`;
+    const rk=op.curatedRank&&op.curatedRank.current<=25?'#'+op.curatedRank.current+' ':'';const lg=op.team.logos&&op.team.logos[0]?op.team.logos[0].href:'';
+    h+=`<div class="card g"><img src="${esc(lg)}" onerror="this.style.visibility='hidden'"><div class="n"><b>${c.neutralSite?'vs':home?'vs':'@'} ${esc(rk+op.team.displayName)}</b><span>${esc(dt)}${tv?' · 📺 '+esc(tv):''}</span><br><span>${esc((c.venue&&c.venue.fullName)||'')}${c.neutralSite?' (neutral)':''}</span></div><div class="res">${res}</div></div>`}
+  return h}
+function standings(){const s=D.std;if(!s)return'<div class="card">No standings yet. Tap Refresh.</div>';let grp=(s.children||[]).filter(g=>g.standings&&g.standings.entries&&g.standings.entries.length);if(!grp.length)grp=[s];let h='';
+  for(const g of grp){const sv=(x,n)=>{const o=x.stats.find(y=>y.type===n);return o&&o.value!=null?+o.value:0};const en=((g.standings&&g.standings.entries)||[]).slice().sort((a,b)=>sv(b,'vsconf_leaguewinpercent')-sv(a,'vsconf_leaguewinpercent')||sv(b,'vsconf_wins')-sv(a,'vsconf_wins')||sv(b,'wins')-sv(a,'wins'));
+    h+=`<div class="card"><h3>${esc(g.name||'Big 12')}</h3><table><tr><th>#</th><th>Team</th><th class="r">Conf</th><th class="r">Overall</th></tr>`;
+    en.forEach((x,i)=>{const f=n=>{const o=x.stats.find(y=>y.type===n||y.name===n);return o?(o.summary||o.displayValue):'-'};const me=x.team.id===TID;const lg=x.team.logos&&x.team.logos[0]?x.team.logos[0].href:'';
+      h+=`<tr class="${me?'me':''}"><td>${i+1}</td><td><img src="${esc(lg)}" onerror="this.style.display='none'">${esc(x.team.shortDisplayName||x.team.displayName)}</td><td class="r">${esc(f('vsconf'))}</td><td class="r">${esc(f('total'))}</td></tr>`});h+='</table></div>'}
+  const r=rec();if(r.ss)h=`<div class="card"><h3>Oklahoma State</h3><div class="big" style="font-size:22px">${esc(r.ss)}</div><div class="muted">ESPN's official conference position (tiebreakers applied)</div></div>`+h;return h}
+function rankings(){const R=D.rank;if(!R)return'<div class="card">No rankings yet. Tap Refresh.</div>';let h='';const tr=rec().rank;
+  for(const p of R.rankings||[]){const r=(p.ranks||[]).find(x=>x.team.id===TID),o=(p.others||[]).find(x=>x.team.id===TID);
+    let v;if(r){const mv=r.previous&&r.previous!==r.current&&r.previous<=25?(r.previous>r.current?' ▲ up from #'+r.previous:' ▼ down from #'+r.previous):(r.previous>25||!r.previous?' (new)':' (no change)');v=`<div class="big">#${r.current}</div><div class="muted">${esc(r.points)} pts${r.firstPlaceVotes?' · '+r.firstPlaceVotes+' first-place':''}${mv}</div>`}
+    else v=`<div class="big" style="font-size:22px">Unranked</div><div class="muted">${o?'Receiving votes: '+esc(o.points)+' pts':'Not receiving votes'}</div>`;
+    h+=`<div class="card"><h3>${esc(p.name)}</h3>${v}<div class="muted">${esc(p.headline||'')}</div></div>`}
+  if(!(R.rankings||[]).some(p=>/playoff|cfp/i.test(p.name)))h+='<div class="card"><h3>College Football Playoff Ranking</h3><div class="muted">CFP rankings appear here once the committee releases them (usually early November).</div></div>';
+  const top=(R.rankings||[])[0];if(top){h+=`<div class="card"><h3>${esc(top.name)} – Top 25</h3><table>`;for(const x of top.ranks||[])h+=`<tr class="${x.team.id===TID?'me':''}"><td>${x.current}</td><td>${esc(x.team.location||x.team.name)}</td><td class="r">${esc(x.recordSummary||'')}</td></tr>`;h+='</table></div>'}
+  return h}
+function stats(){const S=D.stats&&D.stats.results&&D.stats.results.stats;let h='';
+  const L=D.lead&&D.lead.categories;if(L){h+='<div class="card"><h3>Team Leaders</h3>';for(const c of L){const x=c.leaders&&c.leaders[0];if(!x)continue;h+=`<div class="row"><span>${esc(c.displayName)}</span><span>${esc(x.name||'')}${x.pos?' ('+esc(x.pos)+')':''}</span></div><div class="muted" style="text-align:right">${esc(x.displayValue)}</div>`}h+='</div>'}
+  if(!S)return h||'<div class="card">No stats yet. Tap Refresh.</div>';
+  const pick={passing:['Passing',['netPassingYards','completionPct','passingTouchdowns','interceptions','yardsPerPassAttempt','QBRating']],rushing:['Rushing',['rushingYards','yardsPerRushAttempt','rushingTouchdowns','rushingAttempts','longRushing']],miscellaneous:['Offense / Misc',['firstDowns','thirdDownConvPct','fourthDownConvPct','totalPenaltyYards','possessionTimeSeconds','turnOverDifferential']],scoring:['Scoring',['totalPoints','totalPointsPerGame','totalTouchdowns','fieldGoals']],defensive:['Defense',['totalTackles','sacks','tacklesForLoss','passesDefended','stuffs']],defensiveInterceptions:['Interceptions',['interceptions','interceptionYards']],kicking:['Kicking',['fieldGoalsMade','fieldGoalAttempts','fieldGoalPct','longFieldGoalMade']],punting:['Punting',['punts','grossAvgPuntYards']]};
+  for(const c of S.categories||[]){const p=pick[c.name];if(!p)continue;const rows=p[1].map(n=>c.stats.find(s=>s.name===n)).filter(Boolean);if(!rows.length)continue;
+    h+=`<div class="card"><h3>${p[0]}</h3>`+rows.map(s=>`<div class="row"><span>${esc(s.displayName)}</span><span>${esc(s.displayValue)}${s.rankDisplayValue?' <span class="muted">('+esc(s.rankDisplayValue)+')</span>':''}</span></div>`).join('')+'</div>'}
+  return h}
+function render(){document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.t===tab));
+  document.getElementById('upd').textContent=D.ts?'Updated '+new Date(D.ts).toLocaleString('en-US',{timeZone:'America/Chicago',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT':'Not loaded yet';
+  document.getElementById('m').innerHTML=(err?`<div class="err">${esc(err)}</div>`:'')+({sch:sched,std:standings,rk:rankings,st:stats}[tab])()}
+document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>{tab=a.dataset.t;localStorage.setItem('pf_tab',tab);render();scrollTo(0,0)});
+document.getElementById('rf').onclick=load;
+let sy=null;addEventListener('touchstart',e=>{sy=scrollY<=0?e.touches[0].clientY:null},{passive:true});addEventListener('touchend',e=>{if(sy!=null&&e.changedTouches[0].clientY-sy>110)load();sy=null},{passive:true});
+window.__resume=()=>{if(!D.ts||Date.now()-D.ts>15*60e3)load()};
+render();load();
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

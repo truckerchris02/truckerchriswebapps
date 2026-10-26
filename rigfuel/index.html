@@ -1,0 +1,2755 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta name="theme-color" content="#f59e0b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RigFuel">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}</style>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="viewport-fit=cover,width=device-width, initial-scale=1.0">
+  <title>RigFuel — Night Haul Truck Nutrition & Cab Pantry</title>
+  <script src="tailwind.js"></script>
+  <script src="chart.js"></script>
+  <link href="fonts.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            cab: {
+              950: '#090d16',
+              900: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+              accent: '#f59e0b',
+              emerald: '#10b981',
+              sky: '#38bdf8'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #090d16;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+    }
+    .card-glow {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.78) 0%, rgba(15, 23, 42, 0.92) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .card-glow:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Top Hero & Shift Header -->
+  <header class="relative border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Brand & Shift Badge -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-extrabold text-lg shadow-lg shadow-amber-500/20">
+            RF
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white">RigFuel</h1>
+              <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Kenworth Sleeper &amp; Night Haul
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Wed–Sun Night Shift Nutrition • Walmart Supercenter Restock System
+            </p>
+          </div>
+        </div>
+
+        <!-- Active Shift Day & Goal Mode Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
+            <span class="text-slate-400 px-2 font-medium hidden md:inline">Shift Day:</span>
+            <select id="activeDaySelect" aria-label="Select Shift Day" class="bg-slate-800 text-amber-400 font-semibold rounded px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer">
+              <option value="Wed">Wed (Roll-Out 4 PM)</option>
+              <option value="Thu">Thu (Night Haul)</option>
+              <option value="Fri">Fri (Night Haul)</option>
+              <option value="Sat">Sat (Night Haul)</option>
+              <option value="Sun">Sun (End of Watch)</option>
+              <option value="Off">Off-Shift / Home</option>
+            </select>
+          </div>
+
+          <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
+            <span class="text-slate-400 px-2 font-medium hidden md:inline">Target:</span>
+            <select id="goalPresetSelect" aria-label="Select Nutrition Goal Preset" class="bg-slate-800 text-emerald-400 font-semibold rounded px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer">
+              <option value="recomp">Recomp (1,900 kcal • 150g P)</option>
+              <option value="heavy">Heavy Haul (2,350 kcal • 165g P)</option>
+              <option value="light">Light Cut (1,700 kcal • 145g P)</option>
+              <option value="custom">Custom Targets...</option>
+            </select>
+          </div>
+
+          <button id="openGoalsModalBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition flex items-center gap-1.5" title="Edit Daily Targets">
+            <span>⚙️</span>
+            <span class="hidden sm:inline">Targets</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Navigation Tabs -->
+      <nav class="mt-3 flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1" aria-label="Main Navigation">
+        <button type="button" data-tab="log" class="nav-tab-btn tab-active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>📋</span>
+          <span>Shift Log &amp; Macros</span>
+        </button>
+        <button type="button" data-tab="catalog" class="nav-tab-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🥨</span>
+          <span>Cab Snacks &amp; Meals</span>
+          <span id="catalogCountBadge" class="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300">28</span>
+        </button>
+        <button type="button" data-tab="planner" class="nav-tab-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🗓️</span>
+          <span>5-Day Night Haul Plan</span>
+        </button>
+        <button type="button" data-tab="builder" class="nav-tab-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <span>⚡</span>
+          <span>Cab Meal Builder</span>
+        </button>
+        <button type="button" data-tab="groceries" class="nav-tab-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🛒</span>
+          <span>Walmart Haul &amp; Stash</span>
+          <span id="groceryCountBadge" class="px-1.5 py-0.5 text-[10px] rounded-full bg-amber-500/20 text-amber-300">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-6">
+
+    <!-- Hero Visual Banner (Compact & Collapsible for Road Use) -->
+    <section class="relative rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+      <img src="data:image/jpeg;base64,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" alt="Sleeper cab high protein meal prep" class="w-full h-44 sm:h-52 object-cover max-w-full">
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/35 flex flex-col justify-between p-4 sm:p-6">
+        <div class="max-w-xl space-y-1.5">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+            <span>🚛</span>
+            <span id="heroShiftBannerText">Night Haul Schedule: 2 PM Pre-Shift • 8 PM Mid-Drive • 1 AM Midnight • 7 AM Recovery</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+            High-Protein Cab Fuel, Zero Midnight Crash
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Built around Walmart Supercenter staples—Rotisserie Chicken, No-Drain Tuna &amp; Chicken Pouches, Oikos Pro, and Premier Protein shakes—plus B1/Magnesium-friendly low-sugar snacks.
+          </p>
+        </div>
+
+        <!-- Quick Action Bar inside Hero -->
+        <div class="flex flex-wrap items-center gap-2 pt-2">
+          <button id="loadPlannedDayBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow">
+            ⚡ Load Today's Planned Meals (<span id="loadBtnDayLabel">Wed</span>)
+          </button>
+          <button id="quickEmergencySnackBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/40 font-semibold text-xs transition">
+            🚨 Stuck at Receiver? View Cab Stash
+          </button>
+          <button id="openCustomFoodModalBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-medium text-xs transition">
+            + Add Custom Snack / Meal
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: SHIFT LOG & MACROS                  -->
+    <!-- ========================================== -->
+    <section id="tab-log" class="tab-panel space-y-6">
+      <!-- Top Macro Cards & Hydration -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        <!-- Macro Summary Bars (2 columns on lg) -->
+        <div class="lg:col-span-2 card-glow rounded-2xl p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>🎯</span>
+                <span>Shift Nutrition Telemetry (<span id="logActiveDayTitle">Wednesday</span>)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Check off items as you eat them through your shift</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="midnightAlertBadge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                ✓ Low-Glycemic Cab Fuel
+              </span>
+              <button id="clearShiftLogBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 text-xs font-medium transition">
+                Reset Day
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Macro Metric Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <!-- Calories -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>Calories</span>
+                <span class="text-amber-400 font-semibold" id="calPctText">0%</span>
+              </div>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span id="calCurrentText" class="text-xl font-extrabold text-white">0</span>
+                <span class="text-xs text-slate-400">/ <span id="calTargetText">1900</span> kcal</span>
+              </div>
+              <div class="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="calProgressBar" class="bg-amber-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="calRemainingText" class="mt-1.5 text-[11px] text-slate-400">1,900 kcal left</p>
+            </div>
+
+            <!-- Protein -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>Protein</span>
+                <span class="text-emerald-400 font-semibold" id="proPctText">0%</span>
+              </div>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span id="proCurrentText" class="text-xl font-extrabold text-emerald-400">0g</span>
+                <span class="text-xs text-slate-400">/ <span id="proTargetText">150</span>g</span>
+              </div>
+              <div class="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="proProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="proRemainingText" class="mt-1.5 text-[11px] text-slate-400">150g to goal</p>
+            </div>
+
+            <!-- Net/Total Carbs -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>Carbs</span>
+                <span class="text-sky-400 font-semibold" id="carbPctText">0%</span>
+              </div>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span id="carbCurrentText" class="text-xl font-extrabold text-sky-400">0g</span>
+                <span class="text-xs text-slate-400">/ <span id="carbTargetText">130</span>g</span>
+              </div>
+              <div class="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="carbProgressBar" class="bg-sky-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="carbRemainingText" class="mt-1.5 text-[11px] text-slate-400">Keep low at 1 AM</p>
+            </div>
+
+            <!-- Healthy Fats -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>Fats</span>
+                <span class="text-purple-400 font-semibold" id="fatPctText">0%</span>
+              </div>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span id="fatCurrentText" class="text-xl font-extrabold text-purple-400">0g</span>
+                <span class="text-xs text-slate-400">/ <span id="fatTargetText">65</span>g</span>
+              </div>
+              <div class="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="fatProgressBar" class="bg-purple-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="fatRemainingText" class="mt-1.5 text-[11px] text-slate-400">Steady cab energy</p>
+            </div>
+          </div>
+
+          <!-- Hydration & Micronutrient Strip -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="space-y-1 flex-1 min-w-[200px]">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-sky-300 flex items-center gap-1.5">
+                  <span>💧</span>
+                  <span>Cab Water Intake</span>
+                </span>
+                <span class="font-bold text-white"><span id="waterCurrentOz">0</span> / <span id="waterTargetOz">100</span> fl oz</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <div id="waterProgressBar" class="bg-gradient-to-r from-sky-500 to-cyan-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-water="-8" class="water-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">
+                -8 oz
+              </button>
+              <button type="button" data-water="8" class="water-btn px-2.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-semibold border border-sky-500/30 transition">
+                +8 oz Cup
+              </button>
+              <button type="button" data-water="17" class="water-btn px-2.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-semibold border border-sky-500/30 transition">
+                +16.9 oz Bottle
+              </button>
+              <button type="button" data-water="32" class="water-btn px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition">
+                +32 oz Jug
+              </button>
+            </div>
+          </div>
+
+          <!-- Daily Vitamin / Tinnitus & Energy Check (From Keep Note) -->
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2 text-slate-300">
+              <span>⚡</span>
+              <span><strong>Night Shift Stack Reminder:</strong> Vitamin B1 (Allithiamine) + Magnesium Glycinate &amp; low refined sugar for steady nerve/ear energy.</span>
+            </div>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-emerald-300 font-semibold">
+              <input id="stackTakenCheckbox" type="checkbox" class="rounded text-emerald-500 focus:ring-0">
+              <span>Stack Taken Today</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="card-glow rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="text-sm font-bold text-white">Macro Energy Split</h3>
+              <p class="text-xs text-slate-400">Protein vs. Carbs vs. Fat calories</p>
+            </div>
+            <span id="loggedItemsCountText" class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-amber-400">0 items</span>
+          </div>
+          <div class="relative h-56 w-full">
+            <canvas id="macroChartCanvas"></canvas>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span>Est. Daily Burn (Keep Tracker): ~2,355 kcal</span>
+            <span id="netDeficitBadge" class="font-semibold text-emerald-400">Recomp Zone</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shift Meal Windows List -->
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span>🕒</span>
+            <span>Shift Meal Windows &amp; Cab Stash</span>
+          </h3>
+          <div class="flex items-center gap-2">
+            <button type="button" id="goToCatalogFromLogBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-semibold transition">
+              + Browse Snacks &amp; Meals Catalog
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Shift Slots Container -->
+        <div id="shiftSlotsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: CAB SNACKS & MEALS CATALOG          -->
+    <!-- ========================================== -->
+    <section id="tab-catalog" class="tab-panel hidden space-y-5">
+      <!-- Featured Visual Callouts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card-glow rounded-2xl overflow-hidden flex flex-col sm:flex-row items-center">
+          <img src="data:image/jpeg;base64,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" alt="Cab Microwave Power Bowl" class="w-full sm:w-44 h-36 object-cover max-w-full">
+          <div class="p-4 space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">90-Second Cab Meals</span>
+            <h3 class="text-base font-bold text-white">Pre-Shift &amp; Sleeper Power Bowls</h3>
+            <p class="text-xs text-slate-300">Combine pre-cooked rotisserie chicken or sirloin strips with microwave rice pouches and steamable veggies—zero dishes required.</p>
+          </div>
+        </div>
+        <div class="card-glow rounded-2xl overflow-hidden flex flex-col sm:flex-row items-center">
+          <img src="data:image/jpeg;base64,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" alt="Road Ready Trucker Snacks" class="w-full sm:w-44 h-36 object-cover max-w-full">
+          <div class="p-4 space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Zero-Mess Cab Snacks</span>
+            <h3 class="text-base font-bold text-white">One-Handed &amp; No-Drain Staples</h3>
+            <p class="text-xs text-slate-300">Foil tuna/chicken pouches (no draining in the cab), string cheese, peeled hard-boiled eggs, jerky, and raw almonds.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="card-glow rounded-2xl p-4 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Search -->
+          <div>
+            <label for="catalogSearchInput" class="block text-xs font-medium text-slate-400 mb-1">Search Snacks &amp; Meals</label>
+            <input id="catalogSearchInput" type="text" placeholder="e.g., tuna pouch, jerky, yogurt, chicken..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+          </div>
+
+          <!-- Shift Window / Category -->
+          <div>
+            <label for="catalogCategorySelect" class="block text-xs font-medium text-slate-400 mb-1">Shift Window / Type</label>
+            <select id="catalogCategorySelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+              <option value="all">All Categories (28+)</option>
+              <option value="pre-shift">Pre-Shift Power Meals (2 PM)</option>
+              <option value="mid-drive">Mid-Drive Snacks (8 PM)</option>
+              <option value="midnight">Midnight No-Crash (1 AM)</option>
+              <option value="recovery">End-of-Watch Recovery (7 AM)</option>
+              <option value="emergency">Emergency Cab Stash (Dry)</option>
+            </select>
+          </div>
+
+          <!-- Cab Equipment / Storage -->
+          <div>
+            <label for="catalogPrepSelect" class="block text-xs font-medium text-slate-400 mb-1">Cab Storage &amp; Prep</label>
+            <select id="catalogPrepSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+              <option value="all">All Storage &amp; Prep Types</option>
+              <option value="no-cook">No-Cook / Ready to Eat</option>
+              <option value="microwave">Cab Microwave (60–90 sec)</option>
+              <option value="fridge">Cab Fridge / Cooler</option>
+              <option value="shelf">Dry Bunk / Shelf-Stable</option>
+            </select>
+          </div>
+
+          <!-- Quick Toggles -->
+          <div class="flex flex-col justify-end gap-2">
+            <div class="flex items-center gap-2">
+              <button id="toggleHighProteinBtn" type="button" class="flex-1 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold transition">
+                💪 25g+ Protein
+              </button>
+              <button id="toggleFavoritesBtn" type="button" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold transition" title="Show Favorites Only">
+                ★ Favorites
+              </button>
+              <button id="resetCatalogFiltersBtn" type="button" class="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs transition" title="Reset Filters">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Food Cards Grid -->
+      <div id="catalogGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: 5-DAY NIGHT HAUL PLANNER            -->
+    <!-- ========================================== -->
+    <section id="tab-planner" class="tab-panel hidden space-y-5">
+      <div class="card-glow rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
+            <span>🗓️</span>
+            <span>Synced from Your Google Doc: "Chris's 5-Day Fitness &amp; Fuel Plan"</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">5-Day Walmart "Night Haul" Rotation (Wed – Sun)</h3>
+          <p class="text-xs text-slate-300">
+            Built for rolling out at 4:00 PM Wednesday through Sunday morning using "The Big Three": Rotisserie Chicken, No-Drain Pouch Proteins, and Ready-to-Drink Shakes.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="resetPlannerDefaultBtn" type="button" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition">
+            ↺ Restore Original 5-Day Plan
+          </button>
+        </div>
+      </div>
+
+      <!-- 5-Day Cards Container -->
+      <div id="plannerDaysContainer" class="space-y-4">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: CAB MEAL BUILDER                    -->
+    <!-- ========================================== -->
+    <section id="tab-builder" class="tab-panel hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Left 2 Cols: Step-by-Step Selector -->
+        <div class="lg:col-span-2 card-glow rounded-2xl p-4 sm:p-5 space-y-5">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Mix &amp; Match Cab Assembly</span>
+            <h3 class="text-lg font-extrabold text-white">Build a Custom Sleeper Meal or Snack Combo</h3>
+            <p class="text-xs text-slate-400">Pick components from your cab fridge and dry bunk to see instant macros and log to your shift.</p>
+          </div>
+
+          <!-- Step 1: Protein -->
+          <div class="space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-emerald-400">1. Choose Primary Protein Base</label>
+            <div id="builderProteinOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Step 2: Carb / Base -->
+          <div class="space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-sky-400">2. Choose Carb / Wrap Base (Or No-Carb for 1 AM)</label>
+            <div id="builderCarbOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Step 3: Veggie / Fiber Crunch -->
+          <div class="space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-amber-400">3. Choose Veggie / Fiber Side</label>
+            <div id="builderVeggieOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Step 4: Flavor / Healthy Fat Boost -->
+          <div class="space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-purple-400">4. Add Sauce or Protein/Fat Boost</label>
+            <div id="builderBoostOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Col: Live Built Meal Summary -->
+        <div class="card-glow rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4 h-fit sticky top-28">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Live Combo Preview</span>
+                <h4 id="builderComboTitle" class="text-base font-extrabold text-white mt-0.5">Custom Cab Power Bowl</h4>
+              </div>
+              <span id="builderPrepBadge" class="px-2 py-1 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                90s Microwave
+              </span>
+            </div>
+
+            <div>
+              <label for="builderCustomNameInput" class="block text-xs text-slate-400 mb-1">Custom Combo Name (optional)</label>
+              <input id="builderCustomNameInput" type="text" placeholder="e.g., Enid Drop Rotisserie Wrap" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+            </div>
+
+            <!-- Selected Ingredients List -->
+            <div class="space-y-1.5">
+              <span class="text-xs font-semibold text-slate-400">Selected Components:</span>
+              <ul id="builderSelectedList" class="space-y-1.5 text-xs text-slate-200">
+                <!-- Populated by JS -->
+              </ul>
+            </div>
+
+            <!-- Totals Box -->
+            <div class="grid grid-cols-2 gap-2 pt-2">
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[11px] text-slate-400 block">Total Calories</span>
+                <span id="builderTotalCal" class="text-lg font-extrabold text-white">0 kcal</span>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[11px] text-slate-400 block">Total Protein</span>
+                <span id="builderTotalPro" class="text-lg font-extrabold text-emerald-400">0g</span>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[11px] text-slate-400 block">Total Carbs</span>
+                <span id="builderTotalCarb" class="text-base font-bold text-sky-400">0g</span>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[11px] text-slate-400 block">Total Fat</span>
+                <span id="builderTotalFat" class="text-base font-bold text-purple-400">0g</span>
+              </div>
+            </div>
+
+            <!-- Target Slot Selector -->
+            <div>
+              <label for="builderSlotSelect" class="block text-xs text-slate-400 mb-1">Log to Shift Window</label>
+              <select id="builderSlotSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                <option value="pre-shift">2:00 PM — Pre-Shift Power Bowl</option>
+                <option value="mid-drive">8:00 PM — Mid-Drive Protein Hit</option>
+                <option value="midnight">1:00 AM — Midnight Shift Meal</option>
+                <option value="recovery">7:00 AM — End of Watch Recovery</option>
+                <option value="emergency">Cab Stash — Anytime / Delay</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button id="builderLogMealBtn" type="button" class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-amber-500/20">
+              + Log Combo to Today's Shift
+            </button>
+            <button id="builderSaveCatalogBtn" type="button" class="w-full py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition">
+              ★ Save Combo to My Catalog
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: WALMART HAUL & CAB INVENTORY        -->
+    <!-- ========================================== -->
+    <section id="tab-groceries" class="tab-panel hidden space-y-5">
+      <!-- Top Summary & Controls -->
+      <div class="card-glow rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Supercenter Restock &amp; Sleeper Inventory</span>
+          <h3 class="text-lg font-extrabold text-white">Walmart "Night Haul" Grocery List &amp; Under-$50 Staples</h3>
+          <p class="text-xs text-slate-300">
+            Includes your 5-Day Night Haul staples, Under-$50 4-Day Truck Groceries, and cab essentials (plastic spoons, Dude Wipes).
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-right">
+            <span class="text-[11px] text-slate-400 block">Est. Unchecked Basket</span>
+            <span id="groceryEstTotalText" class="text-lg font-extrabold text-emerald-400">$0.00</span>
+          </div>
+          <button id="copyGroceryListBtn" type="button" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow">
+            📋 Copy Restock List
+          </button>
+          <button id="resetGroceriesDefaultBtn" type="button" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition">
+            ↺ Reset Default Haul
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Item & Filter Row -->
+      <div class="card-glow rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" data-gfilter="all" class="gfilter-btn tab-active px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            All Items
+          </button>
+          <button type="button" data-gfilter="need" class="gfilter-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+            🛒 Need to Grab
+          </button>
+          <button type="button" data-gfilter="stocked" class="gfilter-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+            ✓ Stocked in Cab
+          </button>
+        </div>
+
+        <form id="addGroceryForm" class="flex flex-wrap items-center gap-2 flex-1 max-w-xl">
+          <input id="newGroceryNameInput" type="text" required placeholder="Add item (e.g., G Hughes Sugar-Free BBQ, Paper Towels)..." class="flex-1 min-w-[180px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+          <select id="newGroceryDeptSelect" aria-label="Department" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+            <option value="Proteins & Deli">Proteins &amp; Deli</option>
+            <option value="Dairy & Fridge">Dairy &amp; Fridge</option>
+            <option value="Produce">Produce</option>
+            <option value="Pantry & Dry Stash">Pantry &amp; Dry Stash</option>
+            <option value="Cab Supplies">Cab Supplies</option>
+          </select>
+          <input id="newGroceryPriceInput" type="number" step="0.01" min="0" placeholder="$ Est" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+            + Add
+          </button>
+        </form>
+      </div>
+
+      <!-- Grocery Departments Grid -->
+      <div id="groceryDepartmentsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: EDIT DAILY TARGETS                -->
+  <!-- ========================================== -->
+  <div id="goalsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="card-glow rounded-2xl max-w-md w-full p-5 space-y-4 border border-slate-700 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white">⚙️ Customize Daily Shift Targets</h3>
+        <button type="button" id="closeGoalsModalBtn" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-1">✕</button>
+      </div>
+      <form id="customGoalsForm" class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="goalCalInput" class="block text-slate-300 font-medium mb-1">Daily Calories (kcal)</label>
+            <input id="goalCalInput" type="number" min="1000" max="5000" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div>
+            <label for="goalProInput" class="block text-slate-300 font-medium mb-1">Protein Target (g)</label>
+            <input id="goalProInput" type="number" min="50" max="350" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div>
+            <label for="goalCarbInput" class="block text-slate-300 font-medium mb-1">Carbs Target (g)</label>
+            <input id="goalCarbInput" type="number" min="20" max="500" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div>
+            <label for="goalFatInput" class="block text-slate-300 font-medium mb-1">Fat Target (g)</label>
+            <input id="goalFatInput" type="number" min="20" max="200" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label for="goalWaterInput" class="block text-slate-300 font-medium mb-1">Daily Water Goal (fl oz)</label>
+          <input id="goalWaterInput" type="number" min="32" max="256" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelGoalsModalBtn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Save Targets</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: ADD CUSTOM SNACK / MEAL           -->
+  <!-- ========================================== -->
+  <div id="customFoodModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="card-glow rounded-2xl max-w-lg w-full p-5 space-y-4 border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white">🥨 Add Custom Cab Snack or Meal</h3>
+        <button type="button" id="closeCustomFoodModalBtn" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-1">✕</button>
+      </div>
+      <form id="customFoodForm" class="space-y-3 text-xs">
+        <div>
+          <label for="cfNameInput" class="block text-slate-300 font-medium mb-1">Item Name</label>
+          <input id="cfNameInput" type="text" required placeholder="e.g., Fairlife Core Power 42g Shake" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="cfCategorySelect" class="block text-slate-300 font-medium mb-1">Best Shift Window</label>
+            <select id="cfCategorySelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+              <option value="pre-shift">2:00 PM Pre-Shift Meal</option>
+              <option value="mid-drive">8:00 PM Mid-Drive Snack</option>
+              <option value="midnight">1:00 AM Midnight No-Crash</option>
+              <option value="recovery">7:00 AM End-of-Watch Recovery</option>
+              <option value="emergency">Emergency Cab Stash</option>
+            </select>
+          </div>
+          <div>
+            <label for="cfPrepSelect" class="block text-slate-300 font-medium mb-1">Cab Storage / Prep</label>
+            <select id="cfPrepSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+              <option value="no-cook">No-Cook / Ready to Eat</option>
+              <option value="microwave">Cab Microwave (60–90s)</option>
+              <option value="fridge">Cab Fridge / Cooler</option>
+              <option value="shelf">Dry Bunk Shelf-Stable</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2">
+          <div>
+            <label for="cfCalInput" class="block text-slate-300 font-medium mb-1">Calories</label>
+            <input id="cfCalInput" type="number" min="0" max="2500" required value="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+          </div>
+          <div>
+            <label for="cfProInput" class="block text-slate-300 font-medium mb-1">Protein (g)</label>
+            <input id="cfProInput" type="number" min="0" max="200" required value="25" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+          </div>
+          <div>
+            <label for="cfCarbInput" class="block text-slate-300 font-medium mb-1">Carbs (g)</label>
+            <input id="cfCarbInput" type="number" min="0" max="300" required value="10" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+          </div>
+          <div>
+            <label for="cfFatInput" class="block text-slate-300 font-medium mb-1">Fat (g)</label>
+            <input id="cfFatInput" type="number" min="0" max="150" required value="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label for="cfNoteInput" class="block text-slate-300 font-medium mb-1">Portion &amp; Cab Tip</label>
+          <input id="cfNoteInput" type="text" placeholder="e.g., 1 bottle • Keep cold in sleeper fridge, zero mess" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input id="cfLogImmediatelyCheck" type="checkbox" checked class="rounded text-amber-500">
+          <label for="cfLogImmediatelyCheck" class="text-slate-300">Also log this item to today's active shift right now</label>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelCustomFoodModalBtn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Save &amp; Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 3: SWAP PLANNER SLOT                 -->
+  <!-- ========================================== -->
+  <div id="swapSlotModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="card-glow rounded-2xl max-w-md w-full p-5 space-y-4 border border-slate-700 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="swapModalTitle" class="text-base font-bold text-white">Swap Planned Meal</h3>
+        <button type="button" id="closeSwapModalBtn" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-1">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <label for="swapFoodSelect" class="block text-slate-300 font-medium">Choose replacement from your Cab Catalog:</label>
+        <select id="swapFoodSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white">
+          <!-- Populated by JS -->
+        </select>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelSwapModalBtn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Cancel</button>
+          <button type="button" id="confirmSwapSlotBtn" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Swap Meal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <script>
+    // =========================================================
+    // 1. DEFAULT DATA (TAILORED TO CHRIS'S NIGHT HAUL & KEEP)
+    // =========================================================
+    const SHIFT_SLOTS = [
+      {
+        id: 'pre-shift',
+        label: 'Meal 1: Pre-Shift Power Bowl',
+        time: '2:00 PM (Before 4 PM Roll-Out)',
+        icon: '🍲',
+        desc: 'Complex carbs + 40g+ lean protein before heading out to the terminal.'
+      },
+      {
+        id: 'mid-drive',
+        label: 'Meal 2: Mid-Drive Protein Hit',
+        time: '8:00 PM (Quick Drop / Break)',
+        icon: '🥨',
+        desc: 'Easy to eat parked at a drop store or rest plaza with zero cleanup.'
+      },
+      {
+        id: 'midnight',
+        label: 'Meal 3: Midnight Shift Meal',
+        time: '1:00 AM (No Carb Crash)',
+        icon: '🌙',
+        desc: 'High protein, crisp fiber, and healthy fats to stay sharp through the night.'
+      },
+      {
+        id: 'recovery',
+        label: 'Meal 4: End of Watch Recovery',
+        time: '7:00 AM (Sleeper / Home)',
+        icon: '💪',
+        desc: 'Fast-digesting protein shake + eggs so muscles repair while you sleep.'
+      },
+      {
+        id: 'emergency',
+        label: 'Emergency Cab Stash',
+        time: 'Anytime / Stuck at Receiver',
+        icon: '🚨',
+        desc: 'Shelf-stable dry bunk stash when a live unload takes longer than planned.'
+      }
+    ];
+
+    const GOAL_PRESETS = {
+      recomp: { cal: 1900, pro: 150, carb: 130, fat: 65, water: 100 },
+      heavy:  { cal: 2350, pro: 165, carb: 210, fat: 80, water: 110 },
+      light:  { cal: 1700, pro: 145, carb: 105, fat: 55, water: 100 }
+    };
+
+    const DEFAULT_CATALOG = [
+      // Pre-Shift Meals (2:00 PM)
+      {
+        id: 'rotisserie-power-bowl',
+        name: 'Rotisserie Chicken & Brown Rice Power Bowl',
+        category: 'pre-shift',
+        prep: 'microwave',
+        prepBadge: '90s Microwave',
+        cal: 490,
+        pro: 46,
+        carb: 48,
+        fat: 11,
+        portion: '6 oz Marketside Chicken Breast + 1 Uncle Ben’s Brown Rice pouch + 1 cup Steamable Broccoli + G Hughes Sugar-Free BBQ',
+        cabTip: 'Meal 1 staple from your Daily Recomp Plan—heats in 90 seconds.',
+        favorite: true
+      },
+      {
+        id: 'turkey-spinach-wraps',
+        name: 'Low-Carb Deli Turkey & Spinach Double Wrap',
+        category: 'pre-shift',
+        prep: 'no-cook',
+        prepBadge: 'No-Cook Cold',
+        cal: 360,
+        pro: 38,
+        carb: 26,
+        fat: 9,
+        portion: '2 Great Value Low-Carb Wheat Tortillas + 6 oz Deli Turkey + Fresh Spinach + Yellow Mustard',
+        cabTip: 'Thursday Pre-Shift staple—rolls up in 2 minutes with zero heat needed.',
+        favorite: true
+      },
+      {
+        id: 'sirloin-jasmine-bowl',
+        name: 'Pre-Cooked Sirloin Steak & Jasmine Rice Bowl',
+        category: 'pre-shift',
+        prep: 'microwave',
+        prepBadge: '90s Microwave',
+        cal: 520,
+        pro: 44,
+        carb: 50,
+        fat: 14,
+        portion: '6 oz Great Value Pre-Cooked Sirloin Strips + 1 pouch Steamable Jasmine Rice + Mixed Veggies',
+        cabTip: 'Friday Pre-Shift staple—high iron and steady glycogen for weekend runs.',
+        favorite: true
+      },
+      {
+        id: 'rotisserie-bagged-salad',
+        name: 'Marketside Rotisserie Chicken Chopped Salad',
+        category: 'pre-shift',
+        prep: 'no-cook',
+        prepBadge: 'No-Cook Cold',
+        cal: 410,
+        pro: 43,
+        carb: 18,
+        fat: 16,
+        portion: '6 oz Rotisserie Chicken over 1 Marketside Bagged Salad (light dressing)',
+        cabTip: 'Saturday Pre-Shift staple—mix right inside the salad bag to save bowls.',
+        favorite: false
+      },
+      {
+        id: 'deli-egg-bites-toast',
+        name: '"The Scramble" Deli Egg Bites & Whole Wheat Wrap',
+        category: 'pre-shift',
+        prep: 'microwave',
+        prepBadge: '60s Microwave',
+        cal: 380,
+        pro: 29,
+        carb: 24,
+        fat: 17,
+        portion: '2 packages Walmart Deli Pre-Cooked Egg Bites + 1 Whole Wheat Tortilla/Toast',
+        cabTip: 'Sunday Pre-Shift staple—quick warm meal before wrapping up the week.',
+        favorite: false
+      },
+      {
+        id: 'john-soules-fajita-wrap',
+        name: 'John Soules Grilled Chicken & Peanut Butter Energy Wrap',
+        category: 'pre-shift',
+        prep: 'microwave',
+        prepBadge: '60s Microwave',
+        cal: 460,
+        pro: 41,
+        carb: 34,
+        fat: 16,
+        portion: '5 oz John Soules Grilled Chicken Strips + 2 Whole Wheat Tortillas + 1 cup Steamable Veggies',
+        cabTip: 'From your Under-$50 Walmart Truck Groceries Keep list.',
+        favorite: true
+      },
+
+      // Mid-Drive Protein Hits (8:00 PM)
+      {
+        id: 'oikos-almonds-apple',
+        name: 'Oikos Pro 20g Greek Yogurt + Almonds + Apple',
+        category: 'mid-drive',
+        prep: 'fridge',
+        prepBadge: 'Cab Fridge',
+        cal: 340,
+        pro: 26,
+        carb: 36,
+        fat: 11,
+        portion: '1 cup Oikos Pro (20g version) + 1/4 cup Great Value Raw Almonds + 1 medium Apple',
+        cabTip: 'Wednesday 8 PM Mid-Drive combo—eat with a plastic spoon on a 15-min break.',
+        favorite: true
+      },
+      {
+        id: 'jerky-banana-combo',
+        name: 'Jack Link’s Beef Jerky (2 oz) + Fresh Banana',
+        category: 'mid-drive',
+        prep: 'no-cook',
+        prepBadge: 'One-Handed',
+        cal: 265,
+        pro: 25,
+        carb: 33,
+        fat: 3,
+        portion: '2 oz Beef Jerky + 1 medium Banana (high potassium)',
+        cabTip: 'Thursday 8 PM Mid-Drive combo—zero refrigeration required.',
+        favorite: true
+      },
+      {
+        id: 'yogurt-blueberries',
+        name: 'Oikos Pro Greek Yogurt + Fresh Blueberries',
+        category: 'mid-drive',
+        prep: 'fridge',
+        prepBadge: 'Cab Fridge',
+        cal: 205,
+        pro: 21,
+        carb: 24,
+        fat: 2,
+        portion: '1 cup Oikos Pro Greek Yogurt + 1/2 cup Blueberries',
+        cabTip: 'Friday 8 PM Mid-Drive combo—antioxidants + 21g protein.',
+        favorite: false
+      },
+      {
+        id: 'quest-chips-orange',
+        name: 'Quest Protein Chips + Fresh Orange',
+        category: 'mid-drive',
+        prep: 'shelf',
+        prepBadge: 'One-Handed',
+        cal: 210,
+        pro: 20,
+        carb: 21,
+        fat: 5,
+        portion: '1 bag Quest Tortilla Style Protein Chips + 1 medium Orange',
+        cabTip: 'Saturday 8 PM Mid-Drive combo—crunchy and salty without the carb crash.',
+        favorite: true
+      },
+      {
+        id: 'jerky-double-cheese',
+        name: 'Beef Jerky (2 oz) + 2 Mozzarella String Cheese Sticks',
+        category: 'mid-drive',
+        prep: 'fridge',
+        prepBadge: 'One-Handed',
+        cal: 320,
+        pro: 38,
+        carb: 8,
+        fat: 14,
+        portion: '2 oz Jack Link’s Jerky + 2 Great Value Low-Fat String Cheese sticks',
+        cabTip: 'Sunday 8 PM Mid-Drive combo—38g protein and virtually zero sugar.',
+        favorite: true
+      },
+      {
+        id: 'pb-banana-tortilla-roll',
+        name: 'Peanut Butter & Banana Whole Wheat Roll-Up',
+        category: 'mid-drive',
+        prep: 'no-cook',
+        prepBadge: 'One-Handed',
+        cal: 370,
+        pro: 12,
+        carb: 46,
+        fat: 16,
+        portion: '1 Great Value Whole Wheat Tortilla + 2 tbsp Creamy Peanut Butter + 1 Banana',
+        cabTip: 'Uses items from your Under-$50 Truck Grocery list—easy one-handed roll.',
+        favorite: false
+      },
+
+      // Midnight Shift Meals (1:00 AM — Alert Without Carb Crash)
+      {
+        id: 'tuna-lemon-cheese-peas',
+        name: 'StarKist Lemon Pepper Tuna Pouch + 2 String Cheese + Snap Peas',
+        category: 'midnight',
+        prep: 'no-cook',
+        prepBadge: 'No-Drain Pouch',
+        cal: 310,
+        pro: 35,
+        carb: 11,
+        fat: 13,
+        portion: '1 StarKist Creations Pouch + 2 Low-Fat String Cheese + 1 cup Marketside Snap Peas',
+        cabTip: 'Wednesday 1 AM Midnight Meal—no draining needed, keeps you alert.',
+        favorite: true
+      },
+      {
+        id: 'buffalo-chicken-almonds-carrots',
+        name: 'Tyson/StarKist Buffalo Chicken Pouch + Almonds + Baby Carrots',
+        category: 'midnight',
+        prep: 'no-cook',
+        prepBadge: 'No-Drain Pouch',
+        cal: 325,
+        pro: 26,
+        carb: 14,
+        fat: 18,
+        portion: '1 Buffalo Chicken Pouch + 1/4 cup Raw Almonds + 1 cup Sweet Baby Carrots',
+        cabTip: 'Thursday 1 AM Midnight Meal—spicy kick wakes up night alertness.',
+        favorite: true
+      },
+      {
+        id: 'thai-chili-tuna-eggs-celery',
+        name: 'Thai Chili Tuna Pouch + 2 Hard-Boiled Eggs + Celery Sticks',
+        category: 'midnight',
+        prep: 'fridge',
+        prepBadge: 'No-Drain Pouch',
+        cal: 270,
+        pro: 31,
+        carb: 9,
+        fat: 11,
+        portion: '1 StarKist Thai Chili Tuna Pouch + 2 Peeled Hard-Boiled Eggs + Celery Sticks',
+        cabTip: 'Friday 1 AM Midnight Meal—choline from eggs supports nighttime focus.',
+        favorite: true
+      },
+      {
+        id: 'teriyaki-chicken-walnuts-cucumber',
+        name: 'Teriyaki Chicken Pouch + Walnuts + Cucumber Slices',
+        category: 'midnight',
+        prep: 'no-cook',
+        prepBadge: 'No-Drain Pouch',
+        cal: 315,
+        pro: 24,
+        carb: 13,
+        fat: 19,
+        portion: '1 Teriyaki Chicken Creations Pouch + 1/4 cup Walnuts + 1 cup Cucumber Slices',
+        cabTip: 'Saturday 1 AM Midnight Meal—hydrating crunch with omega-3 fats.',
+        favorite: false
+      },
+      {
+        id: 'chunk-light-tuna-veggie-finish',
+        name: 'StarKist Chunk Light Tuna Pouch + Carrots & Snap Peas',
+        category: 'midnight',
+        prep: 'no-cook',
+        prepBadge: 'No-Drain Pouch',
+        cal: 190,
+        pro: 24,
+        carb: 14,
+        fat: 3,
+        portion: '1 StarKist Selects Tuna Pouch + Remaining Baby Carrots & Snap Peas',
+        cabTip: 'Sunday 1 AM Midnight Meal—cleans out the cooler before heading home.',
+        favorite: false
+      },
+      {
+        id: 'john-soules-cold-protein-plate',
+        name: 'Cold Grilled Chicken Strips + 2 String Cheese + Baby Carrots',
+        category: 'midnight',
+        prep: 'fridge',
+        prepBadge: 'No-Cook Cold',
+        cal: 330,
+        pro: 42,
+        carb: 10,
+        fat: 12,
+        portion: '4 oz John Soules Fully Cooked Chicken Strips + 2 Mozzarella String Cheese + Carrots',
+        cabTip: 'Zero prep at 1 AM—eat cold straight from the container.',
+        favorite: false
+      },
+
+      // End of Watch Recovery (7:00 AM)
+      {
+        id: 'premier-shake-2-eggs',
+        name: 'Premier Protein Shake + 2 Hard-Boiled Eggs',
+        category: 'recovery',
+        prep: 'fridge',
+        prepBadge: 'Sleeper Recovery',
+        cal: 300,
+        pro: 42,
+        carb: 6,
+        fat: 13,
+        portion: '1 Premier Protein Shake (30g) + 2 Deli Pre-Peeled Hard-Boiled Eggs (12g)',
+        cabTip: 'Wednesday & Saturday 7 AM Recovery—42g protein for daytime sleep repair.',
+        favorite: true
+      },
+      {
+        id: 'muscle-milk-cheese-stick',
+        name: 'Muscle Milk Pro/Genuine Shake + Low-Fat String Cheese',
+        category: 'recovery',
+        prep: 'fridge',
+        prepBadge: 'Sleeper Recovery',
+        cal: 240,
+        pro: 32,
+        carb: 9,
+        fat: 8,
+        portion: '1 Muscle Milk Shake + 1 Great Value String Cheese stick',
+        cabTip: 'Thursday 7 AM Recovery—light on the stomach right before hitting the bunk.',
+        favorite: false
+      },
+      {
+        id: 'premier-shake-quest-bar',
+        name: 'Premier Protein Shake + 1 Quest Protein Bar',
+        category: 'recovery',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Ready',
+        cal: 350,
+        pro: 51,
+        carb: 25,
+        fat: 11,
+        portion: '1 Premier Protein Shake (Chocolate/Vanilla) + 1 Quest Bar (high fiber, low sugar)',
+        cabTip: 'Friday 7 AM Recovery—51g protein punch after a heavy haul night.',
+        favorite: true
+      },
+      {
+        id: 'premier-shake-solo',
+        name: 'Premier Protein Shake (30g Ready-to-Drink)',
+        category: 'recovery',
+        prep: 'shelf',
+        prepBadge: 'Twist & Drink',
+        cal: 160,
+        pro: 30,
+        carb: 5,
+        fat: 3,
+        portion: '1 carton (11 fl oz) Chocolate, Vanilla, or Café Latte',
+        cabTip: 'Sunday 7 AM transition to your first day off.',
+        favorite: true
+      },
+
+      // Emergency Cab Stash (Dry / Receiver Delay)
+      {
+        id: 'stash-quest-bar',
+        name: 'Quest Protein Bar (Cookies & Cream / Choc Chip)',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Stash',
+        cal: 190,
+        pro: 21,
+        carb: 22,
+        fat: 8,
+        portion: '1 bar (60g) • 14g fiber, 1g sugar',
+        cabTip: 'Keep a 4-box in the bunk for long receiver unloads.',
+        favorite: true
+      },
+      {
+        id: 'stash-jack-links-jerky',
+        name: 'Jack Link’s Original or Teriyaki Beef Jerky',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Stash',
+        cal: 160,
+        pro: 23,
+        carb: 12,
+        fat: 2,
+        portion: '2 oz serving from resealable cab bag',
+        cabTip: 'Chewing jerky helps fight highway drowsiness on long stretches.',
+        favorite: true
+      },
+      {
+        id: 'stash-quest-chips',
+        name: 'Quest Tortilla Style Protein Chips (Nacho / Ranch)',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Stash',
+        cal: 140,
+        pro: 19,
+        carb: 5,
+        fat: 5,
+        portion: '1 single-serve bag (32g)',
+        cabTip: 'Crushes gas-station chip cravings with 19g protein and only 5g carbs.',
+        favorite: true
+      },
+      {
+        id: 'stash-almonds-walnuts',
+        name: 'Great Value Raw Almonds & Walnuts Mix (1/3 Cup)',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Stash',
+        cal: 220,
+        pro: 8,
+        carb: 7,
+        fat: 19,
+        portion: '1.5 oz handful in a cup-holder cup',
+        cabTip: 'Rich in natural magnesium to support your B1 + Magnesium routine.',
+        favorite: false
+      },
+      {
+        id: 'stash-pouch-tuna-solo',
+        name: 'StarKist Tuna or Chicken Creations Foil Pouch (Solo)',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'No-Drain Pouch',
+        cal: 110,
+        pro: 17,
+        carb: 2,
+        fat: 3,
+        portion: '1 foil pouch (2.6 oz) + plastic spoon from cab glovebox',
+        cabTip: 'Lasts months in the bunk cabinet—tear open and eat with a plastic spoon.',
+        favorite: true
+      },
+      {
+        id: 'stash-pb-spoonfuls',
+        name: 'Great Value Creamy Peanut Butter (2 Tbsp Quick Fuel)',
+        category: 'emergency',
+        prep: 'shelf',
+        prepBadge: 'Dry Bunk Stash',
+        cal: 190,
+        pro: 7,
+        carb: 7,
+        fat: 16,
+        portion: '2 tbsp straight from the jar or on a tortilla',
+        cabTip: 'Dense, cheap emergency calories that never spoil in the cab.',
+        favorite: false
+      }
+    ];
+
+    // Chris's 5-Day Walmart "Night Haul" Meal Plan from Google Doc
+    const DEFAULT_FIVE_DAY_PLAN = {
+      Wed: {
+        dayName: 'Wednesday (Shift Start @ 4:00 PM)',
+        notes: 'Roll-out day! Hit the Supercenter before shift if needed.',
+        slots: {
+          'pre-shift': 'rotisserie-power-bowl',
+          'mid-drive': 'oikos-almonds-apple',
+          'midnight':  'tuna-lemon-cheese-peas',
+          'recovery':  'premier-shake-2-eggs'
+        }
+      },
+      Thu: {
+        dayName: 'Thursday (Night Haul Day 2)',
+        notes: 'Zero-microwave Pre-Shift wrap + spicy Buffalo pouch at 1 AM.',
+        slots: {
+          'pre-shift': 'turkey-spinach-wraps',
+          'mid-drive': 'jerky-banana-combo',
+          'midnight':  'buffalo-chicken-almonds-carrots',
+          'recovery':  'muscle-milk-cheese-stick'
+        }
+      },
+      Fri: {
+        dayName: 'Friday (Night Haul Day 3)',
+        notes: 'Steak & Jasmine Rice power bowl + 51g recovery stack.',
+        slots: {
+          'pre-shift': 'sirloin-jasmine-bowl',
+          'mid-drive': 'yogurt-blueberries',
+          'midnight':  'thai-chili-tuna-eggs-celery',
+          'recovery':  'premier-shake-quest-bar'
+        }
+      },
+      Sat: {
+        dayName: 'Saturday (Night Haul Day 4)',
+        notes: 'Lighter bagged salad pre-shift + crunchy Quest chips mid-drive.',
+        slots: {
+          'pre-shift': 'rotisserie-bagged-salad',
+          'mid-drive': 'quest-chips-orange',
+          'midnight':  'teriyaki-chicken-walnuts-cucumber',
+          'recovery':  'premier-shake-2-eggs'
+        }
+      },
+      Sun: {
+        dayName: 'Sunday (Final Watch & Transition Off)',
+        notes: 'Finish out remaining cooler produce and transition to home rest.',
+        slots: {
+          'pre-shift': 'deli-egg-bites-toast',
+          'mid-drive': 'jerky-double-cheese',
+          'midnight':  'chunk-light-tuna-veggie-finish',
+          'recovery':  'premier-shake-solo'
+        }
+      }
+    };
+
+    // Builder Ingredients
+    const BUILDER_OPTIONS = {
+      protein: [
+        { id: 'bp-rotisserie', name: 'Marketside Rotisserie Chicken (6 oz)', cal: 250, pro: 40, carb: 0, fat: 9, prep: 'microwave' },
+        { id: 'bp-soules', name: 'John Soules Grilled Chicken Strips (5 oz)', cal: 190, pro: 31, carb: 2, fat: 4, prep: 'microwave' },
+        { id: 'bp-sirloin', name: 'Great Value Pre-Cooked Sirloin Strips (5 oz)', cal: 240, pro: 32, carb: 2, fat: 11, prep: 'microwave' },
+        { id: 'bp-tuna', name: '2 StarKist Creations Tuna Pouches (No-Drain)', cal: 200, pro: 34, carb: 4, fat: 4, prep: 'no-cook' },
+        { id: 'bp-turkey', name: 'Deli Low-Sodium Turkey Breast (6 oz)', cal: 160, pro: 32, carb: 3, fat: 2, prep: 'no-cook' },
+        { id: 'bp-eggs', name: '3 Peeled Hard-Boiled Eggs + 1 String Cheese', cal: 290, pro: 25, carb: 3, fat: 20, prep: 'no-cook' }
+      ],
+      carb: [
+        { id: 'bc-brownrice', name: 'Uncle Ben’s Ready Brown Rice Pouch', cal: 190, pro: 5, carb: 40, fat: 2, prep: 'microwave' },
+        { id: 'bc-jasmine', name: 'Great Value Steamable Jasmine Rice Pouch', cal: 210, pro: 4, carb: 45, fat: 1, prep: 'microwave' },
+        { id: 'bc-tortillas', name: '2 Great Value Whole Wheat / Low-Carb Tortillas', cal: 140, pro: 8, carb: 22, fat: 4, prep: 'no-cook' },
+        { id: 'bc-salad', name: 'Marketside Chopped Salad Base (Low-Carb)', cal: 70, pro: 2, carb: 10, fat: 2, prep: 'no-cook' },
+        { id: 'bc-none', name: 'No Carb Base (1:00 AM Midnight Alert Mode)', cal: 0, pro: 0, carb: 0, fat: 0, prep: 'no-cook' }
+      ],
+      veggie: [
+        { id: 'bv-broccoli', name: 'Great Value Steamable Broccoli (1.5 cups)', cal: 45, pro: 4, carb: 8, fat: 0, prep: 'microwave' },
+        { id: 'bv-snappeas', name: 'Marketside Sugar Snap Peas (1 cup crisp)', cal: 40, pro: 3, carb: 7, fat: 0, prep: 'no-cook' },
+        { id: 'bv-carrots', name: 'Marketside Sweet Baby Carrots (1 cup)', cal: 45, pro: 1, carb: 10, fat: 0, prep: 'no-cook' },
+        { id: 'bv-spinach', name: 'Fresh Baby Spinach & Cucumber Slices', cal: 25, pro: 2, carb: 4, fat: 0, prep: 'no-cook' }
+      ],
+      boost: [
+        { id: 'bb-bbq', name: 'G Hughes Sugar-Free BBQ or Hot Sauce', cal: 10, pro: 0, carb: 2, fat: 0 },
+        { id: 'bb-cheese', name: '2 Great Value Mozzarella String Cheese Sticks', cal: 160, pro: 14, carb: 2, fat: 10 },
+        { id: 'bb-almonds', name: 'Handful Raw Almonds (1/4 cup)', cal: 160, pro: 6, carb: 6, fat: 14 },
+        { id: 'bb-pb', name: '1 Tbsp Great Value Creamy Peanut Butter', cal: 95, pro: 4, carb: 3, fat: 8 }
+      ]
+    };
+
+    // Walmart Shopping List & Cab Inventory (From Doc + Keep Notes)
+    const DEFAULT_GROCERIES = [
+      // Proteins & Deli
+      { id: 'g-1', name: 'Marketside Rotisserie Chicken (Whole)', dept: 'Proteins & Deli', qty: 1, price: 6.97, stocked: false },
+      { id: 'g-2', name: 'John Soules Grilled Chicken Strips (16 oz, Fully Cooked)', dept: 'Proteins & Deli', qty: 1, price: 6.48, stocked: false },
+      { id: 'g-3', name: 'StarKist / Tyson Tuna & Chicken Creations Pouches', dept: 'Proteins & Deli', qty: 6, price: 1.28, stocked: true },
+      { id: 'g-4', name: 'Deli Low-Sodium Sliced Turkey Breast (1 lb)', dept: 'Proteins & Deli', qty: 1, price: 5.98, stocked: false },
+      { id: 'g-5', name: 'Great Value Pre-Cooked Sirloin Steak Strips', dept: 'Proteins & Deli', qty: 1, price: 7.98, stocked: false },
+      { id: 'g-6', name: 'Jack Link’s Beef Jerky (Family Size Cab Bag)', dept: 'Proteins & Deli', qty: 1, price: 10.98, stocked: true },
+
+      // Dairy & Fridge
+      { id: 'g-7', name: 'Oikos Pro Greek Yogurt (20g Protein, 4-Pack)', dept: 'Dairy & Fridge', qty: 1, price: 5.48, stocked: false },
+      { id: 'g-8', name: 'Great Value Mozzarella String Cheese (12-Count)', dept: 'Dairy & Fridge', qty: 1, price: 3.48, stocked: true },
+      { id: 'g-9', name: 'Deli Pre-Peeled Hard Boiled Eggs (6-Count)', dept: 'Dairy & Fridge', qty: 1, price: 3.68, stocked: false },
+      { id: 'g-10', name: 'Premier Protein or Muscle Milk Shakes (4-Pack)', dept: 'Dairy & Fridge', qty: 2, price: 8.98, stocked: true },
+
+      // Produce
+      { id: 'g-11', name: 'Marketside Sweet Baby Carrots (1 lb Bag)', dept: 'Produce', qty: 1, price: 1.48, stocked: false },
+      { id: 'g-12', name: 'Marketside Sugar Snap Peas (8 oz Bag)', dept: 'Produce', qty: 1, price: 2.68, stocked: false },
+      { id: 'g-13', name: 'Marketside Bagged Salad & Baby Spinach Mix', dept: 'Produce', qty: 1, price: 2.98, stocked: false },
+      { id: 'g-14', name: 'Fresh Bananas & Gala Apples (4–5 count)', dept: 'Produce', qty: 1, price: 3.25, stocked: false },
+      { id: 'g-15', name: 'Great Value Steamable Frozen Broccoli (2 Bags)', dept: 'Produce', qty: 2, price: 1.34, stocked: false },
+
+      // Pantry & Dry Stash
+      { id: 'g-16', name: 'Uncle Ben’s / Great Value Steamable Rice Pouches', dept: 'Pantry & Dry Stash', qty: 3, price: 1.98, stocked: true },
+      { id: 'g-17', name: 'Great Value 100% Whole Wheat / Low-Carb Tortillas', dept: 'Pantry & Dry Stash', qty: 1, price: 2.48, stocked: true },
+      { id: 'g-18', name: 'Quest Protein Bars (4-Count Box)', dept: 'Pantry & Dry Stash', qty: 1, price: 8.97, stocked: true },
+      { id: 'g-19', name: 'Quest Protein Chips (Single Bags)', dept: 'Pantry & Dry Stash', qty: 2, price: 2.48, stocked: false },
+      { id: 'g-20', name: 'Great Value Raw Almonds & Walnuts (16 oz)', dept: 'Pantry & Dry Stash', qty: 1, price: 5.98, stocked: true },
+      { id: 'g-21', name: 'Great Value Creamy Peanut Butter (16 oz)', dept: 'Pantry & Dry Stash', qty: 1, price: 1.94, stocked: true },
+      { id: 'g-22', name: 'G Hughes Sugar-Free BBQ Sauce', dept: 'Pantry & Dry Stash', qty: 1, price: 3.78, stocked: true },
+
+      // Cab Supplies (From Keep Shopping Note)
+      { id: 'g-23', name: 'Great Value Heavy Duty Plastic Spoons (Cab Pack)', dept: 'Cab Supplies', qty: 1, price: 2.18, stocked: false },
+      { id: 'g-24', name: 'Dude Wipes / Dude Wipe Minis (Cab Pack)', dept: 'Cab Supplies', qty: 1, price: 4.98, stocked: false },
+      { id: 'g-25', name: 'Glad ForceFlex Trash Bags (Sleeper Cab)', dept: 'Cab Supplies', qty: 1, price: 8.48, stocked: true }
+    ];
+
+    // =========================================================
+    // 2. APPLICATION STATE & SAFE STORAGE
+    // =========================================================
+    const STORAGE_KEY = 'rigfuel_chris_v1';
+
+    let state = {
+      activeTab: 'log',
+      activeDay: 'Wed',
+      goalPreset: 'recomp',
+      targets: { ...GOAL_PRESETS.recomp },
+      waterByDay: { Wed: 48, Thu: 0, Fri: 0, Sat: 0, Sun: 0, Off: 0 },
+      stackTakenByDay: { Wed: true, Thu: false, Fri: false, Sat: false, Sun: false, Off: false },
+      catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+      fiveDayPlan: JSON.parse(JSON.stringify(DEFAULT_FIVE_DAY_PLAN)),
+      shiftLogs: {
+        Wed: [],
+        Thu: [],
+        Fri: [],
+        Sat: [],
+        Sun: [],
+        Off: []
+      },
+      groceries: JSON.parse(JSON.stringify(DEFAULT_GROCERIES)),
+      groceryFilter: 'all',
+      catalogFilters: {
+        search: '',
+        category: 'all',
+        prep: 'all',
+        highProtein: false,
+        favoritesOnly: false
+      },
+      builderSelection: {
+        protein: 'bp-rotisserie',
+        carb: 'bc-brownrice',
+        veggie: 'bv-broccoli',
+        boost: ['bb-bbq']
+      },
+      swapContext: null
+    };
+
+    function seedInitialShiftLogs() {
+      // Pre-populate Wednesday, Thursday, Friday, Saturday, Sunday logs from the 5-day plan so the app feels immediately alive
+      ['Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach((dayKey) => {
+        const plan = state.fiveDayPlan[dayKey];
+        if (!plan) return;
+        const items = [];
+        Object.keys(plan.slots).forEach((slotId) => {
+          const foodId = plan.slots[slotId];
+          const food = state.catalog.find((f) => f.id === foodId);
+          if (food) {
+            items.push({
+              logId: 'init-' + dayKey + '-' + slotId,
+              foodId: food.id,
+              name: food.name,
+              slot: slotId,
+              cal: food.cal,
+              pro: food.pro,
+              carb: food.carb,
+              fat: food.fat,
+              prepBadge: food.prepBadge,
+              multiplier: 1,
+              eaten: dayKey === 'Wed' && (slotId === 'pre-shift' || slotId === 'mid-drive')
+            });
+          }
+        });
+        state.shiftLogs[dayKey] = items;
+      });
+    }
+
+    function loadState() {
+      seedInitialShiftLogs();
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            state = { ...state, ...parsed };
+          }
+        }
+      } catch (e) {
+        // Ignore storage errors in sandboxed iframes
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        // Ignore storage errors in sandboxed iframes
+      }
+    }
+
+    // =========================================================
+    // 3. TOAST NOTIFICATIONS
+    // =========================================================
+    function showToast(message, type = 'amber') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      const colorClasses = type === 'emerald'
+        ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200'
+        : 'bg-slate-900/95 border-amber-500/50 text-amber-200';
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl border shadow-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 ${colorClasses}`;
+      toast.innerHTML = `<span>${type === 'emerald' ? '✓' : '🚛'}</span><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 250);
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // =========================================================
+    // 4. CHART.JS INSTANCE
+    // =========================================================
+    let macroChart = null;
+
+    function updateMacroChart(proGrams, carbGrams, fatGrams) {
+      const canvas = document.getElementById('macroChartCanvas');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const proCal = Math.round(proGrams * 4);
+      const carbCal = Math.round(carbGrams * 4);
+      const fatCal = Math.round(fatGrams * 9);
+      const totalMacroCal = proCal + carbCal + fatCal;
+
+      const dataVals = totalMacroCal > 0 ? [proCal, carbCal, fatCal] : [1, 1, 1];
+      const bgColors = totalMacroCal > 0
+        ? ['#10b981', '#38bdf8', '#a855f7']
+        : ['#1e293b', '#334155', '#475569'];
+
+      if (macroChart) {
+        macroChart.data.datasets[0].data = dataVals;
+        macroChart.data.datasets[0].backgroundColor = bgColors;
+        macroChart.update();
+        return;
+      }
+
+      macroChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: ['Protein (kcal)', 'Carbs (kcal)', 'Fats (kcal)'],
+          datasets: [{
+            data: dataVals,
+            backgroundColor: bgColors,
+            borderColor: '#0f172a',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '66%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#cbd5e1',
+                font: { family: 'Inter', size: 11, weight: '600' },
+                padding: 12,
+                boxWidth: 10
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  if (totalMacroCal === 0) return ' No meals logged yet';
+                  const val = ctx.raw || 0;
+                  const pct = Math.round((val / totalMacroCal) * 100);
+                  return ` ${ctx.label}: ${val} kcal (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // =========================================================
+    // 5. RENDER FUNCTIONS
+    // =========================================================
+    function renderAll() {
+      renderHeaderAndTabs();
+      renderShiftLogTab();
+      renderCatalogTab();
+      renderPlannerTab();
+      renderBuilderTab();
+      renderGroceriesTab();
+    }
+
+    function renderHeaderAndTabs() {
+      const daySelect = document.getElementById('activeDaySelect');
+      if (daySelect) daySelect.value = state.activeDay;
+
+      const presetSelect = document.getElementById('goalPresetSelect');
+      if (presetSelect) presetSelect.value = state.goalPreset;
+
+      const loadBtnDayLabel = document.getElementById('loadBtnDayLabel');
+      if (loadBtnDayLabel) loadBtnDayLabel.textContent = state.activeDay;
+
+      const catalogBadge = document.getElementById('catalogCountBadge');
+      if (catalogBadge) catalogBadge.textContent = String(state.catalog.length);
+
+      const needToBuyCount = state.groceries.filter((g) => !g.stocked).length;
+      const groceryBadge = document.getElementById('groceryCountBadge');
+      if (groceryBadge) groceryBadge.textContent = String(needToBuyCount);
+
+      document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+        const tab = btn.getAttribute('data-tab');
+        if (tab === state.activeTab) {
+          btn.classList.add('tab-active');
+          btn.classList.remove('bg-slate-900', 'text-slate-300');
+        } else {
+          btn.classList.remove('tab-active');
+          btn.classList.add('bg-slate-900', 'text-slate-300');
+        }
+      });
+
+      document.querySelectorAll('.tab-panel').forEach((panel) => {
+        if (panel.id === 'tab-' + state.activeTab) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      });
+    }
+
+    function renderShiftLogTab() {
+      const dayNames = {
+        Wed: 'Wednesday Night Roll-Out',
+        Thu: 'Thursday Night Haul',
+        Fri: 'Friday Night Haul',
+        Sat: 'Saturday Night Haul',
+        Sun: 'Sunday End of Watch',
+        Off: 'Off-Shift / Home Recovery'
+      };
+      const logActiveDayTitle = document.getElementById('logActiveDayTitle');
+      if (logActiveDayTitle) logActiveDayTitle.textContent = dayNames[state.activeDay] || state.activeDay;
+
+      const dayLogs = state.shiftLogs[state.activeDay] || [];
+
+      let totalCal = 0;
+      let totalPro = 0;
+      let totalCarb = 0;
+      let totalFat = 0;
+      let midnightCarb = 0;
+
+      dayLogs.forEach((item) => {
+        const mult = Number(item.multiplier) || 1;
+        totalCal += Math.round(item.cal * mult);
+        totalPro += Math.round(item.pro * mult);
+        totalCarb += Math.round(item.carb * mult);
+        totalFat += Math.round(item.fat * mult);
+        if (item.slot === 'midnight') {
+          midnightCarb += Math.round(item.carb * mult);
+        }
+      });
+
+      const t = state.targets;
+      const calPct = Math.min(100, Math.round((totalCal / Math.max(1, t.cal)) * 100));
+      const proPct = Math.min(100, Math.round((totalPro / Math.max(1, t.pro)) * 100));
+      const carbPct = Math.min(100, Math.round((totalCarb / Math.max(1, t.carb)) * 100));
+      const fatPct = Math.min(100, Math.round((totalFat / Math.max(1, t.fat)) * 100));
+
+      document.getElementById('calCurrentText').textContent = totalCal.toLocaleString();
+      document.getElementById('calTargetText').textContent = t.cal.toLocaleString();
+      document.getElementById('calPctText').textContent = calPct + '%';
+      document.getElementById('calProgressBar').style.width = calPct + '%';
+      const calDiff = t.cal - totalCal;
+      document.getElementById('calRemainingText').textContent = calDiff >= 0
+        ? `${calDiff.toLocaleString()} kcal remaining`
+        : `${Math.abs(calDiff).toLocaleString()} kcal over target`;
+
+      document.getElementById('proCurrentText').textContent = totalPro + 'g';
+      document.getElementById('proTargetText').textContent = String(t.pro);
+      document.getElementById('proPctText').textContent = proPct + '%';
+      document.getElementById('proProgressBar').style.width = proPct + '%';
+      const proDiff = t.pro - totalPro;
+      document.getElementById('proRemainingText').textContent = proDiff > 0
+        ? `${proDiff}g more to hit goal`
+        : `Goal hit! (+${Math.abs(proDiff)}g)`;
+
+      document.getElementById('carbCurrentText').textContent = totalCarb + 'g';
+      document.getElementById('carbTargetText').textContent = String(t.carb);
+      document.getElementById('carbPctText').textContent = carbPct + '%';
+      document.getElementById('carbProgressBar').style.width = carbPct + '%';
+
+      document.getElementById('fatCurrentText').textContent = totalFat + 'g';
+      document.getElementById('fatTargetText').textContent = String(t.fat);
+      document.getElementById('fatPctText').textContent = fatPct + '%';
+      document.getElementById('fatProgressBar').style.width = fatPct + '%';
+
+      // Midnight crash check
+      const alertBadge = document.getElementById('midnightAlertBadge');
+      if (alertBadge) {
+        if (midnightCarb <= 25) {
+          alertBadge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+          alertBadge.textContent = `✓ 1 AM Alert Zone (${midnightCarb}g Midnight Carbs)`;
+        } else {
+          alertBadge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30';
+          alertBadge.textContent = `⚠️ High 1 AM Carbs (${midnightCarb}g — Watch Drowsiness)`;
+        }
+      }
+
+      // Water
+      const curWater = state.waterByDay[state.activeDay] || 0;
+      const waterGoal = t.water || 100;
+      const waterPct = Math.min(100, Math.round((curWater / waterGoal) * 100));
+      document.getElementById('waterCurrentOz').textContent = String(curWater);
+      document.getElementById('waterTargetOz').textContent = String(waterGoal);
+      document.getElementById('waterProgressBar').style.width = waterPct + '%';
+
+      // Stack checkbox
+      const stackCheck = document.getElementById('stackTakenCheckbox');
+      if (stackCheck) {
+        stackCheck.checked = Boolean(state.stackTakenByDay[state.activeDay]);
+      }
+
+      // Items count & deficit
+      document.getElementById('loggedItemsCountText').textContent = `${dayLogs.length} item${dayLogs.length === 1 ? '' : 's'}`;
+      const burnDiff = 2355 - totalCal;
+      const netBadge = document.getElementById('netDeficitBadge');
+      if (netBadge) {
+        netBadge.textContent = burnDiff >= 0 ? `-${burnDiff} kcal vs. 2,355 avg burn` : `+${Math.abs(burnDiff)} kcal surplus`;
+      }
+
+      updateMacroChart(totalPro, totalCarb, totalFat);
+
+      // Render Shift Slots
+      const slotsContainer = document.getElementById('shiftSlotsContainer');
+      if (!slotsContainer) return;
+
+      slotsContainer.innerHTML = SHIFT_SLOTS.map((slot) => {
+        const slotItems = dayLogs.filter((item) => item.slot === slot.id);
+        const slotCal = slotItems.reduce((acc, i) => acc + Math.round(i.cal * (i.multiplier || 1)), 0);
+        const slotPro = slotItems.reduce((acc, i) => acc + Math.round(i.pro * (i.multiplier || 1)), 0);
+
+        const itemsHtml = slotItems.length === 0
+          ? `<div class="py-4 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+               No food logged for this window yet.
+             </div>`
+          : slotItems.map((item) => {
+              const mult = Number(item.multiplier) || 1;
+              const itemCal = Math.round(item.cal * mult);
+              const itemPro = Math.round(item.pro * mult);
+              const itemCarb = Math.round(item.carb * mult);
+              const itemFat = Math.round(item.fat * mult);
+              return `
+                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/90 border ${item.eaten ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'}">
+                  <div class="flex items-start gap-2.5 min-w-0">
+                    <input type="checkbox" data-action="toggle-eaten" data-logid="${escapeHtml(item.logId)}" ${item.eaten ? 'checked' : ''} class="mt-1 rounded text-emerald-500 focus:ring-0 cursor-pointer" title="Mark eaten">
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold ${item.eaten ? 'line-through text-slate-400' : 'text-white'} truncate">
+                        ${escapeHtml(item.name)}
+                      </div>
+                      <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                        <span class="text-amber-400 font-semibold">${itemCal} kcal</span>
+                        <span class="text-emerald-400 font-semibold">${itemPro}g P</span>
+                        <span>${itemCarb}g C</span>
+                        <span>${itemFat}g F</span>
+                        ${item.prepBadge ? `<span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[10px]">${escapeHtml(item.prepBadge)}</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <select data-action="change-mult" data-logid="${escapeHtml(item.logId)}" aria-label="Portion Multiplier" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-[11px] text-slate-200">
+                      <option value="0.5" ${mult === 0.5 ? 'selected' : ''}>0.5x</option>
+                      <option value="1" ${mult === 1 ? 'selected' : ''}>1x</option>
+                      <option value="1.5" ${mult === 1.5 ? 'selected' : ''}>1.5x</option>
+                      <option value="2" ${mult === 2 ? 'selected' : ''}>2x</option>
+                    </select>
+                    <button type="button" data-action="delete-log" data-logid="${escapeHtml(item.logId)}" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Remove item">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+        return `
+          <div class="card-glow rounded-2xl p-4 space-y-3 flex flex-col justify-between ${slot.id === 'emergency' ? 'md:col-span-2 border-amber-500/30' : ''}">
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-base">${slot.icon}</span>
+                    <h4 class="text-sm font-extrabold text-white">${escapeHtml(slot.label)}</h4>
+                  </div>
+                  <p class="text-[11px] text-amber-400 font-medium">${escapeHtml(slot.time)}</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(slot.desc)}</p>
+                </div>
+                <div class="text-right shrink-0">
+                  <span class="text-xs font-extrabold text-white block">${slotCal} kcal</span>
+                  <span class="text-xs font-bold text-emerald-400 block">${slotPro}g Protein</span>
+                </div>
+              </div>
+              <div class="space-y-2">
+                ${itemsHtml}
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <button type="button" data-action="quick-filter-catalog" data-slot="${slot.id}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
+                + Add ${escapeHtml(slot.label.split(':')[1] || 'Item')} from Catalog →
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCatalogTab() {
+      const f = state.catalogFilters;
+      const highProBtn = document.getElementById('toggleHighProteinBtn');
+      if (highProBtn) {
+        highProBtn.className = f.highProtein
+          ? 'flex-1 px-3 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs transition'
+          : 'flex-1 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold transition';
+      }
+      const favBtn = document.getElementById('toggleFavoritesBtn');
+      if (favBtn) {
+        favBtn.className = f.favoritesOnly
+          ? 'px-3 py-2 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs transition'
+          : 'px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold transition';
+      }
+
+      const filtered = state.catalog.filter((item) => {
+        if (f.category !== 'all' && item.category !== f.category) return false;
+        if (f.prep !== 'all' && item.prep !== f.prep) return false;
+        if (f.highProtein && item.pro < 25) return false;
+        if (f.favoritesOnly && !item.favorite) return false;
+        if (f.search) {
+          const q = f.search.toLowerCase();
+          const matchName = item.name.toLowerCase().includes(q);
+          const matchPortion = (item.portion || '').toLowerCase().includes(q);
+          const matchTip = (item.cabTip || '').toLowerCase().includes(q);
+          if (!matchName && !matchPortion && !matchTip) return false;
+        }
+        return true;
+      });
+
+      const grid = document.getElementById('catalogGridContainer');
+      if (!grid) return;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full card-glow rounded-2xl p-8 text-center space-y-3">
+            <p class="text-sm font-bold text-white">No snacks or meals match those filters.</p>
+            <p class="text-xs text-slate-400">Try clearing a filter or adding a custom cab snack.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const categoryLabels = {
+        'pre-shift': '2 PM Pre-Shift',
+        'mid-drive': '8 PM Mid-Drive',
+        'midnight': '1 AM Midnight',
+        'recovery': '7 AM Recovery',
+        'emergency': 'Cab Stash'
+      };
+
+      grid.innerHTML = filtered.map((item) => {
+        return `
+          <div class="card-glow rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    ${escapeHtml(categoryLabels[item.category] || item.category)}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-sky-300 border border-slate-700">
+                    ${escapeHtml(item.prepBadge || item.prep)}
+                  </span>
+                </div>
+                <button type="button" data-action="toggle-fav" data-id="${escapeHtml(item.id)}" class="text-base leading-none ${item.favorite ? 'text-amber-400' : 'text-slate-600 hover:text-slate-400'} transition" title="Toggle Favorite">
+                  ★
+                </button>
+              </div>
+
+              <h4 class="text-sm font-extrabold text-white leading-snug">${escapeHtml(item.name)}</h4>
+              <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(item.portion)}</p>
+              ${item.cabTip ? `<p class="text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">🚛 ${escapeHtml(item.cabTip)}</p>` : ''}
+            </div>
+
+            <div class="space-y-3 pt-2 border-t border-slate-800/80">
+              <!-- Macros Row -->
+              <div class="grid grid-cols-4 gap-1.5 text-center bg-slate-900/90 rounded-xl p-2 border border-slate-800">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Cal</span>
+                  <span class="text-xs font-extrabold text-white">${item.cal}</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Protein</span>
+                  <span class="text-xs font-extrabold text-emerald-400">${item.pro}g</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Carbs</span>
+                  <span class="text-xs font-bold text-sky-400">${item.carb}g</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Fat</span>
+                  <span class="text-xs font-bold text-purple-400">${item.fat}g</span>
+                </div>
+              </div>
+
+              <!-- Log Controls -->
+              <div class="flex items-center gap-2">
+                <select id="slot-select-${escapeHtml(item.id)}" aria-label="Target Shift Slot" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200 flex-1">
+                  <option value="pre-shift" ${item.category === 'pre-shift' ? 'selected' : ''}>2 PM Pre-Shift</option>
+                  <option value="mid-drive" ${item.category === 'mid-drive' ? 'selected' : ''}>8 PM Mid-Drive</option>
+                  <option value="midnight" ${item.category === 'midnight' ? 'selected' : ''}>1 AM Midnight</option>
+                  <option value="recovery" ${item.category === 'recovery' ? 'selected' : ''}>7 AM Recovery</option>
+                  <option value="emergency" ${item.category === 'emergency' ? 'selected' : ''}>Cab Stash</option>
+                </select>
+                <button type="button" data-action="log-catalog-item" data-id="${escapeHtml(item.id)}" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shrink-0">
+                  + Log to ${escapeHtml(state.activeDay)}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPlannerTab() {
+      const container = document.getElementById('plannerDaysContainer');
+      if (!container) return;
+
+      const slotOrder = [
+        { id: 'pre-shift', title: '2:00 PM Pre-Shift' },
+        { id: 'mid-drive', title: '8:00 PM Mid-Drive' },
+        { id: 'midnight',  title: '1:00 AM Midnight' },
+        { id: 'recovery',  title: '7:00 AM Recovery' }
+      ];
+
+      container.innerHTML = ['Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayKey) => {
+        const dayPlan = state.fiveDayPlan[dayKey];
+        if (!dayPlan) return '';
+
+        let dayCal = 0;
+        let dayPro = 0;
+        let dayCarb = 0;
+        let dayFat = 0;
+
+        const slotsHtml = slotOrder.map((s) => {
+          const foodId = dayPlan.slots[s.id];
+          const food = state.catalog.find((f) => f.id === foodId) || DEFAULT_CATALOG[0];
+          dayCal += food.cal;
+          dayPro += food.pro;
+          dayCarb += food.carb;
+          dayFat += food.fat;
+
+          return `
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between space-y-2">
+              <div>
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold text-amber-400">${escapeHtml(s.title)}</span>
+                  <button type="button" data-action="open-swap" data-day="${dayKey}" data-slot="${s.id}" class="text-[11px] text-sky-400 hover:text-sky-300 font-semibold">
+                    Swap ⇄
+                  </button>
+                </div>
+                <h5 class="text-xs font-bold text-white mt-1 leading-snug">${escapeHtml(food.name)}</h5>
+                <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2">${escapeHtml(food.portion)}</p>
+              </div>
+              <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                <span class="text-slate-300 font-semibold">${food.cal} kcal</span>
+                <span class="text-emerald-400 font-bold">${food.pro}g Protein</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="card-glow rounded-2xl p-4 sm:p-5 space-y-4 ${state.activeDay === dayKey ? 'border-amber-500/50' : ''}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="text-base font-extrabold text-white">${escapeHtml(dayPlan.dayName)}</h4>
+                  ${state.activeDay === dayKey ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">Active Shift</span>' : ''}
+                </div>
+                <p class="text-xs text-slate-400">${escapeHtml(dayPlan.notes)}</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="text-xs bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-3">
+                  <span><strong class="text-white">${dayCal}</strong> kcal</span>
+                  <span class="text-emerald-400"><strong>${dayPro}g</strong> P</span>
+                  <span class="text-sky-400"><strong>${dayCarb}g</strong> C</span>
+                  <span class="text-purple-400"><strong>${dayFat}g</strong> F</span>
+                </div>
+                <button type="button" data-action="load-plan-day" data-day="${dayKey}" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+                  Load into ${dayKey} Shift Log
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              ${slotsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderBuilderTab() {
+      const sel = state.builderSelection;
+
+      const renderRadioGroup = (groupKey, containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = BUILDER_OPTIONS[groupKey].map((opt) => {
+          const isSelected = sel[groupKey] === opt.id;
+          return `
+            <button type="button" data-action="builder-pick" data-group="${groupKey}" data-id="${opt.id}" class="text-left p-3 rounded-xl border transition flex items-start justify-between gap-2 ${isSelected ? 'bg-amber-500/15 border-amber-500 text-white' : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:border-slate-700'}">
+              <div>
+                <div class="text-xs font-bold">${escapeHtml(opt.name)}</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${opt.cal} kcal • <span class="text-emerald-400 font-semibold">${opt.pro}g P</span> • ${opt.carb}g C • ${opt.fat}g F</div>
+              </div>
+              <span class="text-xs font-bold ${isSelected ? 'text-amber-400' : 'text-slate-600'}">${isSelected ? '●' : '○'}</span>
+            </button>
+          `;
+        }).join('');
+      };
+
+      renderRadioGroup('protein', 'builderProteinOptions');
+      renderRadioGroup('carb', 'builderCarbOptions');
+      renderRadioGroup('veggie', 'builderVeggieOptions');
+
+      // Boosts (multi-select)
+      const boostContainer = document.getElementById('builderBoostOptions');
+      if (boostContainer) {
+        boostContainer.innerHTML = BUILDER_OPTIONS.boost.map((opt) => {
+          const isSelected = sel.boost.includes(opt.id);
+          return `
+            <button type="button" data-action="builder-boost" data-id="${opt.id}" class="text-left p-3 rounded-xl border transition flex items-start justify-between gap-2 ${isSelected ? 'bg-purple-500/15 border-purple-400 text-white' : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:border-slate-700'}">
+              <div>
+                <div class="text-xs font-bold">${escapeHtml(opt.name)}</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${opt.cal} kcal • <span class="text-emerald-400 font-semibold">${opt.pro}g P</span> • ${opt.carb}g C • ${opt.fat}g F</div>
+              </div>
+              <span class="text-xs font-bold ${isSelected ? 'text-purple-300' : 'text-slate-600'}">${isSelected ? '☑' : '☐'}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      // Calculate live combo
+      const pObj = BUILDER_OPTIONS.protein.find((x) => x.id === sel.protein) || BUILDER_OPTIONS.protein[0];
+      const cObj = BUILDER_OPTIONS.carb.find((x) => x.id === sel.carb) || BUILDER_OPTIONS.carb[0];
+      const vObj = BUILDER_OPTIONS.veggie.find((x) => x.id === sel.veggie) || BUILDER_OPTIONS.veggie[0];
+      const bObjs = BUILDER_OPTIONS.boost.filter((x) => sel.boost.includes(x.id));
+
+      const chosen = [pObj, cObj, vObj, ...bObjs];
+      const totalCal = chosen.reduce((a, b) => a + b.cal, 0);
+      const totalPro = chosen.reduce((a, b) => a + b.pro, 0);
+      const totalCarb = chosen.reduce((a, b) => a + b.carb, 0);
+      const totalFat = chosen.reduce((a, b) => a + b.fat, 0);
+      const needsMicrowave = [pObj, cObj, vObj].some((x) => x.prep === 'microwave');
+
+      document.getElementById('builderTotalCal').textContent = totalCal + ' kcal';
+      document.getElementById('builderTotalPro').textContent = totalPro + 'g';
+      document.getElementById('builderTotalCarb').textContent = totalCarb + 'g';
+      document.getElementById('builderTotalFat').textContent = totalFat + 'g';
+
+      const prepBadge = document.getElementById('builderPrepBadge');
+      if (prepBadge) {
+        prepBadge.textContent = needsMicrowave ? '90s Cab Microwave' : 'No-Cook Ready';
+      }
+
+      const autoTitle = `${pObj.name.split('(')[0].trim()} + ${cObj.name.split('(')[0].trim()}`;
+      document.getElementById('builderComboTitle').textContent = autoTitle;
+
+      const listEl = document.getElementById('builderSelectedList');
+      if (listEl) {
+        listEl.innerHTML = chosen.map((item) => `
+          <li class="flex items-center justify-between bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+            <span class="truncate pr-2">${escapeHtml(item.name)}</span>
+            <span class="text-emerald-400 font-semibold shrink-0">${item.pro}g P</span>
+          </li>
+        `).join('');
+      }
+    }
+
+    function renderGroceriesTab() {
+      document.querySelectorAll('.gfilter-btn').forEach((btn) => {
+        const gf = btn.getAttribute('data-gfilter');
+        if (gf === state.groceryFilter) {
+          btn.classList.add('tab-active');
+          btn.classList.remove('bg-slate-900', 'text-slate-300');
+        } else {
+          btn.classList.remove('tab-active');
+          btn.classList.add('bg-slate-900', 'text-slate-300');
+        }
+      });
+
+      const unstockedTotal = state.groceries
+        .filter((g) => !g.stocked)
+        .reduce((sum, g) => sum + (Number(g.price) || 0) * (Number(g.qty) || 1), 0);
+
+      const totalEl = document.getElementById('groceryEstTotalText');
+      if (totalEl) totalEl.textContent = '$' + unstockedTotal.toFixed(2);
+
+      const depts = ['Proteins & Deli', 'Dairy & Fridge', 'Produce', 'Pantry & Dry Stash', 'Cab Supplies'];
+      const container = document.getElementById('groceryDepartmentsContainer');
+      if (!container) return;
+
+      container.innerHTML = depts.map((dept) => {
+        const items = state.groceries.filter((g) => {
+          if (g.dept !== dept) return false;
+          if (state.groceryFilter === 'need' && g.stocked) return false;
+          if (state.groceryFilter === 'stocked' && !g.stocked) return false;
+          return true;
+        });
+
+        if (items.length === 0) return '';
+
+        const itemsHtml = items.map((item) => {
+          const lineTotal = ((Number(item.price) || 0) * (Number(item.qty) || 1)).toFixed(2);
+          return `
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/90 border ${item.stocked ? 'border-emerald-500/30 opacity-75' : 'border-slate-800'}">
+              <label class="flex items-center gap-2.5 cursor-pointer min-w-0 flex-1">
+                <input type="checkbox" data-action="toggle-grocery" data-id="${escapeHtml(item.id)}" ${item.stocked ? 'checked' : ''} class="rounded text-emerald-500 focus:ring-0">
+                <div class="min-w-0">
+                  <div class="text-xs font-semibold ${item.stocked ? 'line-through text-slate-400' : 'text-white'} truncate">
+                    ${escapeHtml(item.name)}
+                  </div>
+                  <div class="text-[11px] text-slate-400">
+                    ${item.stocked ? '<span class="text-emerald-400 font-medium">✓ In Cab Stash</span>' : `Est. $${lineTotal}`}
+                  </div>
+                </div>
+              </label>
+
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-action="grocery-qty" data-id="${escapeHtml(item.id)}" data-delta="-1" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">-</button>
+                <span class="w-6 text-center text-xs font-bold text-white">${item.qty}</span>
+                <button type="button" data-action="grocery-qty" data-id="${escapeHtml(item.id)}" data-delta="1" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">+</button>
+                <button type="button" data-action="delete-grocery" data-id="${escapeHtml(item.id)}" class="ml-1 p-1 text-slate-500 hover:text-rose-400 text-xs" title="Remove">✕</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="card-glow rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h4 class="text-sm font-extrabold text-amber-400">${escapeHtml(dept)}</h4>
+              <span class="text-xs text-slate-400">${items.length} item${items.length === 1 ? '' : 's'}</span>
+            </div>
+            <div class="space-y-2">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================
+    // 6. EVENT HANDLERS & INTERACTIONS
+    // =========================================================
+    function loadPlannedDayIntoLog(dayKey) {
+      const plan = state.fiveDayPlan[dayKey];
+      if (!plan) {
+        showToast('Pick Wed–Sun to auto-load your 5-Day Night Haul plan.');
+        return;
+      }
+      const items = [];
+      Object.keys(plan.slots).forEach((slotId) => {
+        const foodId = plan.slots[slotId];
+        const food = state.catalog.find((f) => f.id === foodId);
+        if (food) {
+          items.push({
+            logId: 'plan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            foodId: food.id,
+            name: food.name,
+            slot: slotId,
+            cal: food.cal,
+            pro: food.pro,
+            carb: food.carb,
+            fat: food.fat,
+            prepBadge: food.prepBadge,
+            multiplier: 1,
+            eaten: false
+          });
+        }
+      });
+      state.activeDay = dayKey;
+      state.shiftLogs[dayKey] = items;
+      state.activeTab = 'log';
+      saveState();
+      renderAll();
+      showToast(`Loaded ${dayKey} Night Haul plan into your Shift Log!`, 'emerald');
+    }
+
+    function setupEventListeners() {
+      // Tab switching
+      document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          if (tab) {
+            state.activeTab = tab;
+            saveState();
+            renderAll();
+          }
+        });
+      });
+
+      // Active Day Select
+      document.getElementById('activeDaySelect').addEventListener('change', (e) => {
+        state.activeDay = e.target.value;
+        saveState();
+        renderAll();
+      });
+
+      // Goal Preset Select
+      document.getElementById('goalPresetSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'custom') {
+          openGoalsModal();
+          return;
+        }
+        if (GOAL_PRESETS[val]) {
+          state.goalPreset = val;
+          state.targets = { ...GOAL_PRESETS[val] };
+          saveState();
+          renderAll();
+          showToast('Updated daily macro targets!', 'emerald');
+        }
+      });
+
+      // Hero Buttons
+      document.getElementById('loadPlannedDayBtn').addEventListener('click', () => {
+        const targetDay = state.activeDay === 'Off' ? 'Wed' : state.activeDay;
+        loadPlannedDayIntoLog(targetDay);
+      });
+
+      document.getElementById('quickEmergencySnackBtn').addEventListener('click', () => {
+        state.activeTab = 'catalog';
+        state.catalogFilters.category = 'emergency';
+        state.catalogFilters.prep = 'all';
+        document.getElementById('catalogCategorySelect').value = 'emergency';
+        document.getElementById('catalogPrepSelect').value = 'all';
+        saveState();
+        renderAll();
+        showToast('Showing shelf-stable Emergency Cab Stash items.');
+      });
+
+      document.getElementById('goToCatalogFromLogBtn').addEventListener('click', () => {
+        state.activeTab = 'catalog';
+        saveState();
+        renderAll();
+      });
+
+      // Clear Day Log
+      document.getElementById('clearShiftLogBtn').addEventListener('click', () => {
+        state.shiftLogs[state.activeDay] = [];
+        saveState();
+        renderAll();
+        showToast(`Cleared ${state.activeDay} shift log.`);
+      });
+
+      // Water buttons
+      document.querySelectorAll('.water-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const delta = Number(btn.getAttribute('data-water')) || 0;
+          const current = state.waterByDay[state.activeDay] || 0;
+          state.waterByDay[state.activeDay] = Math.max(0, current + delta);
+          saveState();
+          renderShiftLogTab();
+        });
+      });
+
+      // Vitamin B1 / Mg Stack Checkbox
+      document.getElementById('stackTakenCheckbox').addEventListener('change', (e) => {
+        state.stackTakenByDay[state.activeDay] = e.target.checked;
+        saveState();
+        if (e.target.checked) {
+          showToast('Logged daily Vitamin B1 + Magnesium stack!', 'emerald');
+        }
+      });
+
+      // Shift Slots delegated actions
+      document.getElementById('shiftSlotsContainer').addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.getAttribute('data-action');
+        const logId = target.getAttribute('data-logid');
+        const dayLogs = state.shiftLogs[state.activeDay] || [];
+
+        if (action === 'toggle-eaten') {
+          const item = dayLogs.find((x) => x.logId === logId);
+          if (item) {
+            item.eaten = !item.eaten;
+            saveState();
+            renderShiftLogTab();
+          }
+        } else if (action === 'delete-log') {
+          state.shiftLogs[state.activeDay] = dayLogs.filter((x) => x.logId !== logId);
+          saveState();
+          renderShiftLogTab();
+          showToast('Removed item from shift log.');
+        } else if (action === 'quick-filter-catalog') {
+          const slot = target.getAttribute('data-slot') || 'all';
+          state.activeTab = 'catalog';
+          state.catalogFilters.category = slot;
+          document.getElementById('catalogCategorySelect').value = slot;
+          saveState();
+          renderAll();
+        }
+      });
+
+      document.getElementById('shiftSlotsContainer').addEventListener('change', (e) => {
+        const target = e.target.closest('[data-action="change-mult"]');
+        if (!target) return;
+        const logId = target.getAttribute('data-logid');
+        const dayLogs = state.shiftLogs[state.activeDay] || [];
+        const item = dayLogs.find((x) => x.logId === logId);
+        if (item) {
+          item.multiplier = Number(target.value) || 1;
+          saveState();
+          renderShiftLogTab();
+        }
+      });
+
+      // Catalog Filters
+      document.getElementById('catalogSearchInput').addEventListener('input', (e) => {
+        state.catalogFilters.search = e.target.value;
+        renderCatalogTab();
+      });
+      document.getElementById('catalogCategorySelect').addEventListener('change', (e) => {
+        state.catalogFilters.category = e.target.value;
+        renderCatalogTab();
+      });
+      document.getElementById('catalogPrepSelect').addEventListener('change', (e) => {
+        state.catalogFilters.prep = e.target.value;
+        renderCatalogTab();
+      });
+      document.getElementById('toggleHighProteinBtn').addEventListener('click', () => {
+        state.catalogFilters.highProtein = !state.catalogFilters.highProtein;
+        renderCatalogTab();
+      });
+      document.getElementById('toggleFavoritesBtn').addEventListener('click', () => {
+        state.catalogFilters.favoritesOnly = !state.catalogFilters.favoritesOnly;
+        renderCatalogTab();
+      });
+      document.getElementById('resetCatalogFiltersBtn').addEventListener('click', () => {
+        state.catalogFilters = { search: '', category: 'all', prep: 'all', highProtein: false, favoritesOnly: false };
+        document.getElementById('catalogSearchInput').value = '';
+        document.getElementById('catalogCategorySelect').value = 'all';
+        document.getElementById('catalogPrepSelect').value = 'all';
+        renderCatalogTab();
+      });
+
+      // Catalog Grid Delegated Actions
+      document.getElementById('catalogGridContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
+        const id = btn.getAttribute('data-id');
+        const food = state.catalog.find((f) => f.id === id);
+        if (!food) return;
+
+        if (action === 'toggle-fav') {
+          food.favorite = !food.favorite;
+          saveState();
+          renderCatalogTab();
+        } else if (action === 'log-catalog-item') {
+          const slotSelect = document.getElementById('slot-select-' + id);
+          const chosenSlot = slotSelect ? slotSelect.value : food.category;
+          if (!state.shiftLogs[state.activeDay]) state.shiftLogs[state.activeDay] = [];
+          state.shiftLogs[state.activeDay].push({
+            logId: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            foodId: food.id,
+            name: food.name,
+            slot: chosenSlot,
+            cal: food.cal,
+            pro: food.pro,
+            carb: food.carb,
+            fat: food.fat,
+            prepBadge: food.prepBadge,
+            multiplier: 1,
+            eaten: false
+          });
+          saveState();
+          renderShiftLogTab();
+          showToast(`Logged "${food.name}" to ${state.activeDay}!`, 'emerald');
+        }
+      });
+
+      // 5-Day Planner Delegated Actions
+      document.getElementById('plannerDaysContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
+        const day = btn.getAttribute('data-day');
+
+        if (action === 'load-plan-day' && day) {
+          loadPlannedDayIntoLog(day);
+        } else if (action === 'open-swap' && day) {
+          const slot = btn.getAttribute('data-slot');
+          openSwapModal(day, slot);
+        }
+      });
+
+      document.getElementById('resetPlannerDefaultBtn').addEventListener('click', () => {
+        state.fiveDayPlan = JSON.parse(JSON.stringify(DEFAULT_FIVE_DAY_PLAN));
+        saveState();
+        renderPlannerTab();
+        showToast('Restored original 5-Day Walmart Night Haul plan!', 'emerald');
+      });
+
+      // Cab Meal Builder Actions
+      document.getElementById('tab-builder').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
+        if (action === 'builder-pick') {
+          const group = btn.getAttribute('data-group');
+          const id = btn.getAttribute('data-id');
+          if (group && id) {
+            state.builderSelection[group] = id;
+            renderBuilderTab();
+          }
+        } else if (action === 'builder-boost') {
+          const id = btn.getAttribute('data-id');
+          const idx = state.builderSelection.boost.indexOf(id);
+          if (idx >= 0) {
+            state.builderSelection.boost.splice(idx, 1);
+          } else {
+            state.builderSelection.boost.push(id);
+          }
+          renderBuilderTab();
+        }
+      });
+
+      const getBuilderMealData = () => {
+        const sel = state.builderSelection;
+        const pObj = BUILDER_OPTIONS.protein.find((x) => x.id === sel.protein) || BUILDER_OPTIONS.protein[0];
+        const cObj = BUILDER_OPTIONS.carb.find((x) => x.id === sel.carb) || BUILDER_OPTIONS.carb[0];
+        const vObj = BUILDER_OPTIONS.veggie.find((x) => x.id === sel.veggie) || BUILDER_OPTIONS.veggie[0];
+        const bObjs = BUILDER_OPTIONS.boost.filter((x) => sel.boost.includes(x.id));
+        const chosen = [pObj, cObj, vObj, ...bObjs];
+
+        const customName = document.getElementById('builderCustomNameInput').value.trim();
+        const title = customName || `${pObj.name.split('(')[0].trim()} + ${cObj.name.split('(')[0].trim()}`;
+        const needsMicrowave = [pObj, cObj, vObj].some((x) => x.prep === 'microwave');
+        const slot = document.getElementById('builderSlotSelect').value || 'pre-shift';
+
+        return {
+          name: title,
+          slot,
+          prep: needsMicrowave ? 'microwave' : 'no-cook',
+          prepBadge: needsMicrowave ? '90s Microwave' : 'No-Cook Ready',
+          cal: chosen.reduce((a, b) => a + b.cal, 0),
+          pro: chosen.reduce((a, b) => a + b.pro, 0),
+          carb: chosen.reduce((a, b) => a + b.carb, 0),
+          fat: chosen.reduce((a, b) => a + b.fat, 0),
+          portion: chosen.map((x) => x.name).join(' + ')
+        };
+      };
+
+      document.getElementById('builderLogMealBtn').addEventListener('click', () => {
+        const meal = getBuilderMealData();
+        if (!state.shiftLogs[state.activeDay]) state.shiftLogs[state.activeDay] = [];
+        state.shiftLogs[state.activeDay].push({
+          logId: 'custom-' + Date.now(),
+          foodId: 'builder',
+          name: meal.name,
+          slot: meal.slot,
+          cal: meal.cal,
+          pro: meal.pro,
+          carb: meal.carb,
+          fat: meal.fat,
+          prepBadge: meal.prepBadge,
+          multiplier: 1,
+          eaten: false
+        });
+        state.activeTab = 'log';
+        saveState();
+        renderAll();
+        showToast(`Logged "${meal.name}" (${meal.pro}g Protein) to ${state.activeDay}!`, 'emerald');
+      });
+
+      document.getElementById('builderSaveCatalogBtn').addEventListener('click', () => {
+        const meal = getBuilderMealData();
+        state.catalog.unshift({
+          id: 'custom-cat-' + Date.now(),
+          name: meal.name,
+          category: meal.slot,
+          prep: meal.prep,
+          prepBadge: meal.prepBadge,
+          cal: meal.cal,
+          pro: meal.pro,
+          carb: meal.carb,
+          fat: meal.fat,
+          portion: meal.portion,
+          cabTip: 'Custom Cab Builder combo.',
+          favorite: true
+        });
+        saveState();
+        renderAll();
+        showToast(`Saved "${meal.name}" to your Cab Catalog!`, 'emerald');
+      });
+
+      // Grocery List Actions
+      document.querySelectorAll('.gfilter-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.groceryFilter = btn.getAttribute('data-gfilter') || 'all';
+          renderGroceriesTab();
+        });
+      });
+
+      document.getElementById('groceryDepartmentsContainer').addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.getAttribute('data-action');
+        const id = target.getAttribute('data-id');
+        const item = state.groceries.find((g) => g.id === id);
+        if (!item) return;
+
+        if (action === 'toggle-grocery') {
+          item.stocked = !item.stocked;
+          saveState();
+          renderAll();
+        } else if (action === 'grocery-qty') {
+          const delta = Number(target.getAttribute('data-delta')) || 0;
+          item.qty = Math.max(1, (Number(item.qty) || 1) + delta);
+          saveState();
+          renderGroceriesTab();
+        } else if (action === 'delete-grocery') {
+          state.groceries = state.groceries.filter((g) => g.id !== id);
+          saveState();
+          renderAll();
+        }
+      });
+
+      document.getElementById('addGroceryForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('newGroceryNameInput');
+        const deptSelect = document.getElementById('newGroceryDeptSelect');
+        const priceInput = document.getElementById('newGroceryPriceInput');
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        state.groceries.push({
+          id: 'g-' + Date.now(),
+          name,
+          dept: deptSelect.value,
+          qty: 1,
+          price: Number(priceInput.value) || 3.50,
+          stocked: false
+        });
+        nameInput.value = '';
+        priceInput.value = '';
+        saveState();
+        renderAll();
+        showToast(`Added "${name}" to Walmart Restock list!`, 'emerald');
+      });
+
+      document.getElementById('resetGroceriesDefaultBtn').addEventListener('click', () => {
+        state.groceries = JSON.parse(JSON.stringify(DEFAULT_GROCERIES));
+        saveState();
+        renderAll();
+        showToast('Reset Walmart Supercenter Restock list to default!', 'emerald');
+      });
+
+      document.getElementById('copyGroceryListBtn').addEventListener('click', () => {
+        const needed = state.groceries.filter((g) => !g.stocked);
+        const lines = [
+          '🛒 WALMART NIGHT HAUL RESTOCK LIST',
+          '----------------------------------',
+          ...needed.map((g) => `[ ] ${g.qty}x ${g.name} (${g.dept}) — Est. $${((g.price || 0) * (g.qty || 1)).toFixed(2)}`)
+        ];
+        const text = lines.join('\n');
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+              showToast('Copied Walmart restock list to clipboard!', 'emerald');
+            }).catch(() => fallbackCopy(text));
+          } else {
+            fallbackCopy(text);
+          }
+        } catch (err) {
+          fallbackCopy(text);
+        }
+      });
+
+      // Modals Setup
+      setupModalHandlers();
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('Copied Walmart restock list to clipboard!', 'emerald');
+      } catch (e) {
+        showToast('List ready—select items to review.');
+      }
+    }
+
+    function openGoalsModal() {
+      const modal = document.getElementById('goalsModal');
+      document.getElementById('goalCalInput').value = state.targets.cal;
+      document.getElementById('goalProInput').value = state.targets.pro;
+      document.getElementById('goalCarbInput').value = state.targets.carb;
+      document.getElementById('goalFatInput').value = state.targets.fat;
+      document.getElementById('goalWaterInput').value = state.targets.water || 100;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGoalsModal() {
+      const modal = document.getElementById('goalsModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.getElementById('goalPresetSelect').value = state.goalPreset;
+    }
+
+    function openSwapModal(dayKey, slotId) {
+      state.swapContext = { dayKey, slotId };
+      const modal = document.getElementById('swapSlotModal');
+      const select = document.getElementById('swapFoodSelect');
+      const currentFoodId = state.fiveDayPlan[dayKey].slots[slotId];
+
+      document.getElementById('swapModalTitle').textContent = `Swap ${dayKey} (${slotId}) Meal`;
+      select.innerHTML = state.catalog.map((f) => `
+        <option value="${escapeHtml(f.id)}" ${f.id === currentFoodId ? 'selected' : ''}>
+          ${escapeHtml(f.name)} (${f.cal} kcal • ${f.pro}g P)
+        </option>
+      `).join('');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSwapModal() {
+      const modal = document.getElementById('swapSlotModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      state.swapContext = null;
+    }
+
+    function setupModalHandlers() {
+      // Goals Modal
+      document.getElementById('openGoalsModalBtn').addEventListener('click', openGoalsModal);
+      document.getElementById('closeGoalsModalBtn').addEventListener('click', closeGoalsModal);
+      document.getElementById('cancelGoalsModalBtn').addEventListener('click', closeGoalsModal);
+      document.getElementById('customGoalsForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        state.goalPreset = 'custom';
+        state.targets = {
+          cal: Number(document.getElementById('goalCalInput').value) || 1900,
+          pro: Number(document.getElementById('goalProInput').value) || 150,
+          carb: Number(document.getElementById('goalCarbInput').value) || 130,
+          fat: Number(document.getElementById('goalFatInput').value) || 65,
+          water: Number(document.getElementById('goalWaterInput').value) || 100
+        };
+        saveState();
+        closeGoalsModal();
+        renderAll();
+        showToast('Saved custom nutrition & hydration targets!', 'emerald');
+      });
+
+      // Custom Food Modal
+      const cfModal = document.getElementById('customFoodModal');
+      const closeCf = () => {
+        cfModal.classList.add('hidden');
+        cfModal.classList.remove('flex');
+      };
+      document.getElementById('openCustomFoodModalBtn').addEventListener('click', () => {
+        cfModal.classList.remove('hidden');
+        cfModal.classList.add('flex');
+      });
+      document.getElementById('closeCustomFoodModalBtn').addEventListener('click', closeCf);
+      document.getElementById('cancelCustomFoodModalBtn').addEventListener('click', closeCf);
+
+      document.getElementById('customFoodForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('cfNameInput').value.trim();
+        if (!name) return;
+        const category = document.getElementById('cfCategorySelect').value;
+        const prep = document.getElementById('cfPrepSelect').value;
+        const cal = Number(document.getElementById('cfCalInput').value) || 0;
+        const pro = Number(document.getElementById('cfProInput').value) || 0;
+        const carb = Number(document.getElementById('cfCarbInput').value) || 0;
+        const fat = Number(document.getElementById('cfFatInput').value) || 0;
+        const note = document.getElementById('cfNoteInput').value.trim() || 'Custom cab item';
+        const logNow = document.getElementById('cfLogImmediatelyCheck').checked;
+
+        const prepLabels = {
+          'no-cook': 'No-Cook Ready',
+          'microwave': '90s Microwave',
+          'fridge': 'Cab Fridge',
+          'shelf': 'Dry Bunk Stash'
+        };
+
+        const newItem = {
+          id: 'custom-' + Date.now(),
+          name,
+          category,
+          prep,
+          prepBadge: prepLabels[prep] || 'Cab Ready',
+          cal,
+          pro,
+          carb,
+          fat,
+          portion: note,
+          cabTip: 'Added to your custom cab catalog.',
+          favorite: true
+        };
+
+        state.catalog.unshift(newItem);
+
+        if (logNow) {
+          if (!state.shiftLogs[state.activeDay]) state.shiftLogs[state.activeDay] = [];
+          state.shiftLogs[state.activeDay].push({
+            logId: 'log-' + Date.now(),
+            foodId: newItem.id,
+            name: newItem.name,
+            slot: category,
+            cal,
+            pro,
+            carb,
+            fat,
+            prepBadge: newItem.prepBadge,
+            multiplier: 1,
+            eaten: false
+          });
+        }
+
+        document.getElementById('cfNameInput').value = '';
+        document.getElementById('cfNoteInput').value = '';
+        saveState();
+        closeCf();
+        renderAll();
+        showToast(`Added "${name}" to your Cab Catalog!`, 'emerald');
+      });
+
+      // Swap Slot Modal
+      document.getElementById('closeSwapModalBtn').addEventListener('click', closeSwapModal);
+      document.getElementById('cancelSwapModalBtn').addEventListener('click', closeSwapModal);
+      document.getElementById('confirmSwapSlotBtn').addEventListener('click', () => {
+        if (!state.swapContext) return;
+        const { dayKey, slotId } = state.swapContext;
+        const newFoodId = document.getElementById('swapFoodSelect').value;
+        if (state.fiveDayPlan[dayKey] && newFoodId) {
+          state.fiveDayPlan[dayKey].slots[slotId] = newFoodId;
+          saveState();
+          closeSwapModal();
+          renderPlannerTab();
+          showToast(`Updated ${dayKey} meal plan!`, 'emerald');
+        }
+      });
+    }
+
+    // Boot App
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      setupEventListeners();
+      renderAll();
+    });
+  </script>
+<div style="position:fixed;bottom:2px;right:6px;font-size:10px;opacity:.45;color:#9ca3af;pointer-events:none;z-index:9999">v1.0</div>
+<script>
+window.__rfBack=function(){var ids=['swapSlotModal','customFoodModal','goalsModal'];for(var i=0;i<ids.length;i++){var m=document.getElementById(ids[i]);if(m&&!m.classList.contains('hidden')){if(ids[i]=='goalsModal'&&window.closeGoalsModal)closeGoalsModal();else if(ids[i]=='swapSlotModal'&&window.closeSwapModal)closeSwapModal();else{m.classList.add('hidden');m.classList.remove('flex');}return true;}}return false;};
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head>
+<meta name="theme-color" content="#ffc107">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Music">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SiriusXM</title>
+<style>
+:root{--bg:#0d0b10;--card:#1a1620;--line:#2c2633;--txt:#f3eff7;--dim:#a39bad;--red:#2f7bff;--acc:#ffc107}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Roboto,sans-serif;font-size:16px}
+main{padding:calc(16px + env(safe-area-inset-top)) 14px calc(40px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+h1{font-size:24px;margin:4px 0 4px}
+.sub{color:var(--dim);margin-bottom:16px;line-height:1.4}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+button:active{filter:brightness(1.4)}
+.big{width:100%;min-height:64px;font-size:19px;font-weight:800;background:var(--red);border-color:var(--red);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 20px}
+.grid button{min-height:58px;font-weight:700;font-size:16px}
+.srch{display:flex;gap:8px;margin-bottom:22px}
+.srch input{flex:1;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px}
+.srch button{font-weight:800;background:var(--red);border-color:var(--red);color:#fff}
+h2{font-size:18px;margin:6px 0 10px}
+.pl{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:6px 6px 6px 14px;margin-bottom:8px}
+.pl .n{flex:1;font-weight:700;font-size:17px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:10px 0;cursor:pointer}
+.pl button{padding:10px 12px;font-size:15px;color:var(--dim)}
+.add{border:1px dashed var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.add input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#120f16;color:var(--txt);font-size:16px;margin-bottom:8px}
+.add button{width:100%;font-weight:800;background:var(--acc);border-color:var(--acc);color:#16131b}
+.tip{color:var(--dim);font-size:14px;line-height:1.45;margin-top:18px}
+.empty{color:var(--dim);font-size:15px;padding:4px 2px 8px}
+</style></head>
+<body><main>
+<h1>📻 SiriusXM</h1>
+<div class="sub">Opens in the SiriusXM app with your channels, favorites and Pandora stations. Same account as your Jeep radio.</div>
+<button class="big" id="openApp">Open SiriusXM</button>
+<div class="grid">
+  <button data-u="https://www.siriusxm.com/player/home">🏠 Home</button>
+  <button data-u="https://www.pandora.com/">🎵 Pandora</button>
+</div>
+
+<h2>My favorites</h2>
+<div id="pls"></div>
+<div class="add">
+  <input id="pname" placeholder="Name">
+  <input id="plink" placeholder="Paste a channel or show link (Liquid Metal, Ozzy's Boneyard...)">
+  <button id="padd">＋ Add favorite</button>
+</div>
+<div class="tip">To save a channel: in the SiriusXM app open it, tap Share, then Copy link, and paste it here.</div>
+</main>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var B = window.ST || null, KEY = "sirius", WEB = "https://www.siriusxm.com/player/home";
+function open(u) { if (B) B.open(KEY, u); else location.href = u; }
+function toast(m) { if (B) B.toast(m); else alert(m); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+var pls = []; try { pls = JSON.parse(localStorage.getItem(KEY + "_favs") || "[]"); } catch (e) { pls = []; }
+function save() { localStorage.setItem(KEY + "_favs", JSON.stringify(pls)); }
+function render() {
+  $("pls").innerHTML = pls.length ? pls.map(function (p, i) {
+    return '<div class="pl"><div class="n" data-o="' + i + '">⭐ ' + esc(p.name) + '</div><button data-up="' + i + '">▲</button><button data-del="' + i + '">✕</button></div>';
+  }).join("") : '<div class="empty">Nothing saved yet. Add your go-to stations or playlists below for one-tap play.</div>';
+  document.querySelectorAll("[data-o]").forEach(function (el) {
+    var i = +el.getAttribute("data-o"), t = null;
+    el.onclick = function () { if (t === "done") { t = null; return; } open(pls[i].url); };
+    el.addEventListener("touchstart", function () { t = setTimeout(function () { t = "done"; var n = prompt("Rename", pls[i].name); if (n && n.trim()) { pls[i].name = n.trim().slice(0, 60); save(); render(); } }, 650); }, { passive: true });
+    el.addEventListener("touchend", function () { if (t && t !== "done") { clearTimeout(t); t = null; } });
+    el.addEventListener("touchmove", function () { if (t && t !== "done") { clearTimeout(t); t = null; } }, { passive: true });
+  });
+  document.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { var i = +b.getAttribute("data-del"); if (confirm("Remove " + pls[i].name + "?")) { pls.splice(i, 1); save(); render(); } }; });
+  document.querySelectorAll("[data-up]").forEach(function (b) { b.onclick = function () { var i = +b.getAttribute("data-up"); if (i > 0) { var x = pls.splice(i, 1)[0]; pls.splice(i - 1, 0, x); save(); render(); } }; });
+}
+$("padd").onclick = function () {
+  var m = String($("plink").value || "").match(/https?:\/\/\S+/);
+  if (!m || !/siriusxm\.com|sxm\.app|pandora\.com/i.test(m[0])) { toast("That doesn't look like a SiriusXM link."); return; }
+  var name = $("pname").value.trim() || "Favorite " + (pls.length + 1);
+  pls.push({ name: name.slice(0, 60), url: m[0] }); save(); render();
+  $("pname").value = ""; $("plink").value = ""; toast("Saved " + name);
+};
+$("openApp").onclick = function () { if (B) B.openApp(KEY); else open(WEB); };
+document.querySelectorAll("[data-u]").forEach(function (b) { b.onclick = function () { open(b.getAttribute("data-u")); }; });
+render();
+</script>
+<p style="text-align:center;color:#a39bad;font-size:13px;padding:0 16px 24px"><a href="index.html" style="color:#ffc107">Music Hub</a> · v1.4.0</p>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

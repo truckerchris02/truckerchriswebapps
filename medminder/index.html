@@ -1,0 +1,85 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#0F9D8A">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MedMinder">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>MedMinder</title>
+<style>
+*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:#0d1413;color:#e6f2f0;font:17px system-ui,Roboto,sans-serif;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+header{background:#0F9D8A;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px;flex:1}main{padding:12px}
+.card{background:#16211f;border:1px solid #23332f;border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}.muted{color:#93aba6;font-size:14px}.low{color:#ffb35c;font-weight:600}.bad{color:#ff6b6b;font-weight:600}
+button{background:#0F9D8A;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-size:16px;font-weight:600}button.sec{background:#24403b}button.del{background:#7a2b2b}
+input,select,textarea,option{background:#0d1413!important;color:#e6f2f0!important;border:1px solid #2e4540;border-radius:9px;padding:10px;font-size:16px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+label{display:block;margin:10px 0 4px;font-size:14px;color:#93aba6}
+.ov{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:9}.ov.on{display:flex}
+.sheet{background:#16211f;width:100%;max-height:calc(92vh - env(safe-area-inset-top));overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+.t{display:inline-block;background:#1f3a35;border-radius:8px;padding:3px 8px;margin:2px;font-size:14px}.done{background:#1b5e3a}
+.warn{background:#3a2a12;border-color:#6b4a17}footer{text-align:center;color:#6f8a85;font-size:13px;margin:16px}
+h2{margin:2px 0 10px}h3{margin:0 0 4px}
+</style></head><body>
+<header><h1>💊 MedMinder</h1><button onclick="edit()">+ Add</button></header>
+<main id="m"></main>
+<footer>MedMinder v1.0</footer>
+<div class="ov" id="ov" onclick="if(event.target==this)closeS()"><div class="sheet" id="sh"></div></div>
+<input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="doImp(this)">
+<script>
+var K='medminder_db',db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}if(!db||!db.meds)db={meds:[],log:{}};
+var AB=window.AndroidBridge;
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function daysLeft(m){var per=(+m.perDose||1)*(m.times||[]).length;return per>0?(+m.onHand||0)/per:Infinity}
+function isLow(m){return m.thrMode=='count'?(+m.onHand||0)<=(+m.thr||0):daysLeft(m)<=(+m.thr||0)}
+function sync(){if(AB&&AB.setSchedule)try{AB.setSchedule(JSON.stringify({meds:db.meds.map(function(m){return{id:m.id,name:m.name,dose:m.dose,notes:m.notes,times:m.times,onHand:+m.onHand||0,perDose:+m.perDose||1,thrMode:m.thrMode,thr:+m.thr||0,pharmacy:[m.pharmacy,m.phone].filter(Boolean).join(' ')}})}))}catch(e){}if(window.desktopSync)desktopSync()}
+function save(){localStorage.setItem(K,JSON.stringify(db));sync()}
+function pull(){if(!(AB&&AB.pullTaken))return;try{var q=JSON.parse(AB.pullTaken());q.forEach(function(e){var m=db.meds.find(function(x){return x.id==e.id});if(m){m.onHand=Math.max(0,(+m.onHand||0)-(+m.perDose||1));logDose(m,e.ts)}});if(q.length){save();render()}}catch(e){}}
+function logDose(m,ts){var d=today();(db.log[d]=db.log[d]||{})[m.id]=(db.log[d][m.id]||0)+1}
+function taken(id){var m=db.meds.find(function(x){return x.id==id});m.onHand=Math.max(0,(+m.onHand||0)-(+m.perDose||1));logDose(m,Date.now());save();render();if(isLow(m))setTimeout(function(){alert('Time to refill '+m.name+': '+m.onHand+' left')},50)}
+function refilled(id){var m=db.meds.find(function(x){return x.id==id});var n=prompt('How many pills did you add?',m.lastRefill||30);if(n==null)return;n=+n;if(!(n>0))return;m.lastRefill=n;m.onHand=(+m.onHand||0)+n;save();render()}
+function render(){var h='';
+ if(AB){var w=[];try{if(!AB.notifAllowed())w.push('<div>Notifications are off. <button class="sec" onclick="AB.requestNotif()">Allow</button></div>');if(!AB.exactAllowed())w.push('<div style="margin-top:8px">Exact alarms are off, reminders may be late. <button class="sec" onclick="AB.openExactSettings()">Fix</button></div>')}catch(e){}
+  if(w.length)h+='<div class="card warn">'+w.join('')+'</div>'}
+ if(!db.meds.length)h+='<div class="card"><h3>No medications yet</h3><div class="muted">Tap + Add to put in your first med and its reminder times.</div></div>';
+ var tl=(db.log[today()]||{});
+ db.meds.forEach(function(m){var dl=daysLeft(m),low=isLow(m),n=tl[m.id]||0;
+  h+='<div class="card"><div class="row"><div style="flex:1"><h3>'+esc(m.name)+'</h3><div class="muted">'+esc(m.dose)+(m.notes?' · '+esc(m.notes):'')+'</div></div><button class="sec" onclick="edit(\''+m.id+'\')">Edit</button></div>'+
+  '<div style="margin:8px 0">'+(m.times||[]).map(function(t,i){return '<span class="t'+(i<n?' done':'')+'">'+(i<n?'✓ ':'⏰ ')+t+'</span>'}).join('')+'</div>'+
+  '<div class="'+(m.onHand<=0?'bad':low?'low':'muted')+'">'+(+m.onHand||0)+' pills on hand · '+(isFinite(dl)?Math.floor(dl)+' days left':'—')+(low?' · REFILL SOON':'')+'</div>'+
+  (m.pharmacy||m.phone?'<div class="muted">'+esc(m.pharmacy)+' '+(m.phone?'<a style="color:#5fe0cc" href="tel:'+esc(m.phone)+'">'+esc(m.phone)+'</a>':'')+'</div>':'')+
+  '<div class="row" style="margin-top:10px"><button style="flex:2" onclick="taken(\''+m.id+'\')">✓ Taken ('+n+'/'+(m.times||[]).length+' today)</button><button class="sec" style="flex:1" onclick="refilled(\''+m.id+'\')">Refilled</button></div></div>'});
+ h+='<div class="card"><h3>Backup</h3><button style="width:100%" onclick="exp()">Back up (save / share file)</button><div class="muted" style="margin:6px 0 12px">On iPhone, choose Save to Files or send it to yourself.</div><button class="sec" style="width:100%" onclick="imp.click()">Restore from backup</button><div class="muted" style="margin-top:6px">Pick your MedMinder backup .json file.</div><button class="sec" style="width:100%;margin-top:10px" onclick="webAskNotif()">Allow dose reminders</button><div class="muted" style="margin-top:6px">Reminders show while MedMinder is open. iPhone can also notify you after you add this app to the Home Screen and allow notifications. It will not ring after the app is fully closed.</div></div>';
+ document.getElementById('m').innerHTML=h}
+var cur=null;
+function edit(id){var m=id?db.meds.find(function(x){return x.id==id}):{name:'',dose:'',notes:'',times:['08:00'],onHand:30,perDose:1,thrMode:'days',thr:7,pharmacy:'',phone:''};cur=JSON.parse(JSON.stringify(m));cur._id=id||null;drawS();document.getElementById('ov').classList.add('on')}
+function f(l,k,t){return '<label>'+l+'</label><input '+(t?'type="'+t+'" inputmode="decimal"':'')+' value="'+esc(cur[k])+'" oninput="cur.'+k+'=this.value">'}
+function drawS(){document.getElementById('sh').innerHTML='<h2>'+(cur._id?'Edit':'Add')+' medication</h2>'+f('Name','name')+f('Dose (e.g. 10 mg, 1 tablet)','dose')+f('Notes (e.g. with food)','notes')+
+ '<label>Reminder times ('+cur.times.length+' per day)</label>'+cur.times.map(function(t,i){return '<div class="row" style="margin-bottom:6px"><input type="time" value="'+t+'" onchange="cur.times['+i+']=this.value"><button class="del" onclick="cur.times.splice('+i+',1);drawS()">✕</button></div>'}).join('')+
+ '<button class="sec" onclick="cur.times.push(\'20:00\');drawS()">+ Add time</button>'+
+ '<div class="row"><div style="flex:1">'+f('Pills on hand','onHand','number')+'</div><div style="flex:1">'+f('Pills per dose','perDose','number')+'</div></div>'+
+ '<label>Refill reminder when</label><div class="row"><select onchange="cur.thrMode=this.value"><option value="days"'+(cur.thrMode=='days'?' selected':'')+'>Days left ≤</option><option value="count"'+(cur.thrMode=='count'?' selected':'')+'>Pills left ≤</option></select><input type="number" style="width:40%" value="'+esc(cur.thr)+'" oninput="cur.thr=this.value"></div>'+
+ f('Pharmacy (optional)','pharmacy')+f('Pharmacy phone (optional)','phone','tel')+
+ '<div class="row" style="margin-top:16px">'+(cur._id?'<button class="del" onclick="delM()">Delete</button>':'')+'<button class="sec" style="flex:1" onclick="closeS()">Cancel</button><button style="flex:1" onclick="saveM()">Save</button></div>'}
+function saveM(){if(!cur.name.trim())return alert('Enter a name');cur.times=cur.times.filter(Boolean).sort();var id=cur._id;delete cur._id;cur.onHand=+cur.onHand||0;cur.perDose=+cur.perDose||1;cur.thr=+cur.thr||0;
+ if(id){cur.id=id;db.meds[db.meds.findIndex(function(x){return x.id==id})]=cur}else{cur.id='m'+Date.now().toString(36);db.meds.push(cur)}save();closeS();render()}
+function delM(){if(!confirm('Delete '+cur.name+'?'))return;var id=cur._id;db.meds=db.meds.filter(function(x){return x.id!=id});save();closeS();render()}
+function closeS(){document.getElementById('ov').classList.remove('on');cur=null}
+window.__back=function(){if(cur){closeS();return true}return false};
+window.__resume=function(){pull();render()};
+function exp(){var s=JSON.stringify(db,null,1),fn='MedMinder-backup-'+(today())+'.json';
+ try{var f=new File([s],fn,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'MedMinder backup'}).catch(function(e){if(e&&e.name!=='AbortError')dl(s,fn)});return;}}catch(e){}
+ if(!dl(s,fn))alert('Could not save the backup file');}
+function dl(s,fn){try{var u=URL.createObjectURL(new Blob([s],{type:'application/json'}));var a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);return true;}catch(e){return false}}
+function doImp(inp){var fl=inp.files[0];if(!fl)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(!o||!Array.isArray(o.meds))throw 0;if(confirm('Replace all current data with this backup?')){db=o;db.log=db.log||{};save();render();alert('Backup restored')}}catch(e){alert('Not a valid MedMinder backup')}inp.value=''};r.readAsText(fl)}
+pull();render();sync();
+</script><script src="webping.js"></script><script>
+webWatch(function(){var d=new Date(),hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2),day=today(),tl=db.log[day]||{};
+ db.meds.forEach(function(m){(m.times||[]).forEach(function(tm,i){var n=tl[m.id]||0;if(tm===hm&&n<=i)webOnce('mm-'+day+m.id+tm,function(){webPing('MedMinder',m.name+(m.dose?' · '+m.dose:'')+' is due');});});
+  if(isLow(m))webOnce('mm-low-'+day+m.id,function(){webPing('MedMinder','Time to refill '+m.name);});});});
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

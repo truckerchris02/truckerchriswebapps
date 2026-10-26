@@ -1,0 +1,337 @@
+<!DOCTYPE html><html><head>
+<meta name="theme-color" content="#D7263D">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Health">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Truck Health</title>
+<style>
+*{box-sizing:border-box}html{color-scheme:dark;background:#141012}body{margin:0;background:#141012;color:#f3ecec;font:17px system-ui,Roboto,sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+header{background:#D7263D;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px;flex:1}main{padding:12px;max-width:720px;margin:0 auto}
+.card{background:#1f191b;border:1px solid #33292c;border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}.wrap{flex-wrap:wrap}.muted{color:#b3a3a6;font-size:14px}.low{color:#ffb35c;font-weight:600}.bad,.over{color:#ff6b6b;font-weight:600}
+button{background:#D7263D;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer}button.sec{background:#3b2d31}button.del{background:#7a2b2b}button.go{background:#FF6B35}button.wat{background:#2f7fd6}
+input,select,textarea{background-color:#141012!important;color:#f3ecec!important;border:1px solid #4a3a3e;border-radius:9px;padding:10px;font-size:16px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none;color-scheme:dark}
+select{background-image:linear-gradient(45deg,transparent 50%,#f3ecec 50%),linear-gradient(135deg,#f3ecec 50%,transparent 50%)!important;background-position:calc(100% - 18px) 55%,calc(100% - 12px) 55%!important;background-size:6px 6px!important;background-repeat:no-repeat!important;padding-right:30px}
+option,optgroup,select option{background-color:#1f191b!important;color:#f3ecec!important}input::placeholder{color:#8a7a7d}
+input[type=checkbox]{width:22px;height:22px;flex:none;-webkit-appearance:auto;appearance:auto;accent-color:#D7263D}
+label{display:block;margin:10px 0 4px;font-size:14px;color:#b3a3a6}
+.ov{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:9}.ov.on{display:flex}
+.sheet{background:#1f191b;width:100%;max-width:720px;max-height:calc(92vh - env(safe-area-inset-top));overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+.t{display:inline-block;background:#3a2a2e;border-radius:8px;padding:3px 8px;margin:2px;font-size:14px}.t.done{background:#1b5e3a}.t.c{background:#5a2a1a;color:#ffc2a8}.t.b{background:#2c2350;color:#cbb8ff}
+.warn{background:#3a2a12;border-color:#6b4a17}footer{text-align:center;color:#8a7a7d;font-size:13px;margin:16px}h2{margin:4px 0 10px;font-size:20px}h3{margin:0 0 4px}
+nav{position:fixed;left:0;right:0;bottom:0;background:#1f191b;border-top:1px solid #33292c;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;background:none;border-radius:0;padding:9px 2px;font-size:12px;color:#b3a3a6}nav button.on{color:#fff;background:#3a2226}nav b{display:block;font-size:20px}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}.tabs button{flex:1;padding:9px 6px;font-size:14px}
+.stat{flex:1;text-align:center}.stat b{display:block;font-size:26px;color:#ff8a98}
+.bt{height:14px;border-radius:7px;background:#33292c;overflow:hidden;margin:5px 0 12px}.bf{height:100%;background:#D7263D;border-radius:7px}.bf.w{background:#2f7fd6}
+.food{display:block;width:100%;text-align:left;background:#2a2124;margin-bottom:8px;font-weight:500}.food .m{font-size:13px;color:#b3a3a6;margin-top:3px;font-weight:400}
+.li{padding:8px 0;border-bottom:1px solid #33292c}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.seg button{padding:7px 11px;font-size:14px;background:#3b2d31}.seg button.on{background:#D7263D}
+#wo{position:fixed;inset:0;background:#141012;z-index:20;display:none;flex-direction:column;padding:calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));overflow:auto}#wo.on{display:flex}
+.big{font-size:76px;font-weight:800;text-align:center;margin:8px 0;font-variant-numeric:tabular-nums}.phase{text-align:center;font-weight:700;letter-spacing:2px;color:#FF6B35}
+.bar{height:8px;background:#33292c;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#FF6B35}
+.wb{display:flex;gap:8px;margin-top:auto;padding-top:14px}.wb button{flex:1;padding:15px 6px}.ex{padding:8px 0;border-bottom:1px solid #33292c}.ex:last-child{border:0}
+.drops{font-size:30px;letter-spacing:2px;text-align:center;margin:6px 0}.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));background:#333;color:#fff;padding:10px 16px;border-radius:20px;z-index:30;font-size:15px}
+a{color:#ff8a98}
+</style></head><body>
+<header><h1>❤️ Truck Health</h1><span id="hs" style="font-size:14px"></span><button class="sec" style="padding:8px 12px" onclick="go('set')">⚙️</button></header>
+<main id="m"></main>
+<footer>Truck Health v1.0</footer>
+<nav id="nav"></nav>
+<div class="ov" id="ov" onclick="if(event.target==this)closeS()"><div class="sheet" id="sh"></div></div>
+<div id="wo"></div>
+<input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="doImp(this)">
+<script>
+var AB=window.AndroidBridge;
+function DK(){return !!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.th)}
+function post(o){try{window.webkit.messageHandlers.th.postMessage(JSON.stringify(o))}catch(e){}}
+var FOODS=[
+{ id: "egg2", name: "Hard-boiled eggs (2)", where: "Cooler / truck stop cooler", cat: "breakfast", noCook: true, cal: 155, p: 13, c: 1, f: 11, na: 124 },
+{ id: "oat", name: "Instant oatmeal, plain packet", where: "Hot water / microwave", cat: "breakfast", noCook: false, cal: 100, p: 4, c: 19, f: 2, na: 75 },
+{ id: "gyog", name: "Plain nonfat Greek yogurt cup", where: "Cooler", cat: "breakfast", noCook: true, cal: 100, p: 17, c: 6, f: 0, na: 60 },
+{ id: "emuff", name: "Egg McMuffin", where: "McDonald's", cat: "breakfast", noCook: true, cal: 310, p: 17, c: 30, f: 13, na: 770 },
+{ id: "pbtort", name: "Peanut butter + banana wrap", where: "Lunchbox, no cook", cat: "breakfast", noCook: true, cal: 425, p: 12, c: 56, f: 19, na: 441 },
+{ id: "tuna", name: "Tuna pouch (2.5 oz)", where: "Cab pantry", cat: "meal", noCook: true, cal: 70, p: 17, c: 0, f: 1, na: 300 },
+{ id: "rotis", name: "Rotisserie chicken breast (3 oz, no skin)", where: "Grocery / truck stop deli", cat: "meal", noCook: true, cal: 140, p: 26, c: 0, f: 3, na: 330 },
+{ id: "stove", name: "Chicken, rice + veggies bowl", where: "12V lunchbox stove", cat: "meal", noCook: false, cal: 450, p: 40, c: 45, f: 10, na: 500 },
+{ id: "potato", name: "Baked potato + chili (1/2 cup)", where: "Truck stop microwave", cat: "meal", noCook: false, cal: 320, p: 13, c: 50, f: 7, na: 560 },
+{ id: "sub", name: "Subway 6-inch turkey, veggies", where: "Subway at Pilot / Love's / TA", cat: "meal", noCook: true, cal: 280, p: 18, c: 46, f: 4, na: 760 },
+{ id: "tbowl", name: "Taco Bell chicken power bowl", where: "Taco Bell at Love's / TA", cat: "meal", noCook: true, cal: 460, p: 26, c: 48, f: 19, na: 1200 },
+{ id: "arbys", name: "Arby's Classic Roast Beef", where: "Arby's at Pilot / Love's", cat: "meal", noCook: true, cal: 360, p: 23, c: 37, f: 14, na: 970 },
+{ id: "wendy", name: "Wendy's grilled chicken sandwich", where: "Wendy's", cat: "meal", noCook: true, cal: 370, p: 34, c: 38, f: 10, na: 790 },
+{ id: "cfa", name: "Chick-fil-A grilled nuggets (8)", where: "Chick-fil-A", cat: "meal", noCook: true, cal: 130, p: 25, c: 1, f: 3, na: 440 },
+{ id: "salad", name: "Grab-and-go chicken salad (light dressing)", where: "Pilot / Flying J / Love's cooler", cat: "meal", noCook: true, cal: 300, p: 25, c: 15, f: 15, na: 800 },
+{ id: "jerky", name: "Beef jerky (1 oz)", where: "Any truck stop", cat: "snack", noCook: true, cal: 80, p: 11, c: 6, f: 1, na: 590 },
+{ id: "cheese", name: "String cheese (1)", where: "Cooler", cat: "snack", noCook: true, cal: 80, p: 7, c: 1, f: 6, na: 200 },
+{ id: "almond", name: "Almonds, unsalted (1 oz)", where: "Any truck stop", cat: "snack", noCook: true, cal: 164, p: 6, c: 6, f: 14, na: 0 },
+{ id: "banana", name: "Banana", where: "Truck stop fruit basket", cat: "snack", noCook: true, cal: 105, p: 1, c: 27, f: 0, na: 1 },
+{ id: "apple", name: "Apple", where: "Truck stop fruit basket", cat: "snack", noCook: true, cal: 95, p: 0, c: 25, f: 0, na: 2 },
+{ id: "hummus", name: "Baby carrots + hummus cup", where: "Pilot / Love's cooler", cat: "snack", noCook: true, cal: 100, p: 3, c: 11, f: 5, na: 170 },
+{ id: "cottage", name: "Low-fat cottage cheese (1/2 cup)", where: "Cooler", cat: "snack", noCook: true, cal: 90, p: 12, c: 5, f: 2, na: 360 },
+{ id: "fruitcup", name: "Fresh fruit cup", where: "Pilot / Love's / TA cooler", cat: "snack", noCook: true, cal: 70, p: 1, c: 18, f: 0, na: 10 },
+{ id: "premier", name: "Premier Protein shake", where: "Any truck stop", cat: "drink", noCook: true, cal: 160, p: 30, c: 5, f: 3, na: 370 },
+{ id: "corepow", name: "Fairlife Core Power (26g)", where: "Truck stop cooler", cat: "drink", noCook: true, cal: 170, p: 26, c: 8, f: 5, na: 240 },
+{ id: "milk", name: "2% milk (1 cup)", where: "Truck stop cooler", cat: "drink", noCook: true, cal: 122, p: 8, c: 12, f: 5, na: 115 },
+{ id: "coffee", name: "Black coffee (16 oz)", where: "Any truck stop", cat: "drink", noCook: true, cal: 5, p: 0, c: 0, f: 0, na: 10 },
+{ id: "gatz", name: "Gatorade Zero (20 oz)", where: "Any truck stop", cat: "drink", noCook: true, cal: 10, p: 0, c: 2, f: 0, na: 270 },
+];
+var TIPS=[["Pack the cooler on reset day","Eggs, yogurt, cheese, cut veggies and cooked chicken cover most of a week."],["Protein first","It keeps you full longer and helps stop the snack-bin grazing."],["Watch the sodium","Jerky, deli meat and fast food add up fast. Pick unsalted nuts and fresh fruit."],["Drink water, not soda","Keep a bottle in the cup holder. Thirst often feels like hunger."],["Grill or bowl, skip the fryer","Grilled chicken, bowls and salads beat fried combos at any chain."],["Don't eat right before sleep","A lighter last meal makes the sleeper berth more restful."],["Move at every stop","A 10-minute walk around the lot during fuel-ups helps a lot."]];
+var EX=[
+{id:'march',n:'Marching in Place',k:'c',m:'t',v:60,s:1,mus:'Legs, heart',band:'None',how:'Stand tall. Lift one knee toward hip height, then the other, swinging your arms. Keep a steady pace and breathe normally. Hold a counter or the truck door if you need balance.'},
+{id:'steptouch',n:'Step Touches',k:'c',m:'t',v:60,s:1,mus:'Legs, hips, heart',band:'None',how:'Step your right foot out to the side and tap your left foot next to it. Repeat to the left. Add arm swings or claps to raise your heart rate.'},
+{id:'armcircles',n:'Arm Circles',k:'c',m:'t',v:40,s:1,mus:'Shoulders',band:'None',how:'Hold your arms straight out to the sides. Make small circles forward for 20 seconds, then backward. Make the circles bigger as you warm up.'},
+{id:'lowjacks',n:'Low-Impact Jacks',k:'c',m:'t',v:45,s:1,mus:'Full body, heart',band:'None',how:'Step your right foot out while raising both arms overhead, then return. Repeat to the left. No jumping, so it is easy on knees.'},
+{id:'heeldigs',n:'Heel Digs',k:'c',m:'t',v:45,s:1,mus:'Calves, hamstrings',band:'None',how:'Tap one heel out in front of you, toes up, then switch. Punch your arms forward with each tap.'},
+{id:'kneelift',n:'Standing Knee to Elbow',k:'c',m:'t',v:45,s:1,mus:'Core, hips',band:'None',how:'Hands behind your head. Lift your right knee and bring your left elbow toward it. Alternate sides at a steady pace.'},
+{id:'butt',n:'Butt Kicks (walking)',k:'c',m:'t',v:45,s:1,mus:'Hamstrings, heart',band:'None',how:'Walk in place while bringing each heel toward your seat. Keep it low-impact by staying on the balls of your feet without hopping.'},
+{id:'shadow',n:'Shadow Boxing',k:'c',m:'t',v:45,s:1,mus:'Arms, shoulders, core',band:'None',how:'Feet staggered, knees soft. Throw light jabs and crosses, turning your torso slightly. Keep your hands up and breathe out with each punch.'},
+{id:'calfraise',n:'Calf Raises',k:'c',m:'r',v:15,s:2,mus:'Calves',band:'None',how:'Stand with feet hip width, holding something for balance. Rise up onto your toes, pause, and lower slowly. Great for circulation after long hours driving.'},
+{id:'sidebend',n:'Standing Side Bends',k:'c',m:'t',v:40,s:1,mus:'Obliques, back',band:'None',how:'Feet hip width, one hand on hip. Reach the other arm overhead and lean gently to the side. Alternate sides slowly.'},
+{id:'row',n:'Band Seated or Standing Row',k:'b',m:'r',v:12,s:3,mus:'Upper back, lats, biceps',band:'Medium',how:'Anchor the band around your feet (seated) or a sturdy post at chest height. Hold an end in each hand, arms straight. Pull your elbows back close to your sides and squeeze your shoulder blades. Return slowly.'},
+{id:'chest',n:'Band Chest Press',k:'b',m:'r',v:12,s:3,mus:'Chest, shoulders, triceps',band:'Medium',how:'Wrap the band around your upper back, holding an end in each hand at chest level. Press both hands straight forward until arms are extended, then return slowly with control.'},
+{id:'curl',n:'Band Bicep Curls',k:'b',m:'r',v:12,s:3,mus:'Biceps',band:'Light to Medium',how:'Stand on the middle of the band, feet hip width. Hold the ends with palms forward. Keep elbows pinned at your sides and curl your hands toward your shoulders. Lower slowly.'},
+{id:'tricep',n:'Band Overhead Tricep Extension',k:'b',m:'r',v:12,s:3,mus:'Triceps',band:'Light',how:'Stand on one end of the band and hold the other end behind your head with both hands, elbows pointing up. Straighten your arms overhead, then bend back down slowly.'},
+{id:'lateral',n:'Band Lateral Raises',k:'b',m:'r',v:12,s:3,mus:'Shoulders',band:'Light',how:'Stand on the band, holding an end in each hand at your sides. With a slight bend in the elbows, raise your arms out to shoulder height. Lower slowly.'},
+{id:'press',n:'Band Shoulder Press',k:'b',m:'r',v:10,s:3,mus:'Shoulders, triceps',band:'Light to Medium',how:'Stand on the band, hands at shoulder height, palms forward. Press straight up overhead without arching your back. Lower back to shoulders.'},
+{id:'pullapart',n:'Band Pull-Aparts',k:'b',m:'r',v:15,s:3,mus:'Rear shoulders, upper back, posture',band:'Light',how:'Hold the band in front of you at shoulder height, hands shoulder width apart. Pull the band apart by moving your hands out to the sides until it touches your chest. Return slowly. Great for undoing hunched driving posture.'},
+{id:'facepull',n:'Band Face Pulls',k:'b',m:'r',v:12,s:3,mus:'Rear shoulders, upper back',band:'Light',how:'Anchor the band at face height. Pull the ends toward your face, elbows high and wide, until your hands are beside your ears. Squeeze, then return.'},
+{id:'squat',n:'Band Squats',k:'b',m:'r',v:12,s:3,mus:'Thighs, glutes',band:'Medium to Heavy',how:'Stand on the band with feet shoulder width, ends at your shoulders. Sit your hips back and down like sitting in a chair, chest up. Push through your heels to stand.'},
+{id:'bridge',n:'Band Glute Bridges',k:'b',m:'r',v:15,s:3,mus:'Glutes, hamstrings',band:'Loop band, Medium',how:'Lie on your back, knees bent, loop band just above the knees. Push your knees slightly out against the band and lift your hips until your body is straight from knees to shoulders. Lower slowly. Can be done on the bunk.'},
+{id:'walk',n:'Band Lateral Walks',k:'b',m:'r',v:10,s:2,mus:'Hips, glutes',band:'Loop band, Light to Medium',how:'Loop band above knees or ankles. Bend knees slightly and step sideways 10 steps, keeping tension on the band. Step back the other way.'},
+{id:'kickback',n:'Band Glute Kickbacks',k:'b',m:'r',v:12,s:2,mus:'Glutes',band:'Loop band, Light',how:'Loop band around ankles, hold something for balance. Kick one leg straight back, squeeze the glute, return slowly. Do all reps then switch legs.'},
+{id:'deadlift',n:'Band Romanian Deadlift',k:'b',m:'r',v:12,s:3,mus:'Hamstrings, glutes, lower back',band:'Medium to Heavy',how:'Stand on the band, ends in hands. Soft knees, push your hips back and lower your hands along your legs with a flat back. Squeeze your glutes to stand tall.'},
+{id:'legpress',n:'Band Seated Leg Press',k:'b',m:'r',v:12,s:2,mus:'Thighs, glutes',band:'Medium',how:'Sit on the edge of a seat or bunk. Loop the band around one foot, holding the ends. Pull the knee in, then press the foot straight out against the band. Switch legs. Cab friendly.'},
+{id:'woodchop',n:'Band Wood Chop',k:'b',m:'r',v:10,s:2,mus:'Core, obliques',band:'Light',how:'Anchor band high to one side. Hold with both hands and pull it diagonally down across your body to the opposite hip, turning your torso. Do all reps then switch sides.'},
+{id:'pallof',n:'Band Pallof Press',k:'b',m:'t',v:30,s:2,mus:'Core',band:'Light to Medium',how:'Anchor the band at chest height to your side. Hold it at your chest and press straight out, resisting the band pulling you sideways. Hold, then switch sides.'}
+];
+var BUILT=[
+{id:'r1',n:'15-Min Light Cardio',d:'Easy heart-pumping moves, no band needed.',work:'t',items:['march','steptouch','armcircles','lowjacks','heeldigs','kneelift','butt','shadow','sidebend','march','steptouch','lowjacks'],rest:20,secs:50},
+{id:'r2',n:'Upper Body Bands',d:'Back, chest, arms and shoulders.',items:['armcircles','row','chest','curl','tricep','lateral','pullapart'],rest:45},
+{id:'r3',n:'Lower Body Bands',d:'Legs and glutes.',items:['march','squat','deadlift','bridge','walk','kickback','calfraise'],rest:45},
+{id:'r4',n:'Full Body Bands',d:'A bit of everything.',items:['steptouch','squat','row','chest','bridge','press','pullapart','woodchop'],rest:40},
+{id:'r5',n:'Truck-Stop Quickie (10 min)',d:'Small space, next to the rig or in the cab.',items:['march','pullapart','row','calfraise','legpress','pallof'],rest:30},
+{id:'r6',n:'Posture Fix After Driving',d:'Undo hours of sitting.',items:['armcircles','pullapart','facepull','row','bridge','sidebend'],rest:30}
+];
+
+function today(d){d=d||new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(s){return Math.max(0,Math.round(Number(s)||0))}
+function blank(){return{app:'TruckHealth',ver:1,food:{logs:{},custom:[],goals:{cal:2200,p:140,na:2300}},water:{days:{},goal:8,oz:16,rem:{on:false,s:'08:00',e:'20:00',every:90}},meds:[],medlog:{},wo:{log:[],custom:[],rem:{on:false,t:'17:00'},beep:true,vib:true,rest:0}}}
+function fix(o){var b=blank();o=o||{};['food','water','wo'].forEach(function(k){o[k]=Object.assign({},b[k],o[k]||{})});o.food.goals=Object.assign({},b.food.goals,o.food.goals);o.food.logs=o.food.logs||{};o.food.custom=o.food.custom||[];
+ o.water.rem=Object.assign({},b.water.rem,o.water.rem);o.water.days=o.water.days||{};o.wo.rem=Object.assign({},b.wo.rem,o.wo.rem);o.wo.log=o.wo.log||[];o.wo.custom=o.wo.custom||[];o.meds=Array.isArray(o.meds)?o.meds:[];o.medlog=o.medlog||{};o.app='TruckHealth';o.ver=1;return o}
+var K='truckhealth_db',db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}db=fix(db);
+function wToday(){return db.water.days[today()]||0}
+function woDone(){return db.wo.log.some(function(l){return l.d==today()})}
+function sync(){var meds=db.meds.map(function(m){return{id:m.id,name:m.name,dose:m.dose,notes:m.notes,times:m.times,onHand:+m.onHand||0,perDose:+m.perDose||1,thrMode:m.thrMode,thr:+m.thr||0,pharmacy:[m.pharmacy,m.phone].filter(Boolean).join(' ')}});
+ var wr=db.water.rem,rr=db.wo.rem;
+ if(AB){try{AB.setSchedule(JSON.stringify({meds:meds}))}catch(e){}try{AB.setWorkoutReminder(!!rr.on,rr.t||'17:00')}catch(e){}try{AB.setWaterStatus(today(),wToday(),+db.water.goal||8);AB.setWaterReminder(!!wr.on,wr.s||'08:00',wr.e||'20:00',+wr.every||90)}catch(e){}try{if(woDone())AB.markDone(today())}catch(e){}}
+ if(DK())post({t:'sched',meds:meds,wrem:rr,hrem:wr,water:wToday(),wgoal:+db.water.goal||8,woDone:woDone()})}
+function save(){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){}sync()}
+var flash='',ft=null;function toast(s){flash=s;var t=document.getElementById('toast');if(t)t.remove();t=document.createElement('div');t.id='toast';t.className='toast';t.textContent=s;document.body.appendChild(t);clearTimeout(ft);ft=setTimeout(function(){t.remove()},1800)}
+function bar(l,v,g,u,lim,cls){var pct=g>0?Math.min(100,v/g*100):0,o=lim&&v>g;
+ return '<div class="row" style="justify-content:space-between"><span>'+l+'</span><span class="'+(o?'over':'muted')+'">'+v.toLocaleString()+' / '+(+g).toLocaleString()+' '+u+(o?' (over)':'')+'</span></div><div class="bt"><div class="bf '+(cls||'')+'" style="width:'+pct+'%;'+(o?'background:#ff6b6b':'')+'"></div></div>'}
+// ---------- NAV ----------
+var tab='today',wsub='home';
+function nav(){var T=[['today','🏠','Today'],['food','🍎','Food'],['water','💧','Water'],['meds','💊','Meds'],['wo','💪','Workout']];
+ document.getElementById('nav').innerHTML=T.map(function(t){return '<button class="'+(tab==t[0]?'on':'')+'" onclick="go(\''+t[0]+'\')"><b>'+t[1]+'</b>'+t[2]+'</button>'}).join('')}
+function go(t){tab=t;render();scrollTo(0,0)}
+function render(){nav();var sk=streak();document.getElementById('hs').textContent=sk?'🔥 '+sk:'';
+ var h=({today:rToday,food:rFood,water:rWater,meds:rMeds,wo:rWo,set:rSet}[tab]||rToday)();document.getElementById('m').innerHTML=h;
+ var q=document.getElementById('fq');if(q){q.oninput=function(){fq=q.value;document.getElementById('fl').innerHTML=foodList()}}}
+function warnings(){if(!AB)return '';var w=[];try{if(!AB.notifAllowed())w.push('<div>Notifications are off, so reminders cannot show. <button class="sec" onclick="AB.requestNotif()">Allow</button></div>');if(!AB.exactAllowed())w.push('<div style="margin-top:8px">Exact alarms are off, dose reminders may be late. <button class="sec" onclick="AB.openExactSettings()">Fix</button></div>')}catch(e){}
+ return w.length?'<div class="card warn">'+w.join('')+'</div>':''}
+// ---------- TODAY ----------
+function foodTot(){return (db.food.logs[today()]||[]).reduce(function(a,e){return{cal:a.cal+e.cal,p:a.p+e.p,c:a.c+e.c,f:a.f+e.f,na:a.na+e.na}},{cal:0,p:0,c:0,f:0,na:0})}
+function rToday(){var h=warnings(),t=foodTot(),g=db.food.goals,w=wToday(),wg=+db.water.goal||8,tl=db.medlog[today()]||{};
+ var d=new Date();h+='<div class="muted" style="margin:0 0 8px">'+d.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})+'</div>';
+ h+='<div class="card"><div class="row"><h3 style="flex:1">🍎 Nutrition</h3><button class="sec" onclick="go(\'food\')">Log food</button></div>'+bar('Calories',t.cal,g.cal,'cal',1)+bar('Protein',t.p,g.p,'g',0)+bar('Sodium (limit)',t.na,g.na,'mg',1)+'<div class="muted">'+(db.food.logs[today()]||[]).length+' items logged today</div></div>';
+ h+='<div class="card"><div class="row"><h3 style="flex:1">💧 Water</h3><button class="wat" onclick="addW(1)">+1 bottle</button></div>'+bar('Bottles ('+db.water.oz+' oz)',w,wg,'',0,'w')+(w>=wg?'<div style="color:#7fd1a6">Goal reached. Nice!</div>':'<div class="muted">'+(wg-w)+' more to hit your goal</div>')+'</div>';
+ h+='<div class="card"><div class="row"><h3 style="flex:1">💊 Medications</h3><button class="sec" onclick="go(\'meds\')">All meds</button></div>';
+ if(!db.meds.length)h+='<div class="muted">No meds added yet.</div>';
+ db.meds.forEach(function(m){var n=tl[m.id]||0,tot=(m.times||[]).length,low=isLow(m);
+  h+='<div class="row li"><div style="flex:1"><b>'+esc(m.name)+'</b> <span class="muted">'+esc(m.dose||'')+'</span><div>'+(m.times||[]).map(function(x,i){return '<span class="t'+(i<n?' done':'')+'">'+(i<n?'✓ ':'⏰ ')+x+'</span>'}).join('')+'</div>'+(low?'<div class="low">Refill soon: '+(+m.onHand||0)+' left</div>':'')+'</div>'+(n<tot?'<button onclick="taken(\''+m.id+'\')">✓ Taken</button>':'<span style="color:#7fd1a6">Done</span>')+'</div>'});
+ h+='</div>';var st=stats(),sk=streak(),done=woDone();
+ h+='<div class="card" style="border-color:'+(done?'#2e7d4f':'#FF6B35')+'"><div class="row"><h3 style="flex:1">💪 Workout</h3><button class="go" onclick="go(\'wo\')">'+(done?'More':'Start')+'</button></div>'+(done?'✅ You worked out today.':'<div class="muted">No workout yet today. Even 10 minutes counts.</div>')+'<div class="row" style="margin-top:8px"><div class="stat"><b>'+sk+'</b><span class="muted">day streak</span></div><div class="stat"><b>'+st.n7+'</b><span class="muted">this week</span></div><div class="stat"><b>'+st.m7+'</b><span class="muted">minutes</span></div></div></div>';
+ return h}
+// ---------- FOOD ----------
+var fq='',fcat='all',fnc=false,goalsOpen=false;
+function allF(){return db.food.custom.concat(FOODS)}
+function addF(id){var x=allF().find(function(f){return f.id==id});if(!x)return;var n=new Date(),k=today();(db.food.logs[k]=db.food.logs[k]||[]).push({id:x.id+n.getTime(),name:x.name,cal:x.cal,p:x.p,c:x.c,f:x.f,na:x.na,time:n.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})});save();toast('Added: '+x.name);render()}
+function rmF(id){var k=today();db.food.logs[k]=(db.food.logs[k]||[]).filter(function(y){return y.id!=id});save();render()}
+function foodList(){var ql=fq.toLowerCase();return allF().filter(function(x){return(fcat=='all'||x.cat==fcat)&&(!fnc||x.noCook)&&(!fq||(x.name+' '+x.where).toLowerCase().indexOf(ql)>=0)}).map(function(x){
+ return '<button class="food" onclick="addF(\''+esc(x.id)+'\')"><div class="row" style="justify-content:space-between"><span>'+esc(x.name)+'</span><span style="color:#ff8a98">+ Log</span></div><div class="m">'+esc(x.where)+(x.noCook?' · no cook':'')+'</div><div class="m">'+x.cal+' cal · '+x.p+'g protein · '+x.c+'g carbs · '+x.f+'g fat · '+x.na+'mg sodium</div></button>'}).join('')||'<p class="muted">No matches.</p>'}
+function addCustom(){var v=function(k){return document.getElementById('nf-'+k).value};var name=v('name').trim();if(!name)return alert('Enter a name');
+ var fd={id:'c'+Date.now(),name:name,where:'My food',cat:'snack',noCook:true,cal:num(v('cal')),p:num(v('p')),c:num(v('c')),f:num(v('f')),na:num(v('na'))};db.food.custom.unshift(fd);addF(fd.id)}
+function delCustom(id){if(!confirm('Remove this saved food?'))return;db.food.custom=db.food.custom.filter(function(x){return x.id!=id});save();render()}
+function setGoal(k,v){if(k=='water')db.water.goal=num(v)||8;else db.food.goals[k]=num(v);save();render()}
+function rFood(){var t=foodTot(),g=db.food.goals,log=db.food.logs[today()]||[],h='';
+ var cats=[['all','All'],['breakfast','Breakfast'],['meal','Lunch/Dinner'],['snack','Snack'],['drink','Drink']];
+ h+='<div class="card"><h2>Today</h2>'+bar('Calories',t.cal,g.cal,'cal',1)+bar('Protein',t.p,g.p,'g',0)+bar('Sodium (limit)',t.na,g.na,'mg',1)+'<div class="muted">Carbs '+t.c+' g, fat '+t.f+' g, '+log.length+' items logged.</div></div>';
+ h+='<div class="card"><h2>Food library</h2><div class="muted">Tap a food to log it. Values are approximate, from published brand and USDA figures.</div><label>Search</label><input id="fq" value="'+esc(fq)+'" placeholder="jerky, Subway, eggs...">'+
+ '<div class="seg">'+cats.map(function(c){return '<button class="'+(fcat==c[0]?'on':'')+'" onclick="fcat=\''+c[0]+'\';render()">'+c[1]+'</button>'}).join('')+'</div>'+
+ '<div class="row" style="margin:6px 0 10px"><input type="checkbox" id="nc" '+(fnc?'checked':'')+' onchange="fnc=this.checked;render()"><span>No-cook only</span></div><div id="fl">'+foodList()+'</div></div>';
+ if(log.length)h+='<div class="card"><h2>Today\'s log</h2>'+log.map(function(e){return '<div class="row li"><span style="flex:1">'+esc(e.time)+' · '+esc(e.name)+' · '+e.cal+' cal</span><button class="sec" onclick="rmF(\''+esc(e.id)+'\')">Remove</button></div>'}).join('')+'<p><button class="sec" onclick="if(confirm(\'Clear today\\\'s food log?\')){db.food.logs[today()]=[];save();render()}">Clear today</button></p></div>';
+ h+='<div class="card"><h2>Add my own food</h2><label>Name</label><input id="nf-name" placeholder="Mom\'s chili"><div class="g">'+[['cal','Calories'],['p','Protein g'],['na','Sodium mg'],['c','Carbs g'],['f','Fat g']].map(function(f){return '<div><label>'+f[1]+'</label><input type="number" inputmode="numeric" id="nf-'+f[0]+'"></div>'}).join('')+'</div><p><button onclick="addCustom()">Save and log it</button></p>'+
+ (db.food.custom.length?'<div class="muted">My saved foods</div>'+db.food.custom.map(function(x){return '<div class="row li"><span style="flex:1">'+esc(x.name)+' · '+x.cal+' cal</span><button class="del" onclick="delCustom(\''+esc(x.id)+'\')">✕</button></div>'}).join(''):'')+'</div>';
+ h+='<div class="card"><button class="sec" style="width:100%;text-align:left" onclick="goalsOpen=!goalsOpen;render()">My nutrition goals '+(goalsOpen?'▲':'▼')+'</button>'+(goalsOpen?'<div class="g">'+[['cal','Calories'],['p','Protein g'],['na','Sodium mg']].map(function(f){return '<div><label>'+f[1]+'</label><input type="number" inputmode="numeric" value="'+g[f[0]]+'" onchange="setGoal(\''+f[0]+'\',this.value)"></div>'}).join('')+'</div><p><button class="sec" onclick="db.food.goals={cal:2200,p:140,na:2300};save();render()">Reset to defaults</button></p>':'')+'</div>';
+ h+='<div class="card"><h2>Eating well on the road</h2><ol style="padding-left:20px;margin:0">'+TIPS.map(function(x){return '<li style="margin-bottom:10px"><b>'+x[0]+'</b><br><span class="muted">'+x[1]+'</span></li>'}).join('')+'</ol><div class="muted">General tips, not medical advice. If you have diabetes, high blood pressure or a DOT medical concern, check goals with your doctor.</div></div>';
+ return h}
+// ---------- WATER ----------
+function addW(n){var k=today();db.water.days[k]=Math.max(0,(db.water.days[k]||0)+n);save();if(n>0&&db.water.days[k]==(+db.water.goal||8))toast('💧 Water goal reached!');render()}
+function setWR(){var r=db.water.rem;r.on=document.getElementById('hon').checked;r.s=document.getElementById('hs1').value||'08:00';r.e=document.getElementById('he1').value||'20:00';r.every=+document.getElementById('hev').value||90;if(AB&&r.on)try{if(!AB.notifAllowed())AB.requestNotif()}catch(e){}save()}
+function rWater(){var w=wToday(),g=+db.water.goal||8,r=db.water.rem,h='';
+ h+='<div class="card" style="text-align:center"><h2>💧 Water today</h2><div class="big" style="font-size:64px;color:#6fb1ff">'+w+'<span style="font-size:24px;color:#b3a3a6"> / '+g+'</span></div><div class="muted">bottles of '+db.water.oz+' oz · '+(w*db.water.oz)+' oz total</div><div class="drops">'+Array(Math.min(g,16)+1).join('·').split('').map(function(_,i){return i<w?'💧':'○'}).join('')+'</div>'+bar('Daily goal',w,g,'bottles',0,'w')+
+  '<div class="row"><button class="wat" style="flex:2;padding:16px" onclick="addW(1)">+1 bottle</button><button class="sec" style="flex:1;padding:16px" onclick="addW(-1)">−1</button></div></div>';
+ h+='<div class="card"><h3>Goal</h3><div class="g"><div><label>Bottles per day</label><input type="number" inputmode="numeric" value="'+g+'" onchange="setGoal(\'water\',this.value)"></div><div><label>Bottle size</label><select onchange="db.water.oz=+this.value;save();render()">'+[8,12,16,20,24,32].map(function(o){return '<option value="'+o+'"'+(db.water.oz==o?' selected':'')+'>'+o+' oz</option>'}).join('')+'</select></div></div></div>';
+ h+='<div class="card"><h3>Water reminders</h3><div class="row" style="margin-top:8px"><input type="checkbox" id="hon" '+(r.on?'checked':'')+' onchange="setWR()"><span>Remind me to drink water</span></div><div class="g"><div><label>From</label><input type="time" id="hs1" value="'+esc(r.s)+'" onchange="setWR()"></div><div><label>Until</label><input type="time" id="he1" value="'+esc(r.e)+'" onchange="setWR()"></div><div><label>Every</label><select id="hev" onchange="setWR()">'+[[30,'30 min'],[45,'45 min'],[60,'1 hour'],[90,'1.5 hours'],[120,'2 hours'],[180,'3 hours']].map(function(o){return '<option value="'+o[0]+'"'+(r.every==o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div></div><div class="muted" style="margin-top:6px">Skipped once you hit your goal for the day.'+(AB?'':' Reminders only show while the app is open on this iPhone.')+'</div>'+(AB?'<button class="sec" style="margin-top:8px" onclick="AB.testNotif(\'water\')">Test water reminder</button>':'')+'</div>';
+ var dd=[],mx=g;for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var k=today(d),v=db.water.days[k]||0;dd.push([k,v]);mx=Math.max(mx,v)}
+ h+='<div class="card"><div class="muted">Last 7 days</div><div style="display:flex;align-items:flex-end;gap:6px;height:90px;margin-top:8px">'+dd.map(function(x){return '<div style="flex:1;text-align:center"><div style="background:'+(x[1]>=g?'#2f7fd6':'#4a3a3e')+';height:'+Math.max(4,x[1]/mx*70)+'px;border-radius:3px"></div><div class="muted" style="font-size:11px">'+x[1]+'</div></div>'}).join('')+'</div></div>';
+ return h}
+// ---------- MEDS ----------
+function daysLeft(m){var per=(+m.perDose||1)*(m.times||[]).length;return per>0?(+m.onHand||0)/per:Infinity}
+function isLow(m){return m.thrMode=='count'?(+m.onHand||0)<=(+m.thr||0):daysLeft(m)<=(+m.thr||0)}
+function logDose(m){var d=today();(db.medlog[d]=db.medlog[d]||{})[m.id]=(db.medlog[d][m.id]||0)+1}
+function pull(){if(!(AB&&AB.pullTaken))return;try{var q=JSON.parse(AB.pullTaken());q.forEach(function(e){var m=db.meds.find(function(x){return x.id==e.id});if(m){m.onHand=Math.max(0,(+m.onHand||0)-(+m.perDose||1));logDose(m)}});if(q.length){save();render()}}catch(e){}}
+function taken(id){var m=db.meds.find(function(x){return x.id==id});if(!m)return;m.onHand=Math.max(0,(+m.onHand||0)-(+m.perDose||1));logDose(m);save();render();if(isLow(m))setTimeout(function(){alert('Time to refill '+m.name+': '+m.onHand+' left')},50)}
+function refilled(id){var m=db.meds.find(function(x){return x.id==id});var n=prompt('How many pills did you add?',m.lastRefill||30);if(n==null)return;n=+n;if(!(n>0))return;m.lastRefill=n;m.onHand=(+m.onHand||0)+n;save();render()}
+function rMeds(){var h=warnings()+'<div class="row" style="margin-bottom:10px"><h2 style="flex:1;margin:0">Medications</h2><button onclick="edit()">+ Add</button></div>';
+ if(!db.meds.length)h+='<div class="card"><h3>No medications yet</h3><div class="muted">Tap + Add to put in your first med and its reminder times.</div></div>';
+ var tl=(db.medlog[today()]||{});
+ db.meds.forEach(function(m){var dl=daysLeft(m),low=isLow(m),n=tl[m.id]||0;
+  h+='<div class="card"><div class="row"><div style="flex:1"><h3>'+esc(m.name)+'</h3><div class="muted">'+esc(m.dose)+(m.notes?' · '+esc(m.notes):'')+'</div></div><button class="sec" onclick="edit(\''+m.id+'\')">Edit</button></div>'+
+  '<div style="margin:8px 0">'+(m.times||[]).map(function(t,i){return '<span class="t'+(i<n?' done':'')+'">'+(i<n?'✓ ':'⏰ ')+t+'</span>'}).join('')+'</div>'+
+  '<div class="'+(m.onHand<=0?'bad':low?'low':'muted')+'">'+(+m.onHand||0)+' pills on hand · '+(isFinite(dl)?Math.floor(dl)+' days left':'—')+(low?' · REFILL SOON':'')+'</div>'+
+  (m.pharmacy||m.phone?'<div class="muted">'+esc(m.pharmacy)+' '+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(m.phone)+'</a>':'')+'</div>':'')+
+  '<div class="row" style="margin-top:10px"><button style="flex:2" onclick="taken(\''+m.id+'\')">✓ Taken ('+n+'/'+(m.times||[]).length+' today)</button><button class="sec" style="flex:1" onclick="refilled(\''+m.id+'\')">Refilled</button></div></div>'});
+ if(AB)h+='<div class="card"><div class="row wrap"><button class="sec" style="flex:1" onclick="AB.openBatterySettings()">Battery settings</button><button class="sec" style="flex:1" onclick="AB.testNotif(\'refillcheck\')">Check refills now</button></div><div class="muted" style="margin-top:6px">Set Truck Health to “Unrestricted” battery so reminders are never delayed.</div></div>';
+ else h+='<div class="card muted">On the desktop, dose and refill reminders only show while Truck Health is open. Rely on the phone app for reminders.</div>';
+ return h}
+var cur=null;
+function edit(id){var m=id?db.meds.find(function(x){return x.id==id}):{name:'',dose:'',notes:'',times:['08:00'],onHand:30,perDose:1,thrMode:'days',thr:7,pharmacy:'',phone:''};cur=JSON.parse(JSON.stringify(m));cur._id=id||null;drawS();document.getElementById('ov').classList.add('on')}
+function fld(l,k,t){return '<label>'+l+'</label><input '+(t?'type="'+t+'" inputmode="decimal"':'')+' value="'+esc(cur[k])+'" oninput="cur.'+k+'=this.value">'}
+function drawS(){document.getElementById('sh').innerHTML='<h2>'+(cur._id?'Edit':'Add')+' medication</h2>'+fld('Name','name')+fld('Dose (e.g. 10 mg, 1 tablet)','dose')+fld('Notes (e.g. with food)','notes')+
+ '<label>Reminder times ('+cur.times.length+' per day)</label>'+cur.times.map(function(t,i){return '<div class="row" style="margin-bottom:6px"><input type="time" value="'+t+'" onchange="cur.times['+i+']=this.value"><button class="del" onclick="cur.times.splice('+i+',1);drawS()">✕</button></div>'}).join('')+
+ '<button class="sec" onclick="cur.times.push(\'20:00\');drawS()">+ Add time</button>'+
+ '<div class="row"><div style="flex:1">'+fld('Pills on hand','onHand','number')+'</div><div style="flex:1">'+fld('Pills per dose','perDose','number')+'</div></div>'+
+ '<label>Refill reminder when</label><div class="row"><select onchange="cur.thrMode=this.value"><option value="days"'+(cur.thrMode=='days'?' selected':'')+'>Days left ≤</option><option value="count"'+(cur.thrMode=='count'?' selected':'')+'>Pills left ≤</option></select><input type="number" style="width:40%" value="'+esc(cur.thr)+'" oninput="cur.thr=this.value"></div>'+
+ fld('Pharmacy (optional)','pharmacy')+fld('Pharmacy phone (optional)','phone','tel')+
+ '<div class="row" style="margin-top:16px">'+(cur._id?'<button class="del" onclick="delM()">Delete</button>':'')+'<button class="sec" style="flex:1" onclick="closeS()">Cancel</button><button style="flex:1" onclick="saveM()">Save</button></div>'}
+function saveM(){if(!cur.name.trim())return alert('Enter a name');cur.times=cur.times.filter(Boolean).sort();var id=cur._id;delete cur._id;cur.onHand=+cur.onHand||0;cur.perDose=+cur.perDose||1;cur.thr=+cur.thr||0;
+ if(id){cur.id=id;db.meds[db.meds.findIndex(function(x){return x.id==id})]=cur}else{cur.id='m'+Date.now().toString(36);db.meds.push(cur)}save();closeS();render()}
+function delM(){if(!confirm('Delete '+cur.name+'?'))return;var id=cur._id;db.meds=db.meds.filter(function(x){return x.id!=id});save();closeS();render()}
+function ex(id){return EX.find(function(e){return e.id==id})}
+function allR(){return BUILT.concat(db.wo.custom||[])}
+function rt(id){return allR().find(function(r){return r.id==id})}
+function amt(e){return e.m=='t'?e.v+' sec':e.v+' reps'}
+function sug(e){return (e.s>1?e.s+' × ':'')+amt(e)}
+function streak(){var days={};db.wo.log.forEach(function(l){days[l.d]=1});var s=0,d=new Date();if(!days[today(d)])d.setDate(d.getDate()-1);while(days[today(d)]){s++;d.setDate(d.getDate()-1)}return s}
+function stats(){var wk=new Date();wk.setDate(wk.getDate()-6);var w=today(wk),n7=0,m7=0,tot=0;db.wo.log.forEach(function(l){tot+=l.min||0;if(l.d>=w){n7++;m7+=l.min||0}});return{n7:n7,m7:Math.round(m7),tot:Math.round(tot),n:db.wo.log.length}}
+function rCard(r){var mins=Math.round(estSec(r)/60);return '<div class="card"><h3>'+esc(r.n)+'</h3><div class="muted">'+esc(r.d||'')+' · '+r.items.length+' exercises · about '+mins+' min</div><div class="row" style="margin-top:10px"><button class="go" onclick="start(\''+r.id+'\')">▶ Start</button><button class="sec" onclick="viewR(\''+r.id+'\')">Details</button>'+(r.custom?'<button class="sec" onclick="editR(\''+r.id+'\')">Edit</button>':'')+'</div></div>'}
+function steps(r){var out=[];r.items.forEach(function(id){var e=ex(id);if(!e)return;var sets=r.secs?1:e.s;for(var i=1;i<=sets;i++)out.push({e:e,set:i,sets:sets,secs:r.secs&&e.m=='t'?r.secs:(e.m=='t'?e.v:0),reps:e.m=='r'?e.v:0})});return out}
+function estSec(r){var rest=db.wo.rest||r.rest||30;return steps(r).reduce(function(a,s){return a+(s.secs||s.reps*3.5)+rest},0)}
+function setRem(){db.wo.rem={on:document.getElementById('ron').checked,t:document.getElementById('rt').value||'17:00'};if(AB&&db.wo.rem.on)try{if(!AB.notifAllowed())AB.requestNotif()}catch(e){}save()}
+function sheet(h){document.getElementById('sh').innerHTML=h;document.getElementById('ov').classList.add('on')}
+function closeS(){document.getElementById('ov').classList.remove('on')}
+function viewE(id){var e=ex(id);sheet('<h2>'+esc(e.n)+'</h2><span class="t '+e.k+'">'+(e.k=='c'?'Light cardio':'Resistance band')+'</span><span class="t">'+sug(e)+'</span><p><b>Works:</b> '+esc(e.mus)+'</p><p><b>Band:</b> '+esc(e.band)+'</p><p><b>How to:</b> '+esc(e.how)+'</p><button class="sec" style="width:100%" onclick="closeS()">Close</button>')}
+function viewR(id){var r=rt(id);sheet('<h2>'+esc(r.n)+'</h2><div class="muted">'+esc(r.d||'')+'</div>'+r.items.map(function(i,n){var e=ex(i);return e?'<div class="ex" onclick="viewE(\''+i+'\')"><b>'+(n+1)+'. '+esc(e.n)+'</b><div class="muted">'+(r.secs&&e.m=='t'?r.secs+' sec':sug(e))+' · '+esc(e.mus)+'</div></div>':''}).join('')+'<div class="row" style="margin-top:12px"><button class="go" style="flex:1" onclick="closeS();start(\''+id+'\')">▶ Start</button><button class="sec" onclick="closeS()">Close</button></div>')}
+var ed=null;
+function editR(id){var r=id?rt(id):null;ed={id:r?r.id:'c'+Date.now(),n:r?r.n:'',d:r?r.d:'',items:r?r.items.slice():[],rest:r?r.rest:30,custom:true,isNew:!r};drawEd()}
+function drawEd(){sheet('<h2>'+(ed.isNew?'New':'Edit')+' routine</h2><label>Name</label><input id="en" value="'+esc(ed.n)+'" placeholder="My band workout" oninput="ed.n=this.value"><label>Rest between sets (seconds)</label><input type="number" id="er" value="'+ed.rest+'" oninput="ed.rest=+this.value||30"><label>Exercises ('+ed.items.length+')</label>'+
+ed.items.map(function(i,n){var e=ex(i);return '<div class="row ex"><span style="flex:1">'+(n+1)+'. '+esc(e.n)+'</span><button class="sec" onclick="mv('+n+',-1)">↑</button><button class="sec" onclick="mv('+n+',1)">↓</button><button class="del" onclick="ed.items.splice('+n+',1);drawEd()">✕</button></div>'}).join('')+
+'<label>Add exercise</label><select id="ea">'+['c','b'].map(function(k){return '<optgroup label="'+(k=='c'?'Light cardio':'Bands')+'">'+EX.filter(function(e){return e.k==k}).map(function(e){return '<option value="'+e.id+'">'+esc(e.n)+'</option>'}).join('')+'</optgroup>'}).join('')+'</select><button class="sec" style="width:100%;margin-top:6px" onclick="ed.items.push(document.getElementById(\'ea\').value);drawEd()">+ Add to routine</button>'+
+'<div class="row" style="margin-top:14px"><button style="flex:1" onclick="saveR()">Save</button>'+(ed.isNew?'':'<button class="del" onclick="delR()">Delete</button>')+'<button class="sec" onclick="closeS()">Cancel</button></div>')}
+function mv(n,d){var j=n+d;if(j<0||j>=ed.items.length)return;var t=ed.items[n];ed.items[n]=ed.items[j];ed.items[j]=t;drawEd()}
+function saveR(){if(!ed.n.trim()){alert('Give the routine a name');return}if(!ed.items.length){alert('Add at least one exercise');return}var r={id:ed.id,n:ed.n.trim(),d:'My routine',items:ed.items,rest:ed.rest||30,custom:true};db.wo.custom=(db.wo.custom||[]).filter(function(x){return x.id!=r.id});db.wo.custom.push(r);save();closeS();wsub='routines';render()}
+function delR(){if(!confirm('Delete this routine?'))return;db.wo.custom=db.wo.custom.filter(function(x){return x.id!=ed.id});save();closeS();render()}
+function addLog(){sheet('<h2>Log a workout</h2><label>What did you do?</label><input id="ln" placeholder="Walk around the truck stop"><label>Date</label><input type="date" id="ld" value="'+today()+'"><label>Minutes</label><input type="number" id="lm" value="20"><div class="row" style="margin-top:14px"><button style="flex:1" onclick="db.wo.log.push({n:document.getElementById(\'ln\').value||\'Workout\',d:document.getElementById(\'ld\').value||today(),min:+document.getElementById(\'lm\').value||0});db.wo.log.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});save();markDone();closeS();render()">Save</button><button class="sec" onclick="closeS()">Cancel</button></div>')}
+function delLog(i){if(confirm('Remove this entry?')){db.wo.log.splice(i,1);save();render()}}
+function markDone(){sync()}
+// ---- guided workout ----
+var W=null,ac=null;
+function beep(f,ms){if(!db.wo.beep)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.25,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);o.start();o.stop(ac.currentTime+ms/1000)}catch(e){}}
+function buzz(ms){if(db.wo.vib&&AB&&AB.vibrate)AB.vibrate(ms);else if(db.wo.vib&&navigator.vibrate)navigator.vibrate(ms)}
+function start(id){var r=rt(id);W={r:r,st:steps(r),i:0,ph:'ready',left:5,t0:Date.now(),pause:false,rest:db.wo.rest||r.rest||30};beep(660,120);try{if(navigator.wakeLock&&navigator.wakeLock.request)navigator.wakeLock.request('screen').then(function(w){window.__wl=w}).catch(function(){})}catch(e){}document.getElementById('wo').classList.add('on');clearInterval(W.iv);W.iv=setInterval(tick,1000);draw()}
+function tick(){if(!W||W.pause)return;if(W.ph=='work'&&!W.cur.secs)return;W.left--;if(W.left<=3&&W.left>0){beep(880,120)}if(W.left<=0)adv();else draw()}
+function adv(){if(W.ph=='ready'||W.ph=='rest'){W.ph='work';W.cur=W.st[W.i];W.left=W.cur.secs||0;beep(1200,350);buzz(400)}
+ else{W.i++;if(W.i>=W.st.length)return finish();W.ph='rest';W.left=W.rest;beep(500,300);buzz(200)}draw()}
+function skip(){if(W.ph=='work'){adv()}else{W.left=0;adv()}}
+function prev(){if(W.i>0){W.i--;W.ph='rest';W.left=3;draw()}}
+function finish(){clearInterval(W.iv);var min=(Date.now()-W.t0)/60000,n=new Date();db.wo.log.push({n:W.r.n,d:today(),tm:('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2),min:Math.max(1,Math.round(min)),cnt:W.r.items.length});save();markDone();beep(1000,200);setTimeout(function(){beep(1300,400)},250);buzz(600);
+ document.getElementById('wo').innerHTML='<div style="text-align:center;margin-top:20vh"><div style="font-size:70px">🎉</div><h2>Workout complete!</h2><p class="muted">'+esc(W.r.n)+' · '+Math.round(min)+' min</p><p>🔥 Streak: <b>'+streak()+' day'+(streak()==1?'':'s')+'</b></p></div><div class="wb"><button onclick="quit(1)">Done</button></div>'}
+function quit(ok){if(W)clearInterval(W.iv);if(!ok&&W&&W.i>0&&confirm('Log the part you finished?')){var min=(Date.now()-W.t0)/60000;db.wo.log.push({n:W.r.n+' (partial)',d:today(),min:Math.max(1,Math.round(min)),cnt:W.i});save();markDone()}W=null;try{if(window.__wl){window.__wl.release();window.__wl=null}}catch(e){}document.getElementById('wo').classList.remove('on');render()}
+function fmt(s){return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+function draw(){if(!W)return;var nx=W.st[W.ph=='work'?W.i+1:W.i],c=W.ph=='work'?W.cur:null,h='<div class="row"><button class="sec" onclick="if(confirm(\'Stop workout?\'))quit()">✕ Stop</button><div style="flex:1;text-align:right" class="muted">'+esc(W.r.n)+'<br>'+(Math.min(W.i+1,W.st.length))+' of '+W.st.length+'</div></div><div class="bar" style="margin:12px 0"><i style="width:'+(W.i/W.st.length*100)+'%"></i></div>';
+ if(W.ph=='ready')h+='<div class="phase">GET READY</div><div class="big">'+W.left+'</div>';
+ else if(W.ph=='rest')h+='<div class="phase" style="color:#7fd1a6">REST</div><div class="big">'+fmt(W.left)+'</div><div class="row" style="justify-content:center"><button class="sec" onclick="W.left+=15;draw()">+15 sec</button></div>';
+ else{h+='<div class="phase">'+(c.e.k=='c'?'CARDIO':'BANDS')+(c.sets>1?' · SET '+c.set+' OF '+c.sets:'')+'</div><h2 style="text-align:center;margin-top:8px">'+esc(c.e.n)+'</h2>'+(c.secs?'<div class="big">'+fmt(W.left)+'</div>':'<div class="big">'+c.reps+'<span style="font-size:24px"> reps</span></div><div class="muted" style="text-align:center">Tap “Done set” when finished</div>')+'<div class="card" style="margin-top:10px"><div class="muted">'+esc(c.e.mus)+(c.e.k=='b'?' · Band: '+esc(c.e.band):'')+'</div><div style="margin-top:6px">'+esc(c.e.how)+'</div></div>'}
+ if(nx&&W.ph!='work'){h+='<div class="card"><div class="muted">'+(W.ph=='ready'?'First':'Up next')+'</div><b>'+esc(nx.e.n)+'</b>'+(nx.sets>1?' · set '+nx.set+'/'+nx.sets:'')+' · '+(nx.secs?nx.secs+' sec':nx.reps+' reps')+'<div class="muted" style="margin-top:6px">'+esc(nx.e.how)+'</div></div>'}
+ else if(nx)h+='<div class="muted" style="text-align:center">Next: '+esc(nx.e.n)+'</div>';
+ h+='<div class="wb"><button class="sec" onclick="prev()">⏮</button><button class="sec" onclick="W.pause=!W.pause;draw()">'+(W.pause?'▶ Resume':'⏸ Pause')+'</button><button class="go" onclick="skip()">'+(W.ph=='work'&&!c.secs?'✓ Done set':'⏭ Skip')+'</button></div>';
+ document.getElementById('wo').innerHTML=h}
+function rWo(){var h='',st=stats(),sk=streak();
+ h+='<div class="tabs">'+[['home','Quick start'],['routines','Routines'],['lib','Exercises'],['log','History'],['set','Options']].map(function(x){return '<button class="'+(wsub==x[0]?'':'sec')+'" onclick="wsub=\''+x[0]+'\';render()">'+x[1]+'</button>'}).join('')+'</div>';
+if(wsub=='home'){var done=db.wo.log.some(function(l){return l.d==today()});
+ h+='<div class="card"><div class="row"><div class="stat"><b>'+sk+'</b><span class="muted">day streak</span></div><div class="stat"><b>'+st.n7+'</b><span class="muted">workouts this week</span></div><div class="stat"><b>'+st.m7+'</b><span class="muted">minutes this week</span></div></div></div>';
+ h+='<div class="card" style="'+(done?'border-color:#2e7d4f':'border-color:#FF6B35')+'">'+(done?'✅ <b>You worked out today.</b> Nice job!':'<b>No workout yet today.</b><div class="muted">Pick a routine below. Even 10 minutes counts.</div>')+'</div>';
+ h+='<h2>Quick start</h2>'+BUILT.map(rCard).join('');}
+else if(wsub=='routines'){h+='<div class="row" style="margin-bottom:10px"><h2 style="flex:1;margin:0">Routines</h2><button onclick="editR()">+ New routine</button></div>';
+ if((db.wo.custom||[]).length)h+='<h3 style="margin:8px 0">My routines</h3>'+db.wo.custom.map(rCard).join('');
+ h+='<h3 style="margin:8px 0">Built-in</h3>'+BUILT.map(rCard).join('');}
+else if(wsub=='lib'){window.lf=window.lf||'all';h+='<div class="tabs">'+[['all','All'],['c','Cardio'],['b','Bands']].map(function(f){return '<button class="'+(lf==f[0]?'':'sec')+'" onclick="lf=\''+f[0]+'\';render()">'+f[1]+'</button>'}).join('')+'</div>';
+ EX.filter(function(e){return lf=='all'||e.k==lf}).forEach(function(e){h+='<div class="card" onclick="viewE(\''+e.id+'\')"><h3>'+esc(e.n)+'</h3><span class="t '+e.k+'">'+(e.k=='c'?'Light cardio':'Band')+'</span><span class="t">'+sug(e)+'</span>'+(e.k=='b'?'<span class="t">'+esc(e.band)+'</span>':'')+'<div class="muted" style="margin-top:4px">'+esc(e.mus)+'</div></div>'});}
+else if(wsub=='log'){h+='<div class="card"><div class="row"><div class="stat"><b>'+sk+'</b><span class="muted">streak</span></div><div class="stat"><b>'+st.n+'</b><span class="muted">total workouts</span></div><div class="stat"><b>'+st.tot+'</b><span class="muted">total minutes</span></div></div></div>';
+ var bars='',mx=1,dd=[];for(var i=13;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var k=today(d),m=db.wo.log.filter(function(l){return l.d==k}).reduce(function(a,l){return a+(l.min||0)},0);dd.push([k,m]);mx=Math.max(mx,m)}
+ h+='<div class="card"><div class="muted">Minutes, last 14 days</div><div style="display:flex;align-items:flex-end;gap:3px;height:90px;margin-top:8px">'+dd.map(function(x){return '<div title="'+x[0]+'" style="flex:1;background:'+(x[1]?'#FF6B35':'#2f2643')+';height:'+Math.max(4,x[1]/mx*88)+'px;border-radius:3px"></div>'}).join('')+'</div></div>';
+ h+='<div class="row" style="margin-bottom:10px"><h2 style="flex:1;margin:0">History</h2><button class="sec" onclick="addLog()">+ Log manually</button></div>';
+ if(!db.wo.log.length)h+='<div class="card muted">No workouts logged yet.</div>';
+ db.wo.log.slice().reverse().slice(0,100).forEach(function(l,i){h+='<div class="card"><div class="row"><div style="flex:1"><b>'+esc(l.n)+'</b><div class="muted">'+l.d+(l.tm?' '+l.tm:'')+' · '+Math.round(l.min||0)+' min'+(l.cnt?' · '+l.cnt+' exercises':'')+'</div></div><button class="del" onclick="delLog('+(db.wo.log.length-1-i)+')">✕</button></div></div>'});}
+else if(wsub=='set'){var r=db.wo.rem||{};
+ h+='<div class="card"><h3>Daily workout reminder</h3>'+(1?'<div class="row" style="margin-top:8px"><input type="checkbox" id="ron" '+(r.on?'checked':'')+' onchange="setRem()"><span>Remind me every day</span></div><label>Time</label><input type="time" id="rt" value="'+esc(r.t||'17:00')+'" onchange="setRem()"><div class="muted" style="margin-top:6px">Skipped automatically if you already worked out that day.</div>'+(AB?'<div class="row" style="margin-top:10px"><button class="sec" onclick="AB.testNotif(\'workout\')">Test notification</button><button class="sec" onclick="AB.openBatterySettings()">Battery settings</button></div>':'<div class="muted" style="margin-top:6px">On iPhone this reminder shows while Truck Health is open, or as a notification if you allowed them.</div>')+'':'<div class="muted">Desktop reminder shows only while Truck Health is open.</div>')+'</div>';
+ h+='<div class="card"><h3>Workout sounds</h3><div class="row" style="margin-top:8px"><input type="checkbox" '+(db.wo.beep?'checked':'')+' onchange="db.wo.beep=this.checked;save()"><span>Beep on countdown</span></div>'+(AB?'<div class="row" style="margin-top:8px"><input type="checkbox" '+(db.wo.vib?'checked':'')+' onchange="db.wo.vib=this.checked;save()"><span>Vibrate</span></div>':'')+'<label>Rest between sets</label><select onchange="db.wo.rest=+this.value;save()">'+[[0,'Routine default'],[15,'15 sec'],[30,'30 sec'],[45,'45 sec'],[60,'60 sec'],[90,'90 sec']].map(function(o){return '<option value="'+o[0]+'"'+(db.wo.rest==o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
+ h+='<div class="card muted">Check with your doctor before starting a new exercise program. Stop if you feel pain, dizziness or shortness of breath. Check bands for tears before use.</div>';}
+return h}
+
+// ---------- SETTINGS / BACKUP ----------
+function rSet(){var h='<h2>Settings & backup</h2>';
+ h+='<div class="card"><h3>Back up everything</h3><div class="muted">One file with your food log, water, meds and workouts. '+(AB?'Back up opens the share menu. Pick Google Drive.':'On iPhone, choose Save to Files or send it to yourself.')+'</div><button style="width:100%;margin-top:10px" onclick="exp()">Back up (save / share file)</button><button class="sec" style="width:100%;margin-top:8px" onclick="document.getElementById(\'imp\').click()">Restore from backup</button><div class="muted" style="margin-top:8px">Restore also accepts old MedMinder and BandFit backup files. Those only replace the meds or workout part.</div></div>';
+ if(AB)h+='<div class="card"><h3>Reminders</h3><div class="row wrap"><button class="sec" onclick="AB.openBatterySettings()">Battery settings</button><button class="sec" onclick="AB.openExactSettings()">Exact alarms</button><button class="sec" onclick="AB.requestNotif()">Allow notifications</button></div><div class="muted" style="margin-top:6px">Set battery to “Unrestricted” so dose, water and workout reminders are on time.</div></div>';
+ else h+='<div class="card"><h3>Reminders</h3><div class="muted">Dose, water, and workout reminders show while Truck Health is open. Add it to the Home Screen and allow notifications if you want banners. iPhone will not ring after the app is fully closed.</div><button class="sec" style="margin-top:8px" onclick="webAskNotif()">Allow notifications</button></div>';
+ h+='<div class="card muted">Truck Health combines Truck Cab Nutrition, MedMinder and BandFit. General wellness info, not medical advice. Check with your doctor before starting a new exercise program or changing medications.</div>';
+ return h}
+function exp(){var s=JSON.stringify(db,null,1),fn='TruckHealth-backup-'+(today())+'.json';
+ try{var f=new File([s],fn,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'TruckHealth backup'}).catch(function(e){if(e&&e.name!=='AbortError')dl(s,fn)});return;}}catch(e){}
+ if(!dl(s,fn))alert('Could not save the backup file');}
+function dl(s,fn){try{var u=URL.createObjectURL(new Blob([s],{type:'application/json'}));var a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);return true;}catch(e){return false}}
+function doImp(inp){var fl=inp.files[0];if(!fl)return;var r=new FileReader();r.onload=function(){inp.value='';var o;try{o=JSON.parse(r.result)}catch(e){return alert('That file is not a valid backup')}
+ if(o&&o.app=='TruckHealth'){if(!confirm('Replace ALL current Truck Health data with this backup?'))return;db=fix(o)}
+ else if(o&&Array.isArray(o.meds)){if(!confirm('Import MedMinder backup ('+o.meds.length+' meds)? This replaces your meds list.'))return;db.meds=o.meds;var ml=o.log||{};Object.keys(ml).forEach(function(k){db.medlog[k]=ml[k]})}
+ else if(o&&Array.isArray(o.log)){if(!confirm('Import BandFit backup ('+o.log.length+' workouts, '+(o.custom||[]).length+' custom routines)? This replaces your workout data.'))return;db.wo=fix({wo:o}).wo}
+ else return alert('That file is not a Truck Health, MedMinder or BandFit backup');
+ save();render();alert('Backup restored')};r.readAsText(fl)}
+function closeS(){document.getElementById('ov').classList.remove('on');cur=null}
+window.__back=function(){if(W){if(confirm('Stop workout?'))quit();return true}if(document.getElementById('ov').classList.contains('on')){closeS();return true}if(tab=='wo'&&wsub!='home'){wsub='home';render();return true}if(tab!='today'){go('today');return true}return false};
+window.__resume=function(){pull();render();sync()};
+window.desktopTaken=function(id){taken(id)};
+pull();render();sync();
+setInterval(function(){if(!W&&!document.getElementById('ov').classList.contains('on')&&document.activeElement.tagName!='INPUT'&&tab=='today')render()},60000);
+</script><script src="webping.js"></script><script>
+webWatch(function(){
+  var d=new Date(),hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2),day=today(),tl=db.medlog[day]||{};
+  db.meds.forEach(function(m){(m.times||[]).forEach(function(tm,i){if(tm===hm&&(tl[m.id]||0)<=i)webOnce('th-'+day+m.id+tm,function(){webPing('Truck Health',m.name+' is due');});});});
+  var wr=db.water.rem||{};
+  if(wr.on&&wToday()< (+db.water.goal||8)){
+    var mins=d.getHours()*60+d.getMinutes(),a=(wr.s||'08:00').split(':'),b=(wr.e||'20:00').split(':');
+    var start=+a[0]*60+(+a[1]||0),end=+b[0]*60+(+b[1]||0),every=+wr.every||90;
+    if(mins>=start&&mins<=end&&((mins-start)%every)<1)webOnce('th-w-'+day+'-'+Math.floor((mins-start)/every),function(){webPing('Truck Health','Time for water');});
+  }
+  var rr=db.wo.rem||{};
+  if(rr.on&&hm===(rr.t||'17:00')&&!woDone())webOnce('th-wo-'+day,function(){webPing('Truck Health','Time for a workout');});
+});
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

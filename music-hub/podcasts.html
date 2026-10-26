@@ -1,0 +1,444 @@
+<!doctype html>
+<html><head>
+<meta name="theme-color" content="#ffc107">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Music">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Podcasts</title>
+<style>
+:root{--bg:#0d0b10;--card:#1a1620;--line:#2c2633;--txt:#f3eff7;--dim:#a39bad;--acc:#ffc107;--pod:#9c6bff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Roboto,sans-serif;font-size:16px}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+button:active{filter:brightness(1.4)}
+button:disabled{opacity:.5}
+#top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(12px + env(safe-area-inset-top)) 12px 6px}
+#top h1{font-size:22px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+#top h1 span{flex:1}
+#top h1 button{font-size:15px;padding:8px 12px;color:var(--dim)}
+.addrow{display:flex;gap:8px}
+#addq{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px}
+#addgo{font-weight:800;background:var(--pod);border-color:var(--pod);color:#fff;padding:0 16px}
+#seg{display:flex;gap:6px;margin-top:10px}
+#seg button{flex:1;padding:9px 4px;font-weight:700;color:var(--dim)}
+#seg button.on{color:#16131b;background:var(--acc);border-color:var(--acc)}
+#hdr{display:none;align-items:center;gap:10px;padding:4px 12px 8px}
+#hdr .t{flex:1;font-size:18px;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#main{padding:0 12px 120px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.show{cursor:pointer;position:relative}
+.art{width:100%;aspect-ratio:1;border-radius:12px;background:linear-gradient(135deg,#2a2232,#17131c);display:flex;align-items:center;justify-content:center;font-size:44px;color:#4d4357;overflow:hidden}
+.art img{width:100%;height:100%;object-fit:cover}
+.show .n{font-weight:700;margin-top:6px;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.show .s{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{position:absolute;top:6px;right:6px;background:var(--acc);color:#16131b;font-weight:800;font-size:13px;border-radius:12px;padding:2px 8px}
+.ep{border-bottom:1px solid var(--line);padding:12px 2px}
+.ep .top{display:flex;gap:10px;align-items:flex-start}
+.ep .ic{width:52px;height:52px;border-radius:8px;flex:none;font-size:22px}
+.ep .m{flex:1;min-width:0;cursor:pointer}
+.ep .n{font-size:16px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ep.done .n{color:var(--dim);font-weight:400}
+.ep.cur .n{color:var(--acc)}
+.ep .s{color:var(--dim);font-size:13px;margin-top:3px}
+.ep .bar{height:3px;background:#3a3242;border-radius:2px;margin-top:6px;overflow:hidden}
+.ep .bar i{display:block;height:100%;background:var(--acc)}
+.ep .btns{display:flex;gap:8px;margin-top:8px}
+.ep .btns button{padding:8px 12px;font-size:15px;min-height:42px}
+.ep .btns .play{background:var(--acc);color:#16131b;border-color:var(--acc);font-weight:800;min-width:92px}
+.ep .btns .dl.got{color:#7ddc7d;border-color:#2f5a2f}
+.ep .btns .more{margin-left:auto;color:var(--dim)}
+.showhead{display:flex;gap:14px;align-items:flex-end;margin-bottom:12px}
+.showhead .art{width:120px;flex:none}
+.showhead .n{font-size:20px;font-weight:800}
+.showhead .s{color:var(--dim);margin-top:4px}
+.acts{display:flex;gap:8px;margin:4px 0 10px;flex-wrap:wrap}
+.acts button{flex:1;font-weight:700;min-height:46px;font-size:15px;white-space:nowrap}
+.acts .pri{background:var(--acc);color:#16131b;border-color:var(--acc)}
+.filter{display:flex;gap:6px;margin:6px 0 4px}
+.filter button{padding:6px 12px;font-size:14px;color:var(--dim)}
+.filter .sortb{margin-left:auto;white-space:nowrap;color:var(--txt);border-color:var(--pod)}
+.filter button.on{color:var(--txt);border-color:var(--pod)}
+.empty{padding:28px 10px;text-align:center;color:var(--dim);line-height:1.5}
+.empty h2{color:var(--txt);margin:0 0 8px}
+.res{display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:10px 2px}
+.res .art{width:60px;flex:none;font-size:24px}
+.res .m{flex:1;min-width:0}
+.res .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res .s{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res button{font-weight:800;background:var(--pod);border-color:var(--pod);color:#fff}
+.res button.have{background:var(--card);border-color:var(--line);color:var(--dim)}
+.note{color:var(--dim);font-size:14px;line-height:1.5;margin:12px 2px}
+.more-btn{width:100%;margin-top:12px;color:var(--dim)}
+.setrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px 14px;margin:10px 0}
+.setrow span{flex:1}
+.setrow input{width:22px;height:22px;accent-color:var(--acc)}
+/* sheet */
+#sheet{position:fixed;inset:0;z-index:40;background:#000a;display:none;align-items:flex-end}
+#sheet .box{background:#1d1824;width:100%;max-height:85vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 26px}
+#sheet h3{margin:0 0 4px;font-size:18px}
+#sheet .s{color:var(--dim);font-size:13px;margin-bottom:12px}
+#sheet .desc{line-height:1.5;color:#d9d2e0;white-space:pre-wrap;word-wrap:break-word;font-size:15px}
+#sheet .desc a{color:var(--acc)}
+#sheet .opts button{display:block;width:100%;text-align:left;margin-bottom:8px;min-height:50px;font-weight:600}
+/* mini player */
+#mini{position:fixed;left:8px;right:8px;bottom:8px;z-index:20;background:#221c29;border:1px solid var(--line);border-radius:16px;display:none;align-items:center;gap:8px;padding:8px;box-shadow:0 6px 24px #000a}
+#mini .art{width:50px;height:50px;font-size:22px;border-radius:10px;flex:none}
+#mini .m{flex:1;min-width:0}
+#mini .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mini .s{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mini button{width:46px;height:46px;padding:0;font-size:15px;border-radius:50%;flex:none;font-weight:800}
+#mini #mPlay{background:var(--acc);color:#16131b;border-color:var(--acc);font-size:22px;width:50px;height:50px}
+#mbar{position:absolute;left:14px;right:14px;bottom:2px;height:3px;border-radius:2px;background:#3a3242;overflow:hidden}
+#mbar i{display:block;height:100%;width:0;background:var(--acc)}
+/* full player */
+#full{position:fixed;inset:0;z-index:30;background:linear-gradient(#251d33,#0d0b10 70%);display:none;flex-direction:column;padding:16px 20px 24px;overflow:auto}
+#full .top{display:flex;justify-content:space-between;align-items:center}
+#full .top button{background:none;border:none;font-size:28px;padding:6px 10px}
+#full .bigart{width:min(74vw,320px);margin:14px auto 18px;font-size:90px}
+#full .ft{font-size:20px;font-weight:800;text-align:center;line-height:1.3}
+#full .fs{color:var(--dim);text-align:center;margin-top:4px}
+#seek{width:100%;margin-top:18px;accent-color:var(--acc)}
+.times{display:flex;justify-content:space-between;color:var(--dim);font-size:13px}
+.ctl{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:14px}
+.ctl button{width:66px;height:66px;border-radius:50%;padding:0;font-size:17px;font-weight:800}
+.ctl #fPlay{width:88px;height:88px;font-size:38px;background:var(--acc);color:#16131b;border-color:var(--acc)}
+.ctl2{display:flex;justify-content:center;gap:10px;margin-top:18px}
+.ctl2 button{min-width:96px;font-weight:700;min-height:46px}
+#fErr{color:#ff8a80;text-align:center;margin-top:12px;display:none}
+</style></head>
+<body>
+<div id="top">
+  <h1><span>🎙 Podcasts <small style="font-size:12px;color:var(--dim);font-weight:600">MusicHub v1.4</small></span><button id="refAll">↻ Refresh</button></h1>
+  <div class="addrow"><input id="addq" placeholder="Paste an RSS feed link, or search by name" autocomplete="off" autocapitalize="off"><button id="addgo">Add</button></div>
+  <div id="seg"><button data-v="shows" class="on">Shows</button><button data-v="new">New</button><button data-v="dl">Downloads</button></div>
+</div>
+<div id="hdr"><button id="back">‹ Back</button><div class="t" id="htitle"></div></div>
+<div id="main"></div>
+
+<div id="sheet"><div class="box" id="sheetBox"></div></div>
+
+<div id="mini"><div class="art" id="mArt">🎙</div><div class="m" id="mInfo"><div class="n" id="mT"></div><div class="s" id="mS"></div></div>
+  <button id="mBack">-15</button><button id="mPlay">▶</button><button id="mFwd">+30</button><div id="mbar"><i id="mFill"></i></div></div>
+
+<div id="full">
+  <div class="top"><button id="fClose">⌄</button><span style="color:var(--dim);font-weight:700">Now playing</span><button id="fStop" title="Stop">✕</button></div>
+  <div class="art bigart" id="fArt">🎙</div>
+  <div class="ft" id="fT"></div><div class="fs" id="fS"></div>
+  <input type="range" id="seek" min="0" max="1000" value="0">
+  <div class="times"><span id="tPos">0:00</span><span id="tDur">0:00</span></div>
+  <div class="ctl"><button id="fBack">↺ 15</button><button id="fPlay">▶</button><button id="fFwd">30 ↻</button></div>
+  <div class="ctl2"><button id="fSpeed">1x</button><button id="fNotes">📝 Notes</button><button id="fSleep">😴 Sleep</button></div>
+  <div id="fErr"></div>
+</div>
+
+<script src="podcasts.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var PD = window.PD || null, MH = window.MH || null;
+var subs = [], feeds = {}, prog = {}, dls = {}, dlPct = {}, view = "shows", cur = null, st = { has: false }, filter = "all", sortOld = localStorage.getItem("podSort") === "old", shown = 60, results = null, sleepAt = 0, sleepEnd = false;
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function fmt(ms) { ms = Math.max(0, Math.round((ms || 0) / 1000)); var h = Math.floor(ms / 3600), m = Math.floor(ms % 3600 / 60), s = ms % 60; return (h ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s; }
+function dur(ms) { var m = Math.round((ms || 0) / 60000); if (!m) return ""; return m >= 60 ? Math.floor(m / 60) + " hr " + (m % 60 ? m % 60 + " min" : "") : m + " min"; }
+function day(t) {
+  if (!t) return ""; var d = new Date(t), now = new Date(), diff = (now - d) / 86400000;
+  if (diff < 1 && d.getDate() === now.getDate()) return "Today"; if (diff < 2) return "Yesterday"; if (diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
+}
+function toast(m) { if (PD) PD.toast(m); else alert(m); }
+function artImg(u, ph) { return u ? '<img loading="lazy" src="' + esc(u) + '" onerror="this.remove()">' : (ph || "🎙"); }
+function stripHtml(h) {
+  var d = document.createElement("div"); d.innerHTML = String(h || "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n\n").replace(/<li>/gi, "• ");
+  d.querySelectorAll("script,style,img,iframe").forEach(function (x) { x.remove(); });
+  return (d.textContent || "").replace(/\n{3,}/g, "\n\n").trim();
+}
+function linkify(t) { return esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="#" data-url="$1">$1</a>'); }
+
+/* ---------- data ---------- */
+function loadAll() {
+  try { subs = JSON.parse(PD ? PD.subs() : "[]"); } catch (e) { subs = []; }
+  try { prog = JSON.parse(PD ? PD.progress() : "{}"); } catch (e) { prog = {}; }
+  try { dls = JSON.parse(PD ? PD.downloads() : "{}"); } catch (e) { dls = {}; }
+  feeds = {};
+  subs.forEach(function (s) { try { var f = JSON.parse(PD.feed(s.url) || "null"); if (f) feeds[s.url] = f; } catch (e) { } });
+}
+function eps(url) { var f = feeds[url]; return f ? f.eps || [] : []; }
+function showOf(url) { for (var i = 0; i < subs.length; i++) if (subs[i].url === url) return subs[i]; return null; }
+function newCount(s) { var n = 0; eps(s.url).forEach(function (e) { if (e.date > (s.seen || 0) && prog[e.k] !== -1) n++; }); return n; }
+function epByKey(k) { for (var u in feeds) { var l = feeds[u].eps || []; for (var i = 0; i < l.length; i++) if (l[i].k === k) return { e: l[i], url: u }; } return null; }
+
+/* ---------- views ---------- */
+function setView(v) { view = v; cur = null; results = null; shown = 60; document.querySelectorAll("#seg button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-v") === v); }); render(); window.scrollTo(0, 0); }
+function render() {
+  $("hdr").style.display = cur || results ? "flex" : "none";
+  $("top").style.display = cur ? "none" : "";
+  if (results) return renderResults();
+  if (cur) return renderShow();
+  if (view === "new") return renderNew();
+  if (view === "dl") return renderDl();
+  renderShows();
+}
+function renderShows() {
+  if (!subs.length) {
+    $("main").innerHTML = '<div class="empty"><h2>No podcasts yet</h2>Paste a show\'s RSS feed link in the box up top and tap Add.<br><br>No link? Type the show\'s name instead and tap Add to search for it.<br><br>Apple Podcasts share links work too.</div>';
+    return;
+  }
+  $("main").innerHTML = '<div class="grid">' + subs.map(function (s, i) {
+    var n = newCount(s);
+    return '<div class="show" data-i="' + i + '"><div class="art">' + artImg(s.art) + '</div>' + (n ? '<div class="badge">' + (n > 99 ? "99+" : n) + '</div>' : "") +
+      '<div class="n">' + esc(s.title) + '</div><div class="s">' + esc(s.author || (s.count + " episodes")) + '</div></div>';
+  }).join("") + "</div>";
+  document.querySelectorAll(".show").forEach(function (el) { el.onclick = function () { openShow(subs[+el.getAttribute("data-i")].url); }; });
+}
+function openShow(url) { cur = url; filter = "all"; shown = 60; render(); window.scrollTo(0, 0); }
+function renderShow() {
+  var s = showOf(cur), f = feeds[cur];
+  if (!s) { cur = null; return render(); }
+  $("htitle").textContent = s.title;
+  var list = eps(cur).slice();
+  if (sortOld) list.reverse();
+  if (filter === "unplayed") list = list.filter(function (e) { return prog[e.k] !== -1; });
+  if (filter === "dl") list = list.filter(function (e) { return dls[e.k] !== undefined; });
+  var h = '<div class="showhead"><div class="art">' + artImg(s.art) + '</div><div><div class="n">' + esc(s.title) + '</div><div class="s">' + esc(s.author) + '</div><div class="s">' + (s.count || 0) + ' episodes</div></div></div>' +
+    '<div class="acts"><button class="pri" id="playLatest">▶ Latest</button><button id="refOne">↻ Refresh</button><button id="showMore">⋯</button></div>' +
+    '<div class="filter"><button data-f="all">All</button><button data-f="unplayed">Unplayed</button><button data-f="dl">Downloaded</button><button class="sortb" id="sortBtn">' + (sortOld ? "⇅ Oldest" : "⇅ Newest") + '</button></div>';
+  h += list.length ? list.slice(0, shown).map(function (e) { return epRow(e, cur, false); }).join("") : '<div class="empty">' + (filter === "all" ? "No episodes found. Tap Refresh." : "Nothing here.") + "</div>";
+  if (list.length > shown) h += '<button class="more-btn" id="moreEps">Show more (' + (list.length - shown) + ' ' + (sortOld ? 'newer' : 'older') + ')</button>';
+  $("main").innerHTML = h;
+  document.querySelectorAll(".filter button[data-f]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-f") === filter); b.onclick = function () { filter = b.getAttribute("data-f"); shown = 60; render(); }; });
+  $("sortBtn").onclick = function () { sortOld = !sortOld; localStorage.setItem("podSort", sortOld ? "old" : "new"); shown = 60; render(); };
+  $("playLatest").onclick = function () { var l = eps(cur); if (l.length) playEp(l[0], cur); };
+  $("refOne").onclick = function () { this.disabled = true; this.textContent = "Refreshing…"; PD && PD.refresh(cur); };
+  $("showMore").onclick = function () { showMenu(s); };
+  if ($("moreEps")) $("moreEps").onclick = function () { shown += 100; render(); };
+  bindEps();
+  if (PD && s.seen !== s.latest) { PD.markSeen(cur); s.seen = s.latest; }
+}
+function epRow(e, url, withShow) {
+  var p = prog[e.k], done = p === -1, d = e.d || 0, pos = p > 0 ? p : 0;
+  var s = withShow ? (showOf(url) || {}).title + " · " : "";
+  var info = day(e.date);
+  if (done) info += " · Played"; else if (pos && d) info += " · " + dur(d - pos) + " left"; else if (d) info += " · " + dur(d);
+  var isCur = st.has && st.key === e.k;
+  var dl = dlPct[e.k] !== undefined ? '<button class="dl" data-dl="' + e.k + '">' + (dlPct[e.k] < 0 ? "⬇ …" : "⬇ " + dlPct[e.k] + "%") + "</button>"
+    : dls[e.k] !== undefined ? '<button class="dl got" data-dl="' + e.k + '">✓ Saved</button>' : '<button class="dl" data-dl="' + e.k + '">⬇</button>';
+  return '<div class="ep' + (done ? " done" : "") + (isCur ? " cur" : "") + '" data-k="' + e.k + '" data-u="' + esc(url) + '"><div class="top">' +
+    (withShow ? '<div class="art ic">' + artImg(e.art || (showOf(url) || {}).art) + '</div>' : "") +
+    '<div class="m" data-notes="1"><div class="n">' + esc(e.t) + '</div><div class="s">' + esc(s + info) + '</div>' +
+    (pos && d && !done ? '<div class="bar"><i style="width:' + Math.min(100, pos / d * 100) + '%"></i></div>' : "") + '</div></div>' +
+    '<div class="btns"><button class="play" data-play="1">' + (isCur && st.playing ? "⏸ Pause" : pos && !done ? "▶ Resume" : "▶ Play") + "</button>" + dl + '<button class="more" data-more="1">⋯</button></div></div>';
+}
+function bindEps() {
+  document.querySelectorAll(".ep").forEach(function (el) {
+    var k = el.getAttribute("data-k"), u = el.getAttribute("data-u");
+    var get = function () { var l = eps(u); for (var i = 0; i < l.length; i++) if (l[i].k === k) return l[i]; return null; };
+    el.querySelector("[data-play]").onclick = function () {
+      if (st.has && st.key === k) { MH && MH.cmd("toggle"); setTimeout(poll, 200); return; }
+      var e = get(); if (e) playEp(e, u);
+    };
+    el.querySelector("[data-dl]").onclick = function () { var e = get(); if (e) dlTap(e, u); };
+    el.querySelector("[data-more]").onclick = function () { var e = get(); if (e) epMenu(e, u); };
+    el.querySelector("[data-notes]").onclick = function () { var e = get(); if (e) notes(e, u); };
+  });
+}
+function renderNew() {
+  var all = [];
+  subs.forEach(function (s) { eps(s.url).slice(0, 30).forEach(function (e) { if (prog[e.k] !== -1) all.push({ e: e, u: s.url }); }); });
+  all.sort(function (a, b) { return sortOld ? (a.e.date || 0) - (b.e.date || 0) : (b.e.date || 0) - (a.e.date || 0); });
+  all = all.slice(0, 60);
+  $("main").innerHTML = all.length ? '<div class="note">Newest unplayed episodes from all your shows.</div>' + all.map(function (x) { return epRow(x.e, x.u, true); }).join("") :
+    '<div class="empty">' + (subs.length ? "You're all caught up." : "Add a podcast to see new episodes here.") + "</div>";
+  bindEps();
+}
+function renderDl() {
+  var all = [];
+  Object.keys(dls).forEach(function (k) { var x = epByKey(k); if (x) all.push(x); });
+  all.sort(function (a, b) { return sortOld ? (a.e.date || 0) - (b.e.date || 0) : (b.e.date || 0) - (a.e.date || 0); });
+  var stor = { files: 0, bytes: 0 }; try { stor = JSON.parse(PD.storage()); } catch (e) { }
+  var auto = PD ? PD.autoDelete() : true;
+  var h = '<div class="note">Downloaded episodes play with no signal. ' + stor.files + " saved, " + (stor.bytes / 1048576 > 1024 ? (stor.bytes / 1073741824).toFixed(1) + " GB" : Math.round(stor.bytes / 1048576) + " MB") + ".</div>" +
+    '<label class="setrow"><span>Delete downloads after I finish them</span><input type="checkbox" id="autodel"' + (auto ? " checked" : "") + "></label>";
+  h += all.length ? all.map(function (x) { return epRow(x.e, x.u, true); }).join("") : '<div class="empty">Nothing downloaded. Tap ⬇ on an episode before a long run.</div>';
+  $("main").innerHTML = h;
+  $("autodel").onchange = function () { PD && PD.setAutoDelete(this.checked); };
+  bindEps();
+}
+function renderResults() {
+  $("htitle").textContent = "Search results";
+  if (results === "loading") { $("main").innerHTML = '<div class="empty">Searching…</div>'; return; }
+  if (!results.length) { $("main").innerHTML = '<div class="empty">No shows found. Try another name, or paste the RSS link.</div>'; return; }
+  $("main").innerHTML = results.map(function (r, i) {
+    var have = !!showOf(r.feed);
+    return '<div class="res"><div class="art">' + artImg(r.art) + '</div><div class="m"><div class="n">' + esc(r.title) + '</div><div class="s">' + esc(r.author) + (r.count ? " · " + r.count + " eps" : "") + '</div></div>' +
+      '<button data-r="' + i + '"' + (have ? ' class="have" disabled>Added' : '>＋ Add') + "</button></div>";
+  }).join("");
+  document.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { b.disabled = true; b.textContent = "Adding…"; pendingAdd = results[+b.getAttribute("data-r")].feed; PD.add(pendingAdd); }; });
+}
+
+/* ---------- actions ---------- */
+var pendingAdd = null;
+function doAdd() {
+  var q = $("addq").value.trim(); if (!q) { $("addq").focus(); return; }
+  if (!PD) return;
+  if (/^(https?|feed|pcast|itpc):\/\//i.test(q) || /^[\w.-]+\.[a-z]{2,}\/\S*/i.test(q)) {
+    $("addgo").disabled = true; $("addgo").textContent = "…"; pendingAdd = q; PD.add(q);
+  } else { results = "loading"; render(); PD.search(q); }
+}
+$("addgo").onclick = doAdd;
+$("addq").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("addq").blur(); doAdd(); } });
+window.pdAdded = function (json) {
+  $("addgo").disabled = false; $("addgo").textContent = "Add"; $("addq").value = "";
+  var s = JSON.parse(json); loadAll(); toast("Added " + s.title);
+  results = null; view = "shows"; document.querySelectorAll("#seg button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-v") === "shows"); });
+  openShow(s.url);
+};
+window.pdAddError = function (m) { $("addgo").disabled = false; $("addgo").textContent = "Add"; toast(m); if (results && results !== "loading") renderResults(); };
+window.pdSearch = function (json) { results = JSON.parse(json); render(); window.scrollTo(0, 0); };
+window.pdSearchError = function (m) { results = null; render(); toast(m); };
+
+var refreshing = false;
+$("refAll").onclick = function () { if (!PD || refreshing || !subs.length) return; refreshing = true; $("refAll").textContent = "↻ …"; PD.refresh(""); };
+window.pdRefreshed = function () { };
+window.pdRefreshDone = function (failed) {
+  refreshing = false; $("refAll").textContent = "↻ Refresh"; loadAll(); render();
+  if (+failed > 0) toast(failed + (failed == 1 ? " show" : " shows") + " couldn't refresh. Check your signal.");
+  localStorage.setItem("lastRefresh", Date.now());
+};
+function autoRefresh() { var last = +(localStorage.getItem("lastRefresh") || 0); if (PD && subs.length && !refreshing && Date.now() - last > 3 * 3600000) { refreshing = true; $("refAll").textContent = "↻ …"; PD.refresh(""); } }
+
+function playEp(e, url) {
+  if (!PD) return;
+  var s = showOf(url) || {};
+  PD.clearError();
+  PD.play(JSON.stringify([{ k: e.k, t: e.t, show: s.title || "Podcast", u: e.u, art: e.art || s.art || "", d: e.d || 0 }]), 0);
+  setTimeout(poll, 400);
+}
+function dlTap(e, url) {
+  if (!PD) return;
+  if (dlPct[e.k] !== undefined) { if (confirm("Stop downloading this episode?")) PD.cancelDownload(e.k); return; }
+  if (dls[e.k] !== undefined) { if (confirm("Delete the download of \"" + e.t + "\"?")) { PD.deleteDownload(e.k); delete dls[e.k]; render(); } return; }
+  dlPct[e.k] = -1; PD.download(e.k, e.u, e.t); render();
+}
+window.pdDl = function (k, v) {
+  if (v === "done") { delete dlPct[k]; dls[k] = 1; toast("Downloaded"); }
+  else if (v === "fail" || v === "cancel") delete dlPct[k];
+  else dlPct[k] = +v;
+  var b = document.querySelector('[data-dl="' + k + '"]');
+  if (b && v !== "done" && v !== "fail" && v !== "cancel") b.textContent = +v < 0 ? "⬇ …" : "⬇ " + v + "%";
+  else render();
+};
+function sheet(html) { $("sheetBox").innerHTML = html; $("sheet").style.display = "flex"; }
+function closeSheet() { $("sheet").style.display = "none"; }
+$("sheet").onclick = function (e) { if (e.target === $("sheet")) closeSheet(); };
+$("sheetBox").addEventListener("click", function (e) { var a = e.target.closest("[data-url]"); if (a) { e.preventDefault(); PD && PD.openUrl(a.getAttribute("data-url")); } });
+function notes(e, url) {
+  var s = showOf(url) || {};
+  sheet('<h3>' + esc(e.t) + '</h3><div class="s">' + esc(s.title) + " · " + esc(day(e.date)) + (e.d ? " · " + dur(e.d) : "") + '</div>' +
+    '<div class="opts"><button id="nPlay">▶ Play</button></div><div class="desc">' + (linkify(stripHtml(e.desc)) || "No show notes.") + "</div>");
+  $("nPlay").onclick = function () { closeSheet(); playEp(e, url); };
+}
+function epMenu(e, url) {
+  var done = prog[e.k] === -1;
+  sheet('<h3>' + esc(e.t) + '</h3><div class="s">' + esc(day(e.date)) + '</div><div class="opts">' +
+    '<button id="oPlayed">' + (done ? "↩ Mark as unplayed" : "✓ Mark as played") + '</button>' +
+    '<button id="oNotes">📝 Show notes</button>' +
+    '<button id="oDl">' + (dls[e.k] !== undefined ? "🗑 Delete download" : "⬇ Download") + '</button>' +
+    (cur ? "" : '<button id="oShow">🎙 Go to show</button>') + "</div>");
+  $("oPlayed").onclick = function () { PD.setPlayed(e.k, !done); if (done) delete prog[e.k]; else prog[e.k] = -1; closeSheet(); render(); };
+  $("oNotes").onclick = function () { notes(e, url); };
+  $("oDl").onclick = function () { closeSheet(); if (dls[e.k] !== undefined) { PD.deleteDownload(e.k); delete dls[e.k]; render(); } else dlTap(e, url); };
+  if ($("oShow")) $("oShow").onclick = function () { closeSheet(); openShow(url); };
+}
+function showMenu(s) {
+  var i = subs.indexOf(s);
+  sheet('<h3>' + esc(s.title) + '</h3><div class="s">' + esc(s.url) + '</div><div class="opts">' +
+    '<button id="sAll">✓ Mark all episodes played</button>' +
+    (i > 0 ? '<button id="sUp">⬆ Move up in my shows</button>' : "") +
+    '<button id="sAbout">ℹ About this show</button>' +
+    '<button id="sDel" style="color:#ff8a80">✕ Unsubscribe</button></div>');
+  $("sAll").onclick = function () { if (confirm("Mark every episode of " + s.title + " as played?")) { PD.markAllPlayed(s.url); closeSheet(); loadAll(); render(); } };
+  if ($("sUp")) $("sUp").onclick = function () { PD.move(s.url, -1); closeSheet(); loadAll(); render(); };
+  $("sAbout").onclick = function () { var f = feeds[s.url] || {}; sheet('<h3>' + esc(s.title) + '</h3><div class="s">' + esc(s.author) + '</div><div class="desc">' + linkify(stripHtml(f.desc) || "No description.") + (f.link ? '\n\n<a href="#" data-url="' + esc(f.link) + '">Website</a>' : "") + "</div>"); };
+  $("sDel").onclick = function () { if (confirm("Unsubscribe from " + s.title + "? Its downloads will be deleted.")) { PD.remove(s.url); closeSheet(); cur = null; loadAll(); render(); } };
+}
+$("back").onclick = function () { pdBack(); };
+window.pdBack = function () {
+  if ($("sheet").style.display === "flex") { closeSheet(); return true; }
+  if ($("full").style.display === "flex") { closeFull(); return true; }
+  if (results) { results = null; render(); return true; }
+  if (cur) { cur = null; render(); return true; }
+  if (view !== "shows") { setView("shows"); return true; }
+  return false;
+};
+document.querySelectorAll("#seg button").forEach(function (b) { b.onclick = function () { setView(b.getAttribute("data-v")); }; });
+
+/* ---------- player ---------- */
+var speeds = [1, 1.2, 1.5, 1.75, 2, 0.8];
+function speedLabel(v) { return (Math.round(v * 100) / 100) + "x"; }
+var lastKey = null, seeking = false, lastPlaying = null;
+function poll() {
+  if (!MH) return;
+  try { st = JSON.parse(MH.state()); } catch (e) { return; }
+  var pod = st.has && st.pod;
+  $("mini").style.display = pod ? "flex" : "none";
+  document.body.style.paddingBottom = pod ? "74px" : "0";
+  if (!pod) { if ($("full").style.display === "flex") closeFull(); if (lastKey) { lastKey = null; refreshProg(); } return; }
+  var ic = st.buffering ? "…" : st.playing ? "⏸" : "▶";
+  $("mPlay").textContent = ic; $("fPlay").textContent = ic;
+  $("mFill").style.width = (st.dur ? st.pos / st.dur * 100 : 0) + "%";
+  if (!seeking) $("seek").value = st.dur ? Math.round(st.pos / st.dur * 1000) : 0;
+  $("tPos").textContent = fmt(st.pos); $("tDur").textContent = st.dur ? "-" + fmt(st.dur - st.pos) : "";
+  $("fSpeed").textContent = speedLabel(st.speed || 1);
+  $("fErr").style.display = st.error ? "block" : "none"; $("fErr").textContent = st.error || "";
+  if (st.error && st.error !== lastErr) { lastErr = st.error; toast(st.error); }
+  if (st.key !== lastKey) {
+    lastKey = st.key;
+    $("mT").textContent = st.title; $("mS").textContent = st.artist;
+    $("fT").textContent = st.title; $("fS").textContent = st.artist;
+    $("mArt").innerHTML = artImg(st.art); $("fArt").innerHTML = artImg(st.art);
+    refreshProg();
+  } else if (st.playing !== lastPlaying) refreshProg();
+  lastPlaying = st.playing;
+  if (sleepAt && Date.now() >= sleepAt && st.playing) { MH.cmd("toggle"); sleepAt = 0; $("fSleep").textContent = "😴 Sleep"; }
+  if (sleepEnd && st.dur && st.dur - st.pos < 1500 && st.playing) { MH.cmd("toggle"); sleepEnd = false; $("fSleep").textContent = "😴 Sleep"; }
+  if (sleepAt) $("fSleep").textContent = "😴 " + Math.ceil((sleepAt - Date.now()) / 60000) + " min";
+}
+var lastErr = null;
+function refreshProg() { try { prog = JSON.parse(PD.progress()); } catch (e) { } if (!document.querySelector("#sheet[style*=flex]")) { var y = window.scrollY; render(); window.scrollTo(0, y); } }
+setInterval(poll, 1000);
+$("mPlay").onclick = function (e) { e.stopPropagation(); MH && MH.cmd("toggle"); setTimeout(poll, 150); };
+$("mBack").onclick = function (e) { e.stopPropagation(); PD && PD.skip(-15000); setTimeout(poll, 150); };
+$("mFwd").onclick = function (e) { e.stopPropagation(); PD && PD.skip(30000); setTimeout(poll, 150); };
+$("mInfo").onclick = openFull; $("mArt").onclick = openFull;
+function openFull() { $("full").style.display = "flex"; }
+function closeFull() { $("full").style.display = "none"; }
+$("fClose").onclick = closeFull;
+$("fStop").onclick = function () { MH && MH.cmd("stop"); closeFull(); setTimeout(poll, 300); };
+$("fPlay").onclick = function () { MH && MH.cmd("toggle"); setTimeout(poll, 150); };
+$("fBack").onclick = function () { PD && PD.skip(-15000); setTimeout(poll, 150); };
+$("fFwd").onclick = function () { PD && PD.skip(30000); setTimeout(poll, 150); };
+$("fSpeed").onclick = function () { var c = st.speed || 1, i = speeds.indexOf(c); var n = speeds[(i + 1) % speeds.length]; PD && PD.setSpeed(n); $("fSpeed").textContent = speedLabel(n); setTimeout(poll, 150); };
+$("fNotes").onclick = function () { var x = epByKey(st.key); if (x) notes(x.e, x.u); };
+$("fSleep").onclick = function () {
+  sheet('<h3>Sleep timer</h3><div class="s">Pause playback after…</div><div class="opts">' +
+    [15, 30, 45, 60].map(function (m) { return '<button data-m="' + m + '">' + m + " minutes</button>"; }).join("") +
+    '<button data-m="end">End of this episode</button><button data-m="0">Off</button></div>');
+  document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () {
+    var m = b.getAttribute("data-m"); sleepEnd = m === "end"; sleepAt = m === "end" || m === "0" ? 0 : Date.now() + m * 60000;
+    $("fSleep").textContent = sleepEnd ? "😴 End" : sleepAt ? "😴 " + m + " min" : "😴 Sleep"; closeSheet();
+  }; });
+};
+$("seek").addEventListener("input", function () { seeking = true; $("tPos").textContent = fmt($("seek").value / 1000 * (st.dur || 0)); });
+$("seek").addEventListener("change", function () { if (MH && st.dur) MH.seek(Math.round($("seek").value / 1000 * st.dur)); seeking = false; setTimeout(poll, 150); });
+
+window.pdResume = function () { loadAll(); render(); autoRefresh(); };
+loadAll(); render(); poll(); autoRefresh();
+</script>
+<p style="text-align:center;color:#a39bad;font-size:13px;padding:8px 16px 28px"><a href="index.html" style="color:#ffc107">Music Hub</a> · v1.4.0</p>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>

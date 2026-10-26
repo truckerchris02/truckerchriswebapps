@@ -1,0 +1,108 @@
+<!doctype html>
+<html><head>
+<meta name="theme-color" content="#ffc107">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Music">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YouTube Music</title>
+<style>
+:root{--bg:#0d0b10;--card:#1a1620;--line:#2c2633;--txt:#f3eff7;--dim:#a39bad;--red:#ff3d3d;--acc:#ffc107}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Roboto,sans-serif;font-size:16px}
+main{padding:calc(16px + env(safe-area-inset-top)) 14px calc(40px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+h1{font-size:24px;margin:4px 0 4px}
+.sub{color:var(--dim);margin-bottom:16px;line-height:1.4}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+button:active{filter:brightness(1.4)}
+.big{width:100%;min-height:64px;font-size:19px;font-weight:800;background:var(--red);border-color:var(--red);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 20px}
+.grid button{min-height:58px;font-weight:700;font-size:16px}
+.srch{display:flex;gap:8px;margin-bottom:22px}
+.srch input{flex:1;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px}
+.srch button{font-weight:800;background:var(--red);border-color:var(--red);color:#fff}
+h2{font-size:18px;margin:6px 0 10px}
+.pl{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:6px 6px 6px 14px;margin-bottom:8px}
+.pl .n{flex:1;font-weight:700;font-size:17px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:10px 0;cursor:pointer}
+.pl button{padding:10px 12px;font-size:15px;color:var(--dim)}
+.add{border:1px dashed var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.add input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#120f16;color:var(--txt);font-size:16px;margin-bottom:8px}
+.add button{width:100%;font-weight:800;background:var(--acc);border-color:var(--acc);color:#16131b}
+.tip{color:var(--dim);font-size:14px;line-height:1.45;margin-top:18px}
+.empty{color:var(--dim);font-size:15px;padding:4px 2px 8px}
+</style></head>
+<body><main>
+<h1>▶ YouTube Music</h1>
+<div class="sub">Plays in the YouTube Music app on your trucker.chris02 account, with your library, likes and downloads.</div>
+<button class="big" id="openApp">Open YouTube Music</button>
+<div class="grid">
+  <button data-u="https://music.youtube.com/playlist?list=LM">👍 Liked songs</button>
+  <button data-u="https://music.youtube.com/library">📚 Library</button>
+  <button data-u="https://music.youtube.com/library/downloads">⬇ Downloads</button>
+  <button data-u="https://music.youtube.com/explore">🔥 Explore</button>
+</div>
+<div class="srch"><input id="sq" type="search" placeholder="Search YouTube Music" enterkeyhint="search"><button id="sgo">Go</button></div>
+
+<h2>My playlists</h2>
+<div id="pls"></div>
+<div class="add">
+  <input id="pname" placeholder="Name (e.g. Thrash for the road)">
+  <input id="plink" placeholder="Paste the playlist or album link">
+  <button id="padd">＋ Add playlist</button>
+</div>
+<div class="tip">To get a link: in YouTube Music open the playlist, tap ⋮ then Share, then Copy link. Paste it here once and it's one tap from now on. Long-press a playlist to rename it.</div>
+</main>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var YTB = window.YT || null;
+function open(u) { if (YTB) YTB.open(u); else location.href = u; }
+function toast(m) { if (YTB) YTB.toast(m); else alert(m); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+var pls = []; try { pls = JSON.parse(localStorage.getItem("yt_pls") || "[]"); } catch (e) { pls = []; }
+function save() { localStorage.setItem("yt_pls", JSON.stringify(pls)); }
+function render() {
+  $("pls").innerHTML = pls.length ? pls.map(function (p, i) {
+    return '<div class="pl"><div class="n" data-o="' + i + '">🎶 ' + esc(p.name) + '</div><button data-up="' + i + '">▲</button><button data-del="' + i + '">✕</button></div>';
+  }).join("") : '<div class="empty">No playlists saved yet. Add your favorites below for one-tap play.</div>';
+  document.querySelectorAll("[data-o]").forEach(function (el) {
+    var i = +el.getAttribute("data-o"), t = null;
+    el.onclick = function () { if (t === "done") { t = null; return; } open(pls[i].url); };
+    el.addEventListener("touchstart", function () { t = setTimeout(function () { t = "done"; var n = prompt("Rename playlist", pls[i].name); if (n && n.trim()) { pls[i].name = n.trim().slice(0, 60); save(); render(); } }, 650); }, { passive: true });
+    el.addEventListener("touchend", function () { if (t && t !== "done") { clearTimeout(t); t = null; } });
+    el.addEventListener("touchmove", function () { if (t && t !== "done") { clearTimeout(t); t = null; } }, { passive: true });
+  });
+  document.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { var i = +b.getAttribute("data-del"); if (confirm("Remove " + pls[i].name + "?")) { pls.splice(i, 1); save(); render(); } }; });
+  document.querySelectorAll("[data-up]").forEach(function (b) { b.onclick = function () { var i = +b.getAttribute("data-up"); if (i > 0) { var x = pls.splice(i, 1)[0]; pls.splice(i - 1, 0, x); save(); render(); } }; });
+}
+function cleanLink(s) {
+  var m = String(s || "").match(/https?:\/\/\S+/); if (!m) return null;
+  var u = m[0];
+  if (!/(youtube\.com|youtu\.be)/i.test(u)) return null;
+  var list = u.match(/[?&]list=([A-Za-z0-9_-]+)/);
+  if (list) return "https://music.youtube.com/playlist?list=" + list[1];
+  var br = u.match(/\/browse\/([A-Za-z0-9_-]+)/);
+  if (br) return "https://music.youtube.com/browse/" + br[1];
+  return u.replace("://www.youtube.com", "://music.youtube.com").replace("://m.youtube.com", "://music.youtube.com");
+}
+$("padd").onclick = function () {
+  var url = cleanLink($("plink").value);
+  if (!url) { toast("That doesn't look like a YouTube Music link."); return; }
+  var name = $("pname").value.trim() || "Playlist " + (pls.length + 1);
+  pls.push({ name: name.slice(0, 60), url: url }); save(); render();
+  $("pname").value = ""; $("plink").value = ""; toast("Saved " + name);
+};
+$("openApp").onclick = function () { if (YTB) YTB.openApp(); else open("https://music.youtube.com/"); };
+document.querySelectorAll("[data-u]").forEach(function (b) { b.onclick = function () { open(b.getAttribute("data-u")); }; });
+function search() { var q = $("sq").value.trim(); if (q) open("https://music.youtube.com/search?q=" + encodeURIComponent(q)); }
+$("sgo").onclick = search;
+$("sq").addEventListener("keydown", function (e) { if (e.key === "Enter") search(); });
+render();
+</script>
+<p style="text-align:center;color:#a39bad;font-size:13px;padding:0 16px 24px"><a href="index.html" style="color:#ffc107">Music Hub</a> · v1.4.0</p>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
+</body></html>
