@@ -290,6 +290,20 @@
         #printArea td.n,#printArea th.n{text-align:right;white-space:nowrap}
         #printArea .tot td{font-weight:700;border-top:2px solid #000}
       }
+
+      /* ---------- Totals reset (v1.1) ---------- */
+      .totals-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+      .totals-bar .tb-l{font-size:13px;color:var(--ink-soft);font-weight:600}
+      .totals-bar .tb-l b{color:var(--accent)}
+      .totals-bar .tb-r{display:flex;gap:8px;flex-wrap:wrap}
+      .totals-bar .btn-small{padding:7px 12px;font-size:13.5px}
+      .tl-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:1000}
+      .tl-modal.show{display:flex}
+      .tl-modal .box{background:var(--bg-panel);color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--radius);box-shadow:var(--shadow);max-width:420px;width:100%;padding:18px 18px 14px}
+      .tl-modal h3{font-size:24px;text-transform:uppercase;margin-bottom:6px}
+      .tl-modal p{margin:0 0 14px;color:var(--ink-soft);font-size:15px}
+      .tl-modal .acts{display:flex;gap:10px}
+      .tl-modal .btn-primary.danger{background:var(--danger);color:#fff}
     </style>
   </head>
   <body>
@@ -302,6 +316,21 @@
         <div class="scope-note">Trips are saved <strong>in this browser only</strong></div>
       </div>
 
+      <div class="tl-modal" id="totalsModal" role="dialog" aria-modal="true" aria-labelledby="totalsModalTitle">
+      <div class="box">
+        <h3 id="totalsModalTitle">Reset totals?</h3>
+        <p>The totals at the top start over from zero. Only trips and shift miles logged after now will count. <b>Your trips and history are not deleted</b> — you can undo this or view all-time totals any time.</p>
+        <div class="acts"><button type="button" class="btn btn-ghost" id="totalsCancel">Cancel</button><button type="button" class="btn btn-primary danger" id="totalsConfirm">Reset totals</button></div>
+      </div>
+    </div>
+      <div class="totals-bar" id="totalsBar">
+        <div class="tb-l" id="totalsSince">All-time totals</div>
+        <div class="tb-r">
+          <button type="button" class="btn-small" id="totalsViewBtn" style="display:none">Show all-time</button>
+          <button type="button" class="btn-small" id="totalsUndoBtn" style="display:none">Undo reset</button>
+          <button type="button" class="btn-small danger" id="totalsResetBtn">Reset totals</button>
+        </div>
+      </div>
       <div class="stats" aria-label="Totals across all logged trips">
         <div class="stat"><div class="num" id="statTrips">0</div><div class="lbl">Trips logged</div></div>
         <div class="stat"><div class="num" id="statMiles">0</div><div class="lbl">Total miles</div></div>
@@ -462,7 +491,7 @@
       <p class="foot">Your trips live in this browser on this device — they aren't sent anywhere or tied to an account. Use <strong>Back up (JSON)</strong> to keep a copy you can restore later or move to another device.</p>
     </div>
 
-    <p class="ver"><a href="./">Rig Hub home</a> · Rig Hub v1.3 · Trip Logger v1.3.0 · 1.0.1 original · 1.1.0 activity pay, Tue–Mon week · 1.2.0 GPS shift miles and mileage pay · 1.3.0 weekly odometer · Rig Hub 1.2.0 pick any week start day · 1.2.1 Save miles · 1.2.2 odometer saves with trip · 1.2.3 pause shift miles · 1.2.4 save &amp; print week</p>
+    <p class="ver"><a href="./">Rig Hub home</a> · Rig Hub v1.4 · Trip Logger v1.4.0 · 1.0.1 original · 1.1.0 activity pay, Tue–Mon week · 1.2.0 GPS shift miles and mileage pay · 1.3.0 weekly odometer · Rig Hub 1.2.0 pick any week start day · 1.2.1 Save miles · 1.2.2 odometer saves with trip · 1.2.3 pause shift miles · 1.2.4 save &amp; print week · Rig Hub 1.4 reset totals</p>
     <div class="toast" id="toast" role="status"></div>
 
     <script src="mile.js"></script>
@@ -493,7 +522,7 @@
         function tripPay(t){ return actsPay(t.activities, t.rates ? cleanRates(t.rates) : RATES); }
 
         /* ---------- GPS mileage ---------- */
-        var APP_VERSION = "1.3.0";
+        var APP_VERSION = "1.4.0";
         var MRATE_KEY = "trip-logger-mile-rates-v1", MSNAP_KEY = "trip-logger-mile-snap-v1", MCACHE_KEY = "trip-logger-mile-days-v1";
         var MILE_FIELDS = [["base","Base, all miles",0.64],["night","Night shift, all miles",0.07],["weekend","Weekend (Sat & Sun, midnight to midnight)",0.07]];
         function cleanMRates(raw){
@@ -541,6 +570,58 @@
           }catch(e){}
         }
         function allMilePay(){ return Object.keys(mileStatus.days).reduce(function(s,k){ return s + dayMilePay(k); }, 0); }
+
+        /* ---------- Totals reset (v1.1): baseline only, never deletes trips ---------- */
+        var TOTALS_KEY = "trip-logger-totals-since-v1";
+        var TOTALS = lsGet(TOTALS_KEY, null) || {};
+        if(typeof TOTALS !== "object") TOTALS = {};
+        function saveTotals(){ lsSet(TOTALS_KEY, TOTALS); }
+        function idTime(id){ var m = /^t([0-9a-z]{8})/.exec(String(id || "")); if(!m) return 0; var n = parseInt(m[1], 36); return (n > 1e12 && n < 1e14) ? n : 0; }
+        function tripTime(t){ return (t && +t.created) || idTime(t && t.id) || 0; }
+        function milePaySince(){
+          var b = TOTALS.mileBase || {}, d0 = b.day || dayKey(new Date(TOTALS.since));
+          return Object.keys(mileStatus.days).reduce(function(s,k){
+            if(k < d0) return s;
+            if(k > d0) return s + dayMilePay(k);
+            var full = parseFloat(mileStatus.days[k]) || 0; if(full <= 0) return s;
+            var rest = Math.max(0, full - (parseFloat(b.meters) || 0));
+            return s + dayMilePay(k) * (rest / full);
+          }, 0);
+        }
+        function sinceText(ms){
+          var d = new Date(ms);
+          try{ return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"}) + " " + d.toLocaleTimeString(undefined, {hour:"numeric", minute:"2-digit"}); }catch(e){ return d.toString(); }
+        }
+        function renderTotalsBar(){
+          var lbl = document.getElementById("totalsSince"), vb = document.getElementById("totalsViewBtn"), ub = document.getElementById("totalsUndoBtn");
+          if(!TOTALS.since){ lbl.innerHTML = "All-time totals"; vb.style.display = "none"; ub.style.display = "none"; return; }
+          vb.style.display = ""; ub.style.display = "";
+          if(TOTALS.showAll){ lbl.innerHTML = "All-time totals"; vb.textContent = "Show since reset"; }
+          else { lbl.innerHTML = "Since <b>" + esc(sinceText(TOTALS.since)) + "</b>"; vb.textContent = "Show all-time"; }
+        }
+        (function(){
+          var modal = document.getElementById("totalsModal");
+          function close(){ modal.classList.remove("show"); }
+          document.getElementById("totalsResetBtn").addEventListener("click", function(){ modal.classList.add("show"); document.getElementById("totalsConfirm").focus(); });
+          document.getElementById("totalsCancel").addEventListener("click", close);
+          modal.addEventListener("click", function(e){ if(e.target === modal) close(); });
+          document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
+          document.getElementById("totalsConfirm").addEventListener("click", function(){
+            readMileStatus();
+            var now = Date.now(), tk = dayKey(new Date(now));
+            var prev = TOTALS.since ? {since: TOTALS.since, mileBase: TOTALS.mileBase || null, prev: TOTALS.prev || null} : null;
+            TOTALS = {since: now, mileBase: {day: tk, meters: parseFloat(mileStatus.days[tk]) || 0}, showAll: false, prev: prev};
+            saveTotals(); close(); render(); toast("Totals reset. Your trip history is still saved.");
+          });
+          document.getElementById("totalsUndoBtn").addEventListener("click", function(){
+            var p = TOTALS.prev;
+            TOTALS = p ? {since: p.since, mileBase: p.mileBase, showAll: false, prev: p.prev || null} : {};
+            saveTotals(); render(); toast(p ? "Reset undone — back to the earlier start date." : "Reset undone — showing all-time totals.");
+          });
+          document.getElementById("totalsViewBtn").addEventListener("click", function(){
+            TOTALS.showAll = !TOTALS.showAll; saveTotals(); render();
+          });
+        })();
         var editingId = null;
 
         function blankActs(){
@@ -746,6 +827,7 @@
 
           var record = {
             id: editingId || uid(),
+            created: Date.now(),
             trip: tripNo,
             date: date,
             trailer: trailer,
@@ -757,6 +839,7 @@
           };
           var prev = null; for(var q = 0; q < trips.length; q++){ if(trips[q].id === editingId) prev = trips[q]; }
           record.rates = (prev && prev.rates) ? cleanRates(prev.rates) : cleanRates(RATES);
+          if(prev) record.created = tripTime(prev) || record.created;
           if(editingId){
             for(var j = 0; j < trips.length; j++){ if(trips[j].id === editingId) trips[j] = record; }
             toast("Trip " + tripNo + " updated.");
@@ -947,13 +1030,16 @@
           document.getElementById("emptyState").style.display = trips.length === 0 ? "block" : "none";
           document.getElementById("noMatchState").style.display = (trips.length > 0 && visible.length === 0) ? "block" : "none";
 
-          var totalMiles = trips.reduce(function(s,t){ return s + tripTotal(t); }, 0);
-          var totalStops = trips.reduce(function(s,t){ return s + t.stops.length; }, 0);
-          document.getElementById("statTrips").textContent = trips.length;
+          var useSince = !!(TOTALS.since && !TOTALS.showAll);
+          var counted = useSince ? trips.filter(function(t){ return tripTime(t) >= TOTALS.since; }) : trips;
+          var totalMiles = counted.reduce(function(s,t){ return s + tripTotal(t); }, 0);
+          var totalStops = counted.reduce(function(s,t){ return s + t.stops.length; }, 0);
+          document.getElementById("statTrips").textContent = counted.length;
           document.getElementById("statMiles").textContent = fmt(totalMiles);
           document.getElementById("statStops").textContent = totalStops;
-          document.getElementById("statAvg").textContent = trips.length ? fmt(totalMiles / trips.length) : "0";
-          document.getElementById("statPay").textContent = money(trips.reduce(function(s,t){ return s + tripPay(t); }, 0) + allMilePay());
+          document.getElementById("statAvg").textContent = counted.length ? fmt(totalMiles / counted.length) : "0";
+          document.getElementById("statPay").textContent = money(counted.reduce(function(s,t){ return s + tripPay(t); }, 0) + (useSince ? milePaySince() : allMilePay()));
+          renderTotalsBar();
           renderWeek();
 
           listEl.innerHTML = "";
@@ -1123,6 +1209,7 @@
                 if(!t || !t.trip || !Array.isArray(t.stops) || t.stops.length === 0) return;
                 cleaned.push({
                   id: uid(),
+                  created: (+t.created) || idTime(t.id) || Date.now(),
                   trip: String(t.trip),
                   date: t.date || "",
                   trailer: String(t.trailer || ""),

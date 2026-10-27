@@ -22,7 +22,7 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 | Pokes Football | `pokes-football/` | 1.0 |
 | RigCare | `rigcare/` | 1.2 |
 | RigFuel | `rigfuel/` | 1.0 |
-| Rig Hub | `rig-hub/` | 1.3 |
+| Rig Hub | `rig-hub/` | 1.4 |
 | Rune Lore | `rune-lore/` | 1.0 |
 | Solitaire | `solitaire/` | 1.0 |
 | StormTrack | `stormtrack/` | 1.0 |

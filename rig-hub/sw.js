@@ -1,4 +1,4 @@
-var C="rig-hub-v1.3";
+var C="rig-hub-v1.4";
 var P="rig-hub-";
 var F=["./", "./icons/apple-touch-icon.png", "./icons/icon-192.png", "./icons/icon-512.png", "./index.html", "./manifest.webmanifest", "./mile.js", "./rignav/images/layers-2x.png", "./rignav/images/layers.png", "./rignav/images/marker-icon-2x.png", "./rignav/images/marker-icon.png", "./rignav/images/marker-shadow.png", "./rignav/index.html", "./rignav/leaflet.css", "./rignav/leaflet.js", "./trip.html", "./weather.html"];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(F)}).then(function(){return self.skipWaiting()}))});
