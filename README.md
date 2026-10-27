@@ -27,7 +27,7 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 | Solitaire | `solitaire/` | 1.0 |
 | StormTrack | `stormtrack/` | 1.0 |
 | Tandem Slide | `tandemslide/` | 1.0 |
-| Trip Logger | `triplogger/` | 1.0 |
+| Trip Logger | `triplogger/` | 1.3.5 |
 | Truck Cab Nutrition | `truck-cab-nutrition/` | 1.0 |
 | Truck Health | `truck-health/` | 1.0 |
 
