@@ -22,12 +22,12 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 | Pokes Football | `pokes-football/` | 1.0 |
 | RigCare | `rigcare/` | 1.2 |
 | RigFuel | `rigfuel/` | 1.0 |
-| Rig Hub | `rig-hub/` | 1.4 |
+| Rig Hub | `rig-hub/` | 1.5 |
 | Rune Lore | `rune-lore/` | 1.0 |
 | Solitaire | `solitaire/` | 1.0 |
 | StormTrack | `stormtrack/` | 1.0 |
 | Tandem Slide | `tandemslide/` | 1.0 |
-| Trip Logger | `triplogger/` | 1.3.5 |
+| Trip Logger | `triplogger/` | 1.3.6 |
 | Truck Cab Nutrition | `truck-cab-nutrition/` | 1.0 |
 | Truck Health | `truck-health/` | 1.0 |
 

@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="Trip Logger" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <link rel="icon" href="icons/icon-192.png" />
-    <title>Trip Logger v1.3.5</title>
+    <title>Trip Logger v1.3.6</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet" />
@@ -149,7 +149,7 @@
       .field{margin-bottom:12px}
       .field label{display:block;font-size:13px;font-weight:600;letter-spacing:.02em;margin-bottom:5px}
       .field label .opt{font-weight:400;color:var(--ink-faint)}
-      .field input[type="text"],.field input[type="number"],.field input[type="date"],.field select,.field textarea{
+      .field input[type="text"],.field input[type="number"],.field input[type="date"],.field input[type="time"],.field select,.field textarea{
         width:100%;padding:10px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg-panel);font-size:16px;
       }
       .field textarea{resize:vertical;min-height:56px}
@@ -311,6 +311,22 @@
       .tl-modal p{margin:0 0 14px;color:var(--ink-soft);font-size:15px}
       .tl-modal .acts{display:flex;gap:10px}
       .tl-modal .btn-primary.danger{background:var(--danger);color:#fff}
+
+      /* ---------- Pay period (TL 1.3.6 / Rig Hub 1.5) ---------- */
+      .pp-line{margin:-2px 0 10px;font-size:13px;color:var(--ink-soft);line-height:1.45}
+      .pp-line b{color:var(--ink)}
+      .pp-line .pp-pay{color:var(--accent);font-weight:700}
+      .pp-line button{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+      .dt-row{display:flex;gap:8px}
+      .dt-row input{flex:1 1 0;min-width:0}
+      .tl-modal .pp-box{max-width:460px;max-height:92vh;overflow:auto}
+      .pp-f{margin:0 0 11px}
+      .pp-f label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:5px}
+      .pp-f select,.pp-f input{width:100%;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--bg-panel-2);color:var(--ink);font:inherit}
+      .pp-f .pp-sm{font-size:12px;color:var(--ink-soft);margin-top:4px}
+      .pp-on{display:flex;align-items:center;gap:8px;font-weight:600;margin:0 0 12px}
+      .pp-on input{width:20px;height:20px}
+      .pp-prev{background:var(--bg-panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin:0 0 14px;color:var(--ink)}
     </style>
   </head>
   <body>
@@ -323,7 +339,25 @@
         <div class="scope-note">Trips are saved <strong>in this browser only</strong></div>
       </div>
 
-      <div class="tl-modal" id="totalsModal" role="dialog" aria-modal="true" aria-labelledby="totalsModalTitle">
+      <div class="tl-modal" id="ppModal" role="dialog" aria-modal="true" aria-labelledby="ppModalTitle">
+      <div class="box pp-box">
+        <h3 id="ppModalTitle">Pay period</h3>
+        <p>Totals at the top show only the current pay period and start over by themselves when a period ends. Trips count by their own date and time. Nothing is deleted.</p>
+        <label class="pp-on"><input type="checkbox" id="ppOn" /> Use pay periods for the totals</label>
+        <div class="pp-f"><label for="ppFreq">How often you're paid</label>
+          <select id="ppFreq"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="semimonthly">Twice a month</option><option value="monthly">Monthly</option></select></div>
+        <div class="pp-f" id="ppDayRow"><label for="ppDay">Period ends on</label>
+          <select id="ppDay"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div>
+        <div class="pp-f" id="ppAnchorRow"><label for="ppAnchor">A date a period ends (anchor)</label><input type="date" id="ppAnchor" /><div class="pp-sm">Pick any day one of your pay periods ended or will end. Every 2 weeks is counted from it.</div></div>
+        <div class="pp-f" id="ppSemiRow"><label for="ppSemi">First period ends on day</label><input type="number" id="ppSemi" min="1" max="27" step="1" inputmode="numeric" /><div class="pp-sm">The second period ends on the last day of the month.</div></div>
+        <div class="pp-f" id="ppMonthRow"><label for="ppMonth">Period ends on day of month</label><input type="number" id="ppMonth" min="1" max="31" step="1" inputmode="numeric" /><div class="pp-sm">31 means the last day of every month.</div></div>
+        <div class="pp-f"><label for="ppTime">Period ends at</label><select id="ppTime"></select></div>
+        <div class="pp-f"><label for="ppPayday">Payday (any one payday)</label><input type="date" id="ppPayday" /><div class="pp-sm">Used to figure how many days after a period ends you get paid.</div></div>
+        <div class="pp-prev" id="ppPreview"></div>
+        <div class="acts"><button type="button" class="btn btn-ghost" id="ppCancel">Cancel</button><button type="button" class="btn btn-primary" id="ppSave">Save</button></div>
+      </div>
+    </div>
+    <div class="tl-modal" id="totalsModal" role="dialog" aria-modal="true" aria-labelledby="totalsModalTitle">
       <div class="box">
         <h3 id="totalsModalTitle">Reset totals?</h3>
         <p>The totals at the top start over from zero. Only trips and shift miles logged after now will count. <b>Your trips and history are not deleted</b> — you can undo this or view all-time totals any time.</p>
@@ -335,9 +369,11 @@
         <div class="tb-r">
           <button type="button" class="btn-small" id="totalsViewBtn" style="display:none">Show all-time</button>
           <button type="button" class="btn-small" id="totalsUndoBtn" style="display:none">Undo reset</button>
+          <button type="button" class="btn-small" id="ppEditBtn">Pay period</button>
           <button type="button" class="btn-small danger" id="totalsResetBtn">Reset totals</button>
         </div>
       </div>
+      <div class="pp-line" id="ppLine"></div>
       <div class="stats" aria-label="Totals across all logged trips">
         <div class="stat"><div class="num" id="statTrips">0</div><div class="lbl">Trips logged</div></div>
         <div class="stat"><div class="num" id="statMiles">0</div><div class="lbl">Total miles</div></div>
@@ -376,8 +412,8 @@
                   <input type="text" id="fTrip" placeholder="e.g. 1042" autocomplete="off" />
                 </div>
                 <div class="field">
-                  <label for="fDate">Date <span class="opt">(optional)</span></label>
-                  <input type="date" id="fDate" />
+                  <label for="fDate">Date &amp; time <span class="opt">(optional)</span></label>
+                  <div class="dt-row"><input type="date" id="fDate" /><input type="time" id="fTime" aria-label="Trip time" /></div>
                 </div>
               </div>
               <div class="grid2">
@@ -499,7 +535,7 @@
       <p class="foot">Your trips live in this browser on this device — they aren't sent anywhere or tied to an account. Use <strong>Back up (JSON)</strong> to keep a copy you can restore later or move to another device.</p>
     </div>
 
-    <p class="ver">Trip Logger v1.3.5 · standalone app · same Trip Logger as Rig Hub 1.4 · 1.3.5 reset totals (activity pay, GPS shift miles &amp; mileage pay, pause, weekly odometer, any week start day, save &amp; print week)</p>
+    <p class="ver">Trip Logger v1.3.6 · standalone app · same Trip Logger as Rig Hub 1.5 · 1.3.6 pay periods · 1.3.5 reset totals (activity pay, GPS shift miles &amp; mileage pay, pause, weekly odometer, any week start day, save &amp; print week)</p>
     <div class="toast" id="toast" role="status"></div>
 
     <script src="mileweb.js"></script>
@@ -530,7 +566,7 @@
         function tripPay(t){ return actsPay(t.activities, t.rates ? cleanRates(t.rates) : RATES); }
 
         /* ---------- GPS mileage ---------- */
-        var APP_VERSION = "1.3.5";
+        var APP_VERSION = "1.3.6";
         var MRATE_KEY = "trip-logger-mile-rates-v1", MSNAP_KEY = "trip-logger-mile-snap-v1", MCACHE_KEY = "trip-logger-mile-days-v1";
         var MILE_FIELDS = [["base","Base, all miles",0.64],["night","Night shift, all miles",0.07],["weekend","Weekend (Sat & Sun, midnight to midnight)",0.07]];
         function cleanMRates(raw){
@@ -601,11 +637,18 @@
           try{ return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"}) + " " + d.toLocaleTimeString(undefined, {hour:"numeric", minute:"2-digit"}); }catch(e){ return d.toString(); }
         }
         function renderTotalsBar(){
-          var lbl = document.getElementById("totalsSince"), vb = document.getElementById("totalsViewBtn"), ub = document.getElementById("totalsUndoBtn");
-          if(!TOTALS.since){ lbl.innerHTML = "All-time totals"; vb.style.display = "none"; ub.style.display = "none"; return; }
-          vb.style.display = ""; ub.style.display = "";
-          if(TOTALS.showAll){ lbl.innerHTML = "All-time totals"; vb.textContent = "Show since reset"; }
-          else { lbl.innerHTML = "Since <b>" + esc(sinceText(TOTALS.since)) + "</b>"; vb.textContent = "Show all-time"; }
+          var lbl = document.getElementById("totalsSince"), vb = document.getElementById("totalsViewBtn"), ub = document.getElementById("totalsUndoBtn"), pl = document.getElementById("ppLine");
+          var now = Date.now(), b = PP.on ? ppBounds(now, PP) : null;
+          var resetLive = !!(TOTALS.since && (!b || TOTALS.since >= b.start));
+          pl.innerHTML = PP.on ? ppSummary(PP, now) + ' · <button type="button" onclick="openPayPeriod()">Change</button>' : 'Want totals to start over each pay period? <button type="button" onclick="openPayPeriod()">Set your pay period</button>';
+          vb.style.display = (PP.on || TOTALS.since) ? "" : "none";
+          ub.style.display = resetLive ? "" : "none";
+          ppSchedule();
+          if(TOTALS.showAll){ lbl.innerHTML = "All-time totals"; vb.textContent = PP.on ? "Show this pay period" : "Show since reset"; return; }
+          vb.textContent = "Show all-time";
+          if(PP.on){ lbl.innerHTML = "Pay period <b>" + esc(ppRangeText(b, PP, false)) + "</b>" + (resetLive ? " · since reset <b>" + esc(sinceText(TOTALS.since)) + "</b>" : ""); return; }
+          if(!TOTALS.since){ lbl.innerHTML = "All-time totals"; return; }
+          lbl.innerHTML = "Since <b>" + esc(sinceText(TOTALS.since)) + "</b>";
         }
         (function(){
           var modal = document.getElementById("totalsModal");
@@ -628,6 +671,137 @@
           });
           document.getElementById("totalsViewBtn").addEventListener("click", function(){
             TOTALS.showAll = !TOTALS.showAll; saveTotals(); render();
+          });
+        })();
+
+        /* ---------- Pay period (TL 1.3.6 / Rig Hub 1.5): totals roll over at the period cutoff; trips count by their own date/time ---------- */
+        var PP_KEY = "trip-logger-pay-period-v1";
+        var DAY_MS = 864e5, ppTimer = null;
+        function parseDay(s){ var p = String(s).split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+        function isDay(s){ return /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")); }
+        function nextWeekday(wd){ var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + ((wd - d.getDay() + 7) % 7)); return dayKey(d); }
+        function ppClean(p){
+          p = (p && typeof p === "object") ? p : {};
+          var freq = ["weekly","biweekly","semimonthly","monthly"].indexOf(p.freq) >= 0 ? p.freq : "biweekly";
+          var em = parseInt(p.endMin, 10); if(!(em >= 0 && em <= 1440)) em = 1440;
+          var ed = parseInt(p.endDay, 10); if(!(ed >= 0 && ed <= 6)) ed = 5;
+          var anc = isDay(p.anchor) ? p.anchor : nextWeekday(ed);
+          var a = parseDay(anc); if(a.getDay() !== ed){ a.setDate(a.getDate() - ((a.getDay() - ed + 7) % 7)); anc = dayKey(a); }
+          var s1 = parseInt(p.semiDay, 10); if(!(s1 >= 1 && s1 <= 27)) s1 = 15;
+          var md = parseInt(p.monthDay, 10); if(!(md >= 1 && md <= 31)) md = 31;
+          return {on: !!p.on, freq: freq, endDay: ed, endMin: em, anchor: anc, semiDay: s1, monthDay: md, payday: isDay(p.payday) ? p.payday : ""};
+        }
+        var PP = ppClean(lsGet(PP_KEY, null));
+        function savePP(){ lsSet(PP_KEY, PP); }
+        /* boundary = end of a period: calendar end date d (local) + endMin minutes after that day's midnight (1440 = midnight at the end of the day) */
+        function ppB(y, m, d, P){ var date = new Date(y, m, d); return {t: new Date(y, m, d, 0, P.endMin).getTime(), d: date}; }
+        function ppBounds(t, P){
+          var lo = null, hi = null;
+          if(P.freq === "weekly" || P.freq === "biweekly"){
+            var L = P.freq === "weekly" ? 7 : 14, a = parseDay(P.anchor);
+            var B = function(k){ return ppB(a.getFullYear(), a.getMonth(), a.getDate() + k * L, P); };
+            var k = Math.floor((t - B(0).t) / (L * DAY_MS));
+            while(B(k).t > t) k--;
+            while(B(k + 1).t <= t) k++;
+            lo = B(k); hi = B(k + 1);
+          } else {
+            var base = new Date(t), list = [];
+            for(var i = -2; i <= 2; i++){
+              var y = base.getFullYear(), m = base.getMonth() + i, last = new Date(y, m + 1, 0).getDate();
+              if(P.freq === "semimonthly"){ list.push(ppB(y, m, P.semiDay, P)); list.push(ppB(y, m, last, P)); }
+              else list.push(ppB(y, m, Math.min(P.monthDay, last), P));
+            }
+            list.sort(function(x, z){ return x.t - z.t; });
+            for(var j = 0; j < list.length; j++){ if(list[j].t <= t) lo = list[j]; else { hi = list[j]; break; } }
+          }
+          return {start: lo.t, end: hi.t, startEnd: lo.d, endDate: hi.d};
+        }
+        function ppLag(P){
+          if(!isDay(P.payday)) return null;
+          var pd = parseDay(P.payday), b = ppBounds(new Date(pd.getFullYear(), pd.getMonth(), pd.getDate(), 12).getTime(), P);
+          var e = (dayKey(b.endDate) === P.payday) ? b.endDate : b.startEnd;
+          return Math.round((pd - e) / DAY_MS);
+        }
+        function ppNextPayday(now, P){
+          var lag = ppLag(P); if(lag === null) return null;
+          var today = new Date(now); today.setHours(0,0,0,0);
+          var b = ppBounds(now, P), list = [];
+          for(var i = 0; i < 4; i++){ list.unshift(b.endDate); b = ppBounds(b.start - 1, P); }
+          for(var j = 0; j < list.length; j++){ var d = new Date(list[j].getFullYear(), list[j].getMonth(), list[j].getDate() + lag); if(d >= today) return d; }
+          return null;
+        }
+        /* a trip's own moment: its date + time; legacy trips without a time use when they were saved (if same day) or noon */
+        function tripMoment(t){
+          if(t && isDay(t.date)){
+            var d = parseDay(t.date), tm = /^(\d{1,2}):(\d{2})/.exec(t.time || "");
+            if(tm) return new Date(d.getFullYear(), d.getMonth(), d.getDate(), +tm[1], +tm[2]).getTime();
+            var c = tripTime(t); if(c && dayKey(new Date(c)) === t.date) return c;
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime();
+          }
+          return tripTime(t) || 0;
+        }
+        function milePayRange(s, e){ return Object.keys(mileStatus.days).reduce(function(sum, k){ if(!isDay(k)) return sum; var t = parseDay(k).getTime(); return (t >= s && t < e) ? sum + dayMilePay(k) : sum; }, 0); }
+        function timeLabel(min){
+          if(min === 1440) return "midnight (end of day)";
+          var h = Math.floor(min / 60), mm = min % 60, ap = h < 12 ? "AM" : "PM", h12 = h % 12 || 12;
+          return h12 + ":" + (mm < 10 ? "0" : "") + mm + " " + ap + (min === 0 ? " (start of day)" : "");
+        }
+        function dShort(d, wd){ try{ return d.toLocaleDateString(undefined, wd ? {weekday:"short", month:"short", day:"numeric"} : {month:"short", day:"numeric"}); }catch(e){ return dayKey(d); } }
+        function ppRangeText(b, P, wd){
+          var s = new Date(b.start), sTxt = dShort(s, wd) + ((s.getHours() || s.getMinutes()) ? " " + timeLabel(s.getHours() * 60 + s.getMinutes()).replace(/ \(.*\)/, "") : "");
+          var eTxt = dShort(b.endDate, wd) + (wd ? " " + (P.endMin === 1440 ? "midnight" : timeLabel(P.endMin).replace(/ \(.*\)/, "")) : "");
+          return sTxt + " – " + eTxt;
+        }
+        function ppSummary(P, now){
+          var b = ppBounds(now, P), np = ppNextPayday(now, P);
+          return "Current pay period: <b>" + esc(ppRangeText(b, P, true)) + "</b> · Next payday: " + (np ? '<span class="pp-pay">' + esc(dShort(np, true)) + "</span>" : "<i>set a payday date</i>");
+        }
+        function ppSchedule(){
+          if(ppTimer) clearTimeout(ppTimer); ppTimer = null;
+          if(!PP.on) return;
+          var wait = ppBounds(Date.now(), PP).end - Date.now() + 1000;
+          ppTimer = setTimeout(function(){ render(); }, Math.max(1000, Math.min(wait, 3600000)));
+        }
+        document.addEventListener("visibilitychange", function(){ if(!document.hidden) render(); });
+        window.TLPayPeriod = {clean: ppClean, bounds: ppBounds, nextPayday: ppNextPayday, tripMoment: tripMoment, get: function(){ return PP; }};
+        (function(){
+          var modal = document.getElementById("ppModal"), tsel = document.getElementById("ppTime");
+          var opts = '<option value="1440">Midnight (end of the day)</option>';
+          for(var h = 0; h < 24; h++) opts += '<option value="' + (h * 60) + '">' + timeLabel(h * 60) + "</option>";
+          tsel.innerHTML = opts;
+          function el(id){ return document.getElementById(id); }
+          function readForm(){
+            return ppClean({on: el("ppOn").checked, freq: el("ppFreq").value, endDay: el("ppDay").value, endMin: el("ppTime").value, anchor: el("ppAnchor").value, semiDay: el("ppSemi").value, monthDay: el("ppMonth").value, payday: el("ppPayday").value});
+          }
+          function syncRows(){
+            var f = el("ppFreq").value, wk = (f === "weekly" || f === "biweekly");
+            el("ppDayRow").style.display = wk ? "" : "none";
+            el("ppAnchorRow").style.display = f === "biweekly" ? "" : "none";
+            el("ppSemiRow").style.display = f === "semimonthly" ? "" : "none";
+            el("ppMonthRow").style.display = f === "monthly" ? "" : "none";
+            var P = readForm(); el("ppPreview").innerHTML = ppSummary(P, Date.now());
+          }
+          function fill(P){
+            el("ppOn").checked = PP.on || !lsGet(PP_KEY, null); el("ppFreq").value = P.freq; el("ppDay").value = String(P.endDay); el("ppTime").value = String(P.endMin);
+            el("ppAnchor").value = P.anchor; el("ppSemi").value = P.semiDay; el("ppMonth").value = P.monthDay; el("ppPayday").value = P.payday;
+            syncRows();
+          }
+          function open(){ fill(PP); modal.classList.add("show"); }
+          function close(){ modal.classList.remove("show"); }
+          window.openPayPeriod = open;
+          el("ppEditBtn").addEventListener("click", open);
+          el("ppCancel").addEventListener("click", close);
+          modal.addEventListener("click", function(e){ if(e.target === modal) close(); });
+          document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
+          el("ppDay").addEventListener("change", function(){
+            var a = isDay(el("ppAnchor").value) ? parseDay(el("ppAnchor").value) : new Date(), wd = +el("ppDay").value, diff = (wd - a.getDay() + 7) % 7;
+            if(diff > 3) diff -= 7; a.setDate(a.getDate() + diff); el("ppAnchor").value = dayKey(a); syncRows();
+          });
+          el("ppAnchor").addEventListener("change", function(){ if(isDay(el("ppAnchor").value)) el("ppDay").value = String(parseDay(el("ppAnchor").value).getDay()); syncRows(); });
+          ["ppOn","ppFreq","ppTime","ppSemi","ppMonth","ppPayday"].forEach(function(id){ el(id).addEventListener("change", syncRows); el(id).addEventListener("input", syncRows); });
+          el("ppSave").addEventListener("click", function(){
+            PP = readForm(); savePP(); if(PP.on) TOTALS.showAll = false; saveTotals(); close(); render();
+            toast(PP.on ? "Pay period saved. Totals now show the current pay period." : "Pay periods off. Totals are all-time again.");
           });
         })();
         var editingId = null;
@@ -838,6 +1012,7 @@
             created: Date.now(),
             trip: tripNo,
             date: date,
+            time: date ? document.getElementById("fTime").value : "",
             trailer: trailer,
             type: type,
             notes: notes,
@@ -1046,15 +1221,20 @@
           document.getElementById("emptyState").style.display = trips.length === 0 ? "block" : "none";
           document.getElementById("noMatchState").style.display = (trips.length > 0 && visible.length === 0) ? "block" : "none";
 
-          var useSince = !!(TOTALS.since && !TOTALS.showAll);
-          var counted = useSince ? trips.filter(function(t){ return tripTime(t) >= TOTALS.since; }) : trips;
+          var per = (PP.on && !TOTALS.showAll) ? ppBounds(Date.now(), PP) : null;
+          var useSince = !!(TOTALS.since && !TOTALS.showAll && (!per || TOTALS.since >= per.start));
+          var counted = trips.filter(function(t){
+            if(useSince && tripTime(t) < TOTALS.since) return false;
+            if(per){ var tm = tripMoment(t); if(tm < per.start || tm >= per.end) return false; }
+            return true;
+          });
           var totalMiles = counted.reduce(function(s,t){ return s + tripTotal(t); }, 0);
           var totalStops = counted.reduce(function(s,t){ return s + t.stops.length; }, 0);
           document.getElementById("statTrips").textContent = counted.length;
           document.getElementById("statMiles").textContent = fmt(totalMiles);
           document.getElementById("statStops").textContent = totalStops;
           document.getElementById("statAvg").textContent = counted.length ? fmt(totalMiles / counted.length) : "0";
-          document.getElementById("statPay").textContent = money(counted.reduce(function(s,t){ return s + tripPay(t); }, 0) + (useSince ? milePaySince() : allMilePay()));
+          document.getElementById("statPay").textContent = money(counted.reduce(function(s,t){ return s + tripPay(t); }, 0) + (useSince ? milePaySince() : (per ? milePayRange(per.start, per.end) : allMilePay())));
           renderTotalsBar();
           renderWeek();
 
@@ -1151,6 +1331,7 @@
           editingId = id;
           document.getElementById("fTrip").value = t.trip;
           document.getElementById("fDate").value = t.date || "";
+          document.getElementById("fTime").value = t.time || "";
           document.getElementById("fTrailer").value = t.trailer;
           document.getElementById("fType").value = t.type;
           document.getElementById("fNotes").value = t.notes || "";
@@ -1195,7 +1376,7 @@
         });
         document.getElementById("exportJsonBtn").addEventListener("click", function(){
           if(trips.length === 0 && Object.keys(mileStatus.days).length === 0 && Object.keys(ODO).length === 0 && Object.keys(SAVED_WEEKS).length === 0){ toast("Nothing to back up yet."); return; }
-          download("trip-log-backup.json", JSON.stringify({app:"trip-logger", version:3, appVersion: APP_VERSION, rates: RATES, mileRates: MRATES, mileSnap: MSNAP, mileDays: mileStatus.days, odometer: ODO, savedWeeks: SAVED_WEEKS, trips: trips}, null, 2), "application/json");
+          download("trip-log-backup.json", JSON.stringify({app:"trip-logger", version:3, appVersion: APP_VERSION, payPeriod: PP, rates: RATES, mileRates: MRATES, mileSnap: MSNAP, mileDays: mileStatus.days, odometer: ODO, savedWeeks: SAVED_WEEKS, trips: trips}, null, 2), "application/json");
           toast("Backup downloaded.");
         });
         var importFile = document.getElementById("importFile");
@@ -1218,6 +1399,7 @@
                   created: (+t.created) || idTime(t.id) || Date.now(),
                   trip: String(t.trip),
                   date: t.date || "",
+                  time: /^\d{1,2}:\d{2}$/.test(String(t.time || "")) ? String(t.time) : "",
                   trailer: String(t.trailer || ""),
                   type: String(t.type || "Other"),
                   notes: String(t.notes || ""),
@@ -1237,6 +1419,7 @@
               if(data && data.savedWeeks && typeof data.savedWeeks === "object"){ Object.keys(data.savedWeeks).forEach(function(k){ if(!SAVED_WEEKS[k]) SAVED_WEEKS[k] = data.savedWeeks[k]; }); lsSet(WEEKS_KEY, SAVED_WEEKS); restoredMiles = true; }
               if(data && data.mileRates){ MRATES = cleanMRates(data.mileRates); lsSet(MRATE_KEY, MRATES); buildMileRates(); }
               if(cleaned.length === 0){ if(restoredMiles){ render(); toast("Mileage restored."); } else toast("That file had no trips to restore."); return; }
+              if(data && data.payPeriod && typeof data.payPeriod === "object" && !PP.on){ PP = ppClean(data.payPeriod); savePP(); }
               if(data && data.rates){ RATES = cleanRates(data.rates); saveRates(); buildRates(); }
               trips = cleaned.concat(trips);
               persist(); render();
