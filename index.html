@@ -29,6 +29,8 @@ h1{font-size:30px;line-height:1.15;margin:0}
 .meta p{margin:2px 0 0;color:#cbbba8;font-size:14px}
 .ver{color:#a89480;font-size:13px}
 a.open{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border-radius:12px;background:#e8a24a;color:#2a1a0e;font-weight:800;text-decoration:none}
+.group>h2{font-size:15px;line-height:1.2;margin:22px 2px 0;color:#e8a24a;font-weight:800}
+.group:first-of-type>h2{margin-top:2px}
 footer{color:#8d7d6d;font-size:13px;text-align:center;margin-top:18px}
 </style>
 </head>
@@ -44,20 +46,29 @@ footer{color:#8d7d6d;font-size:13px;text-align:center;margin-top:18px}
 <li>Tap Add to Home Screen.</li>
 </ol>
 </div>
-<div id="list"></div>
+<section class="group" aria-labelledby="hubs-h">
+<h2 id="hubs-h">All-in-One Hub Apps</h2>
+<div id="hub-list"></div>
+</section>
+<section class="group" aria-labelledby="singles-h">
+<h2 id="singles-h">Single Apps</h2>
+<div id="single-list"></div>
+</section>
 <footer>TruckerChris Web Apps</footer>
 </div>
 <script>
-var APPS=[
+var HUBS=[
+{name:"Rig Hub",slug:"rig-hub",version:"1.3",description:"Rig Nav, Trip Logger and Weather in one app"},
+{name:"Music Hub",slug:"music-hub",version:"1.4.0",description:"Music and podcast hub with latest/oldest feed sort"}
+];
+var SINGLES=[
 {name:"Truck Health",slug:"truck-health",version:"1.0",description:"Nutrition, water, meds and workouts in one app"},
 {name:"Solitaire",slug:"solitaire",version:"1.0",description:"Classic solitaire card game"},
 {name:"RigFuel",slug:"rigfuel",version:"1.0",description:"Truck fuel log and tracker"},
 {name:"Daily Mantra",slug:"daily-mantra",version:"1.0",description:"Daily money mantras and affirmations with reminders"},
 {name:"Hazmat Helper",slug:"hazmathelper",version:"1.0",description:"Hazmat lookup, placards and load segregation checker"},
-{name:"Music Hub",slug:"music-hub",version:"1.4.0",description:"Music and podcast hub with latest/oldest feed sort"},
 {name:"Checkers",slug:"checkers",version:"1.0",description:"Checkers vs computer (3 levels) or pass-and-play"},
 {name:"StormTrack",slug:"stormtrack",version:"1.0",description:"Location-following weather, severe alerts and live radar"},
-{name:"Rig Hub",slug:"rig-hub",version:"1.3",description:"Rig Nav, Trip Logger and Weather in one app"},
 {name:"Pokes Football",slug:"pokes-football",version:"1.0",description:"Oklahoma State football 2026 schedule, rankings and stats"},
 {name:"MedMinder",slug:"medminder",version:"1.0",description:"Medication list with dose and refill reminders"},
 {name:"Rune Lore",slug:"rune-lore",version:"1.0",description:"Learn the 24 Elder Futhark runes with flashcards and quiz"},
@@ -66,10 +77,12 @@ var APPS=[
 {name:"AutoCare",slug:"autocare",version:"1.3",description:"Personal vehicle maintenance tracker"},
 {name:"RigCare",slug:"rigcare",version:"1.2",description:"Truck maintenance tracker"}
 ];
-APPS.sort(function(a,b){return a.name.localeCompare(b.name);});
-document.getElementById("list").innerHTML=APPS.map(function(a){
+function byName(a,b){return a.name.localeCompare(b.name);}
+function cards(list){return list.sort(byName).map(function(a){
   return '<article class="card"><img src="'+a.slug+'/icons/icon-192.png" alt="" width="64" height="64"><div class="meta"><h2>'+a.name+'</h2><p>'+a.description+'</p><div class="ver">v'+a.version+'</div></div><a class="open" href="'+a.slug+'/">Open</a></article>';
-}).join("");
+}).join("");}
+document.getElementById("hub-list").innerHTML=cards(HUBS);
+document.getElementById("single-list").innerHTML=cards(SINGLES);
 </script>
 </body>
 </html>

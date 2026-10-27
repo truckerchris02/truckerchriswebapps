@@ -8,7 +8,7 @@ The site is meant to be served from `/truckerchriswebapps/` (GitHub project Page
 
 ## Apps
 
-Sorted A to Z on the hub when the page loads.
+The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed first, then the single apps. Each section is sorted A to Z when the page loads.
 
 | App | Folder | Version |
 | --- | --- | --- |
