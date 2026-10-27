@@ -16,6 +16,7 @@ Sorted A to Z on the hub when the page loads.
 | BandFit | `bandfit/` | 1.0 |
 | Checkers | `checkers/` | 1.0 |
 | Daily Mantra | `daily-mantra/` | 1.0 |
+| Hazmat Helper | `hazmathelper/` | 1.0 |
 | MedMinder | `medminder/` | 1.0 |
 | Music Hub | `music-hub/` | 1.4.0 |
 | Pokes Football | `pokes-football/` | 1.0 |
@@ -35,6 +36,7 @@ Sorted A to Z on the hub when the page loads.
 - Rig Hub shift miles use GPS only while Trip Logger stays open. Miles pause if the screen locks or you leave the app.
 - Rig Nav still needs your own HERE API key, typed in that app’s settings. Search and truck routing do not run without it. The key stays in `localStorage` on the phone.
 - Music Hub’s YouTube Music, Amazon Music, and SiriusXM pages open those sites in the browser. My Music plays files you pick from Files (there is no access to the phone’s music library). Podcasts stream; full episode downloads are not stored for offline play. Feed refresh uses a public RSS reader because many shows block browser requests.
+- Hazmat Helper runs offline. Search, placards, and the load checker use the tables shipped in the app. There is no Android bridge, and nothing is uploaded.
 - Pokes Football asks ESPN for the schedule, standings, rankings, and stats. ESPN blocks that request from a normal browser, so Safari shows an empty board unless this device already has saved data. The Android app loaded the same URLs through a native bridge, which is not available here. StormTrack and Rig Hub Weather need a network connection. Weather and alerts cover the United States (National Weather Service).
 - RigFuel in this package is the night-haul cab pantry and nutrition screen from the Android app.
 
