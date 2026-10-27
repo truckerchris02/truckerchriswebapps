@@ -19,7 +19,7 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 | Hazmat Helper | `hazmathelper/` | 1.0 |
 | MedMinder | `medminder/` | 1.0 |
 | Music Hub | `music-hub/` | 1.4.0 |
-| Pokes Football | `pokes-football/` | 1.0 |
+| Pokes Football | `pokes-football/` | 1.1 |
 | RigCare | `rigcare/` | 1.2 |
 | RigFuel | `rigfuel/` | 1.0 |
 | Rig Hub | `rig-hub/` | 1.5 |

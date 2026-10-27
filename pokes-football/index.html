@@ -23,20 +23,27 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;b
 td.r,th.r{text-align:right}tr.me td{background:rgba(255,115,0,.18);color:var(--o);font-weight:700}td img{width:22px;height:22px;vertical-align:middle;margin-right:6px}
 .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--l);font-size:14px}.row span:last-child{font-weight:700}
 .muted{color:var(--m);font-size:12.5px}.ft{text-align:center;color:var(--m);font-size:12px;padding:14px}.err{background:#3a1a00;color:#ffb27a;padding:9px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.nw{display:block;color:inherit;text-decoration:none;background:var(--c);border-radius:10px;margin-bottom:10px;overflow:hidden}.nw img{width:100%;max-height:190px;object-fit:cover;display:block;background:#222}
+.nw .b{padding:11px 12px}.nw b{display:block;font-size:16px;line-height:1.3}.nw .ex{color:#cfcfcf;font-size:13.5px;line-height:1.4;margin-top:6px}.nw .mt{color:var(--o);font-size:12px;margin-top:6px;font-weight:600}
+.nbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}.nbar .muted{flex:1}.chip{background:#222;color:var(--t);border:1px solid var(--l);border-radius:16px;padding:6px 12px;font-size:13px;font-weight:600}.chip.on{background:var(--o);color:#000;border-color:var(--o)}
 .sum{display:flex;gap:8px}.sum .card{flex:1;text-align:center;margin:0 0 10px}.sum .card div:first-child{font-size:12px;color:var(--m)}
 </style></head><body>
 <header><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23FF7300'/%3E%3Cellipse cx='50' cy='42' rx='34' ry='20' fill='%23111' transform='rotate(-25 50 42)'/%3E%3Cpath d='M36 46 L64 38' stroke='%23fff' stroke-width='3'/%3E%3Cpath d='M44 38l3 10M50 36l3 10M56 34l3 10' stroke='%23fff' stroke-width='3'/%3E%3Ctext x='50' y='88' font-family='Arial Black,Arial' font-weight='900' font-size='24' text-anchor='middle' fill='%23111'%3EOSU%3C/text%3E%3C/svg%3E">
 <h1>Pokes Football<small id="upd">Loading…</small></h1><button id="rf">⟳ Refresh</button></header>
-<nav><a data-t="sch" class="on">Schedule</a><a data-t="std">Big 12</a><a data-t="rk">Rankings</a><a data-t="st">Stats</a></nav>
-<main id="m"></main><div class="ft">Pokes Football v1.0 · Data from ESPN</div>
+<nav><a data-t="sch" class="on">Schedule</a><a data-t="std">Big 12</a><a data-t="rk">Rankings</a><a data-t="st">Stats</a><a data-t="nw">News</a></nav>
+<main id="m"></main><div class="ft">Pokes Football v1.1 · Data from ESPN · News from <a href="https://pistolsfiringblog.com/" style="color:var(--o)">Pistols Firing</a></div>
 <script>
 const TID='197',SEASON=2026,E='https://site.api.espn.com/apis/site/v2/sports/football/college-football',C='https://sports.core.api.espn.com/v2/sports/football/leagues/college-football';
 const U={team:E+'/teams/'+TID,sched:E+'/teams/'+TID+'/schedule?season='+SEASON,std:'https://site.web.api.espn.com/apis/v2/sports/football/college-football/standings?group=4&season='+SEASON,rank:E+'/rankings',stats:E+'/teams/'+TID+'/statistics',lead:C+'/seasons/'+SEASON+'/types/2/teams/'+TID+'/leaders'};
 let D=JSON.parse(localStorage.getItem('pf_data')||'{}'),tab=localStorage.getItem('pf_tab')||'sch',err='';
 const cb={};let seq=0;window.__got=(id,ok,b)=>{const c=cb[id];delete cb[id];c&&(ok?c.res(b):c.rej(new Error(b)))};
-function get(u){u=u.replace(/^http:/,'https:');
-  if(window.AndroidBridge&&AndroidBridge.get)return new Promise((res,rej)=>{const id=++seq;cb[id]={res,rej};AndroidBridge.get(id,u)}).then(JSON.parse);
-  return fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})}
+const DESK=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.pfget),NATIVE=!!(window.AndroidBridge&&AndroidBridge.get)||DESK;
+/* Text fetch: Android = native Java HTTP, desktop Flatpak = Python backend (no CORS limits); web = browser fetch */
+function getText(u){u=u.replace(/^http:/,'https:');
+  if(window.AndroidBridge&&AndroidBridge.get)return new Promise((res,rej)=>{const id=++seq;cb[id]={res,rej};AndroidBridge.get(id,u)});
+  if(DESK)return new Promise((res,rej)=>{const id=++seq;cb[id]={res,rej};window.webkit.messageHandlers.pfget.postMessage(JSON.stringify({id,url:u}))});
+  return fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text()})}
+function get(u){return getText(u).then(JSON.parse)}
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function load(){document.getElementById('upd').textContent='Updating…';err='';const nd={};
   const ks=Object.keys(U);const rs=await Promise.allSettled(ks.map(k=>get(U[k])));
@@ -77,13 +84,50 @@ function stats(){const S=D.stats&&D.stats.results&&D.stats.results.stats;let h='
   for(const c of S.categories||[]){const p=pick[c.name];if(!p)continue;const rows=p[1].map(n=>c.stats.find(s=>s.name===n)).filter(Boolean);if(!rows.length)continue;
     h+=`<div class="card"><h3>${p[0]}</h3>`+rows.map(s=>`<div class="row"><span>${esc(s.displayName)}</span><span>${esc(s.displayValue)}${s.rankDisplayValue?' <span class="muted">('+esc(s.rankDisplayValue)+')</span>':''}</span></div>`).join('')+'</div>'}
   return h}
+
+/* ---------- News (v1.1): Pistols Firing RSS ---------- */
+const FEED='https://pistolsfiringblog.com/feed/',WPAPI='https://pistolsfiringblog.com/wp-json/wp/v2/posts?per_page=30&_fields=link,title,date_gmt,excerpt,jetpack_featured_media_url,categories',
+  R2J='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(FEED);
+let N=JSON.parse(localStorage.getItem('pf_news')||'null')||{items:[]},nErr='',nBusy=false,nFb=localStorage.getItem('pf_nfb')==='1';
+const deent=s=>{const t=document.createElement('textarea');t.innerHTML=String(s||'');return t.value};
+const strip=h=>deent(String(h||'').replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').replace(/\s*(The post .*? appeared first on .*)$/,'').trim();
+const cut=(s,n)=>s.length>n?s.slice(0,n).replace(/\s+\S*$/,'')+'…':s;
+function parseRSS(xml){const doc=new DOMParser().parseFromString(xml,'text/xml');if(doc.querySelector('parsererror')&&!doc.querySelector('item'))throw new Error('Feed could not be read');
+  const its=[...doc.getElementsByTagName('item')];if(!its.length)throw new Error('Feed has no stories');
+  return its.slice(0,40).map(it=>{const tx=n=>{const e=it.getElementsByTagName(n)[0];return e?e.textContent:''};
+    let img='';const enc=[...it.getElementsByTagName('enclosure')].find(e=>/^image\//.test(e.getAttribute('type')||''));if(enc)img=enc.getAttribute('url');
+    if(!img){const m=it.getElementsByTagName('media:content')[0]||it.getElementsByTagName('media:thumbnail')[0];if(m)img=m.getAttribute('url')||''}
+    const body=tx('content:encoded')||'';if(!img){const m=body.match(/<img[^>]+src=["']([^"']+)["']/i);if(m)img=m[1]}
+    return{t:deent(tx('title')).trim(),l:tx('link').trim(),d:Date.parse(tx('pubDate'))||0,x:cut(strip(tx('description')||body),220),img:img.replace(/^http:/,'https:'),
+      c:[...it.getElementsByTagName('category')].map(e=>e.textContent.trim()),a:tx('dc:creator').trim()}})}
+function fromWP(a){return a.map(p=>({t:deent(p.title&&p.title.rendered||'').trim(),l:p.link,d:Date.parse((p.date_gmt||'')+'Z')||0,x:cut(strip(p.excerpt&&p.excerpt.rendered),220),img:p.jetpack_featured_media_url||'',c:[],a:''}))}
+async function loadNews(){if(nBusy)return;nBusy=true;nErr='';if(tab==='nw')render();let items=null,why='';
+  try{if(NATIVE){items=parseRSS(await getText(FEED));
+      /* RSS rarely carries pictures: add each story's featured image from the same site (optional) */
+      try{const wp=await get(WPAPI.replace('title,date_gmt,excerpt,','').replace(',categories',''));const im={};wp.forEach(p=>{if(p.jetpack_featured_media_url)im[p.link]=p.jetpack_featured_media_url});items.forEach(i=>{if(!i.img&&im[i.l])i.img=im[i.l]})}catch(e){}}
+    else{/* iPhone/web: the RSS has no CORS header, so read the same stories from the site's own CORS-enabled WordPress feed, then a public RSS-to-JSON service */
+      try{items=fromWP(await get(WPAPI))}catch(e){why=String(e.message||e);const j=await get(R2J);if(j.status!=='ok')throw new Error(j.message||'proxy');
+        items=j.items.map(i=>({t:deent(i.title).trim(),l:i.link,d:Date.parse((i.pubDate||'').replace(' ','T')+'Z')||0,x:cut(strip(i.description),220),img:i.thumbnail||(i.enclosure&&/^image/.test(i.enclosure.type||'')&&i.enclosure.link)||'',c:i.categories||[],a:i.author||''}))}}
+    if(!items||!items.length)throw new Error('No stories');N={ts:Date.now(),items:items.slice(0,40)};try{localStorage.setItem('pf_news',JSON.stringify(N))}catch(e){}}
+  catch(e){nErr=(N.items.length?'Could not refresh the news – showing stories saved ':'Could not load the news. Check your connection and tap Retry.')+(N.items.length&&N.ts?ago(N.ts)+'.':'');console.log('news error',e,why)}
+  nBusy=false;if(tab==='nw')render()}
+function ago(t){const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'}
+function openLink(u){if(window.AndroidBridge&&AndroidBridge.open)AndroidBridge.open(u);else window.open(u,'_blank')}
+function news(){let h=`<div class="nbar"><span class="muted">${nBusy?'Loading Pistols Firing…':N.ts?'Pistols Firing · updated '+ago(N.ts):'Pistols Firing'}</span>${N.items.some(i=>i.c&&i.c.length)?`<button class="chip${nFb?' on':''}" id="nfb">🏈 Football only</button>`:''}<button id="nrf">${nBusy?'…':'⟳'}</button></div>`;
+  if(nErr)h+=`<div class="err">${esc(nErr)}${N.items.length?'':' <button id="nretry" style="margin-left:6px">Retry</button>'}</div>`;
+  let its=N.items;if(nFb)its=its.filter(i=>!i.c.length||i.c.some(c=>/football|recruit|daily bullets|podcast/i.test(c)));
+  if(!its.length&&!nErr)h+=`<div class="card">${nBusy?'Loading the latest stories…':'No stories yet. Tap ⟳ to load.'}</div>`;
+  for(const i of its)h+=`<a class="nw" href="${esc(i.l)}" data-l="${esc(i.l)}">${i.img?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(i.img)}" alt="" onerror="this.remove()">`:''}<div class="b"><b>${esc(i.t)}</b><div class="ex">${esc(i.x)}</div><div class="mt">${esc(i.d?ct(i.d,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT · '+ago(i.d):'')}${i.a?' · '+esc(i.a):''} · Read ›</div></div></a>`;
+  return h}
+document.getElementById('m').addEventListener('click',e=>{const a=e.target.closest('a.nw');if(a){e.preventDefault();openLink(a.dataset.l);return}
+  if(e.target.id==='nrf'||e.target.id==='nretry')loadNews();if(e.target.id==='nfb'){nFb=!nFb;localStorage.setItem('pf_nfb',nFb?'1':'0');render()}});
 function render(){document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.t===tab));
-  document.getElementById('upd').textContent=D.ts?'Updated '+new Date(D.ts).toLocaleString('en-US',{timeZone:'America/Chicago',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT':'Not loaded yet';
-  document.getElementById('m').innerHTML=(err?`<div class="err">${esc(err)}</div>`:'')+({sch:sched,std:standings,rk:rankings,st:stats}[tab])()}
-document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>{tab=a.dataset.t;localStorage.setItem('pf_tab',tab);render();scrollTo(0,0)});
-document.getElementById('rf').onclick=load;
-let sy=null;addEventListener('touchstart',e=>{sy=scrollY<=0?e.touches[0].clientY:null},{passive:true});addEventListener('touchend',e=>{if(sy!=null&&e.changedTouches[0].clientY-sy>110)load();sy=null},{passive:true});
-window.__resume=()=>{if(!D.ts||Date.now()-D.ts>15*60e3)load()};
-render();load();
+  document.getElementById('upd').textContent=D.ts?'Updated '+new Date(D.ts).toLocaleString('en-US',{timeZone:'America/Chicago',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT · v1.1':'Not loaded yet · v1.1';
+  document.getElementById('m').innerHTML=(err&&tab!=='nw'?`<div class="err">${esc(err)}</div>`:'')+({sch:sched,std:standings,rk:rankings,st:stats,nw:news}[tab]||sched)()}
+document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>{tab=a.dataset.t;localStorage.setItem('pf_tab',tab);render();scrollTo(0,0);if(tab==='nw'&&(!N.ts||Date.now()-N.ts>10*60e3))loadNews()});
+document.getElementById('rf').onclick=()=>{load();if(tab==='nw')loadNews()};
+let sy=null;addEventListener('touchstart',e=>{sy=scrollY<=0?e.touches[0].clientY:null},{passive:true});addEventListener('touchend',e=>{if(sy!=null&&e.changedTouches[0].clientY-sy>110){load();if(tab==='nw')loadNews()}sy=null},{passive:true});
+window.__resume=()=>{if(!D.ts||Date.now()-D.ts>15*60e3)load();if(tab==='nw'&&(!N.ts||Date.now()-N.ts>10*60e3))loadNews()};
+render();load();if(tab==='nw')loadNews();
 </script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});</script>
 </body></html>

@@ -1,4 +1,4 @@
-var C="pokes-football-v1.0";
+var C="pokes-football-v1.1";
 var P="pokes-football-";
 var F=["./", "./icons/apple-touch-icon.png", "./icons/icon-192.png", "./icons/icon-512.png", "./index.html", "./manifest.webmanifest"];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(F)}).then(function(){return self.skipWaiting()}))});

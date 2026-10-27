@@ -1,7 +1,7 @@
 {
   "name": "Pokes Football",
   "short_name": "Pokes",
-  "description": "Oklahoma State football 2026 schedule, rankings and stats",
+  "description": "Oklahoma State football 2026 schedule, rankings, stats and news",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
