@@ -26,6 +26,7 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 | Rune Lore | `rune-lore/` | 1.0 |
 | Solitaire | `solitaire/` | 1.0 |
 | StormTrack | `stormtrack/` | 1.0 |
+| Trip Logger | `triplogger/` | 1.0 |
 | Truck Cab Nutrition | `truck-cab-nutrition/` | 1.0 |
 | Truck Health | `truck-health/` | 1.0 |
 
@@ -34,6 +35,7 @@ The hub has two sections. All-in-one apps (Music Hub and Rig Hub) are listed fir
 - Reminders (meds, water, workouts, mantras, weather) run while the app is open. After you add it to the Home Screen you can allow notifications, but iOS will not keep firing alarms after the app is fully closed. There is no exact-alarm or battery-optimization setting on iPhone.
 - Backups use the share sheet or a downloaded `.json` file (Save to Files). They do not open Google Drive by themselves.
 - Rig Hub shift miles use GPS only while Trip Logger stays open. Miles pause if the screen locks or you leave the app.
+- The standalone Trip Logger uses the same rule on iPhone: GPS miles count only while the app is open. Miles can also be added by hand.
 - Rig Nav still needs your own HERE API key, typed in that app’s settings. Search and truck routing do not run without it. The key stays in `localStorage` on the phone.
 - Music Hub’s YouTube Music, Amazon Music, and SiriusXM pages open those sites in the browser. My Music plays files you pick from Files (there is no access to the phone’s music library). Podcasts stream; full episode downloads are not stored for offline play. Feed refresh uses a public RSS reader because many shows block browser requests.
 - Hazmat Helper runs offline. Search, placards, and the load checker use the tables shipped in the app. There is no Android bridge, and nothing is uploaded.
