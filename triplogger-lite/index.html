@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Trip Logger Lite" />
-    <title>Trip Logger Lite v1.0.0</title>
+    <title>Trip Logger Lite v1.1.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet" />
@@ -429,28 +429,83 @@
             </div>
           </div>
     </div>
-    <p class="ver">Trip Logger Lite v1.0.0 · iPhone web app · shift miles, activities, save, pay rates</p>
+    <p class="ver">Trip Logger Lite v1.1.0 · iPhone web app · shift miles, activities, save, pay rates</p>
     <div class="toast" id="toast" role="status"></div>
     <script src="mileweb.js"></script>
     <script>
       (function(){
         "use strict";
         var KEY = "trip-logger-lite-entries-v1";
-        var ACTIVITIES = ["Hook", "Arrive", "Drop and Hook", "Live Unload"];
+        /* Hook, Arrive, Drop, and Drop and Hook are one event. They share one count and one rate. */
+        var COMBINED = "Arrive/Drop/Hook";
+        var ACTIVITIES = [COMBINED, "Live Unload"];
+        var LEGACY_ACTS = ["Hook", "Arrive", "Drop and Hook", "Drop"];
         var trips = [];
         var RATE_KEY = "trip-logger-lite-rates-v1";
-        var DEFAULT_RATES = {"Hook":10.00,"Arrive":12.75,"Drop and Hook":12.75,"Live Unload":12.75};
+        var CUR_KEY = "trip-logger-lite-current-v1";
+        var DEFAULT_RATES = {"Arrive/Drop/Hook":12.75,"Live Unload":12.75};
+        var PRE_ADH = "-pre-adh-v1";
+        function rateNum(v){
+          if(v == null || v === "") return null;
+          var n = parseFloat(v);
+          if(isNaN(n) || n < 0) return null;
+          return Math.round(n * 100) / 100;
+        }
+        /* If the old rates match, keep that rate. If they differ, keep Arrive.
+           Nothing records which rate was edited last. Live Unload is copied as-is. */
+        function combinedRate(raw){
+          var already = rateNum(raw && raw[COMBINED]);
+          if(already != null) return already;
+          var old = [];
+          LEGACY_ACTS.forEach(function(k){
+            var n = rateNum(raw && raw[k]);
+            if(n != null) old.push(n);
+          });
+          if(!old.length) return DEFAULT_RATES[COMBINED];
+          if(old.every(function(n){ return n === old[0]; })) return old[0];
+          var arrive = rateNum(raw && raw.Arrive);
+          if(arrive != null) return arrive;
+          var drop = rateNum(raw && raw["Drop and Hook"]);
+          if(drop == null) drop = rateNum(raw && raw.Drop);
+          if(drop != null) return drop;
+          return old[0];
+        }
         function cleanRates(raw){
           var o = {};
-          ACTIVITIES.forEach(function(a){
-            var v = raw && raw[a] != null ? parseFloat(raw[a]) : NaN;
-            o[a] = (isNaN(v) || v < 0) ? DEFAULT_RATES[a] : Math.round(v * 100) / 100;
-          });
+          o[COMBINED] = combinedRate(raw);
+          var live = rateNum(raw && raw["Live Unload"]);
+          o["Live Unload"] = live == null ? DEFAULT_RATES["Live Unload"] : live;
           return o;
         }
+        function legacyAct(o){
+          if(!o || typeof o !== "object" || Array.isArray(o)) return false;
+          if(o[COMBINED] != null && o[COMBINED] !== "") return false;
+          return LEGACY_ACTS.some(function(k){ return o[k] != null && o[k] !== ""; });
+        }
+        function legacyRate(o){
+          if(!o || typeof o !== "object" || Array.isArray(o)) return false;
+          if(o[COMBINED] != null && o[COMBINED] !== "") return false;
+          return LEGACY_ACTS.some(function(k){ return rateNum(o[k]) != null; });
+        }
+        function hasLegacy(data){
+          if(Array.isArray(data)) return data.some(function(t){ return t && (legacyAct(t.activities) || legacyRate(t.rates)); });
+          return legacyAct(data) || legacyRate(data);
+        }
+        function backupOnce(key){
+          try{
+            var bk = key + PRE_ADH;
+            if(localStorage.getItem(bk) != null) return;
+            var raw = localStorage.getItem(key);
+            if(raw == null) return;
+            if(!hasLegacy(JSON.parse(raw))) return;
+            localStorage.setItem(bk, raw);
+          }catch(e){}
+        }
+        backupOnce(RATE_KEY);
         var RATES = cleanRates(null);
         try{ var rr = localStorage.getItem(RATE_KEY); if(rr) RATES = cleanRates(JSON.parse(rr)); }catch(e){}
         function saveRates(){ try{ localStorage.setItem(RATE_KEY, JSON.stringify(RATES)); }catch(e){} }
+        try{ if(localStorage.getItem(RATE_KEY) != null && localStorage.getItem(RATE_KEY) !== JSON.stringify(RATES)) saveRates(); }catch(e){}
         function money(n){ return "$" + (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
         function actsPay(acts, rates){
           acts = cleanActs(acts); rates = rates || RATES;
@@ -459,7 +514,7 @@
         function tripPay(t){ return actsPay(t.activities, t.rates ? cleanRates(t.rates) : RATES); }
 
         /* ---------- GPS mileage ---------- */
-        var APP_VERSION = "1.0.0";
+        var APP_VERSION = "1.1.0";
         var MRATE_KEY = "trip-logger-lite-mile-rates-v1", MSNAP_KEY = "trip-logger-lite-mile-snap-v1", MCACHE_KEY = "trip-logger-lite-mile-days-v1";
         var MILE_FIELDS = [["base","Base, all miles",0.64],["night","Night shift, all miles",0.07],["weekend","Weekend (Sat & Sun, midnight to midnight)",0.07]];
         function cleanMRates(raw){
@@ -698,13 +753,16 @@
           ACTIVITIES.forEach(function(a){ o[a] = 0; });
           return o;
         }
+        function countNum(v){
+          var n = parseInt(v, 10);
+          return (isNaN(n) || n < 0) ? 0 : n;
+        }
         function cleanActs(raw){
           var o = blankActs();
           if(raw && typeof raw === "object"){
-            ACTIVITIES.forEach(function(a){
-              var n = parseInt(raw[a], 10);
-              o[a] = (isNaN(n) || n < 0) ? 0 : n;
-            });
+            if(raw[COMBINED] != null && raw[COMBINED] !== "") o[COMBINED] = countNum(raw[COMBINED]);
+            else LEGACY_ACTS.forEach(function(k){ o[COMBINED] += countNum(raw[k]); });
+            o["Live Unload"] = countNum(raw["Live Unload"]);
           }
           return o;
         }
@@ -712,13 +770,22 @@
           return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
         }
         function load(){
+          backupOnce(KEY);
           try{
             var raw = localStorage.getItem(KEY);
             if(raw){
               var parsed = JSON.parse(raw);
               if(Array.isArray(parsed)){
                 trips = parsed.filter(function(t){ return t && typeof t === "object"; });
-                trips.forEach(function(t){ t.activities = cleanActs(t.activities); if(t.rates) t.rates = cleanRates(t.rates); });
+                var changed = false;
+                trips.forEach(function(t){
+                  var nextA = cleanActs(t.activities);
+                  var nextR = t.rates ? cleanRates(t.rates) : t.rates;
+                  if(JSON.stringify(t.activities) !== JSON.stringify(nextA) || JSON.stringify(t.rates || null) !== JSON.stringify(nextR || null)) changed = true;
+                  t.activities = nextA;
+                  if(t.rates) t.rates = nextR;
+                });
+                if(changed) persist();
               }
             }
           }catch(e){ trips = []; }
@@ -757,8 +824,9 @@
         function tripMilesNone(){ return 0; }
         /* ---------- Activity counters ---------- */
         var actRowsEl = document.getElementById("actRows");
-        var CUR_KEY = "trip-logger-lite-current-v1";
+        backupOnce(CUR_KEY);
         var formActs = cleanActs(lsGet(CUR_KEY, null));
+        try{ if(localStorage.getItem(CUR_KEY) != null && localStorage.getItem(CUR_KEY) !== JSON.stringify(formActs)) lsSet(CUR_KEY, formActs); }catch(e){}
         ACTIVITIES.forEach(function(a){
           var row = document.createElement("div");
           row.className = "act-row";
@@ -865,9 +933,19 @@
           download("trip-logger-lite.csv", lines.join("\n"), "text/csv");
           toast("CSV saved.");
         });
+        function preAdhExport(){
+          var o = {}, any = false;
+          [KEY, RATE_KEY, CUR_KEY].forEach(function(k){
+            try{ var v = localStorage.getItem(k + PRE_ADH); if(v != null){ o[k] = v; any = true; } }catch(e){}
+          });
+          return any ? o : null;
+        }
         document.getElementById("exportJsonBtn").addEventListener("click", function(){
           if(trips.length === 0 && Object.keys(mileStatus.days).length === 0){ toast("Nothing to back up yet."); return; }
-          download("trip-logger-lite-backup.json", JSON.stringify({app:"trip-logger-lite", version:1, appVersion: APP_VERSION, payPeriod: PP, rates: RATES, mileRates: MRATES, mileSnap: MSNAP, mileDays: mileStatus.days, entries: trips}, null, 2), "application/json");
+          var backup = {app:"trip-logger-lite", version:1, appVersion: APP_VERSION, payPeriod: PP, rates: RATES, mileRates: MRATES, mileSnap: MSNAP, mileDays: mileStatus.days, entries: trips};
+          var pre = preAdhExport();
+          if(pre) backup.preAdh = pre;
+          download("trip-logger-lite-backup.json", JSON.stringify(backup, null, 2), "application/json");
           toast("Backup saved.");
         });
         var importFile = document.getElementById("importFile");
@@ -889,6 +967,15 @@
               if(data.mileSnap && typeof data.mileSnap === "object"){ Object.keys(data.mileSnap).forEach(function(k){ if(!MSNAP[k]) MSNAP[k] = cleanMRates(data.mileSnap[k]); }); lsSet(MSNAP_KEY, MSNAP); }
               if(data.mileRates){ MRATES = cleanMRates(data.mileRates); lsSet(MRATE_KEY, MRATES); buildMileRates(); }
               if(data.rates){ RATES = cleanRates(data.rates); saveRates(); buildRates(); }
+              if(data.preAdh && typeof data.preAdh === "object"){
+                [KEY, RATE_KEY, CUR_KEY].forEach(function(k){
+                  try{
+                    var bk = k + PRE_ADH;
+                    if(data.preAdh[k] == null || localStorage.getItem(bk) != null) return;
+                    localStorage.setItem(bk, typeof data.preAdh[k] === "string" ? data.preAdh[k] : JSON.stringify(data.preAdh[k]));
+                  }catch(e){}
+                });
+              }
               if(data.payPeriod && typeof data.payPeriod === "object" && !PP.on){ PP = ppClean(data.payPeriod); savePP(); }
               render(); refreshActUI(); toast("Restored" + (n ? " " + n + " entries." : "."));
             }catch(e){ toast("Couldn't read that file — pick a Trip Logger Lite backup (.json)."); }
