@@ -436,14 +436,14 @@
       (function(){
         "use strict";
         var KEY = "trip-logger-lite-entries-v1";
-        /* Hook, Arrive, Drop, and Drop and Hook are one event. They share one count and one rate. */
-        var COMBINED = "Arrive/Drop/Hook";
-        var ACTIVITIES = [COMBINED, "Live Unload"];
-        var LEGACY_ACTS = ["Hook", "Arrive", "Drop and Hook", "Drop"];
+        /* Arrive, Drop and Hook, Drop, and Live Unload share one count and one rate. Hook stays separate. */
+        var COMBINED = "Arrive/Drop";
+        var HOOK = "Hook";
+        var ACTIVITIES = [COMBINED, HOOK];
         var trips = [];
         var RATE_KEY = "trip-logger-lite-rates-v1";
         var CUR_KEY = "trip-logger-lite-current-v1";
-        var DEFAULT_RATES = {"Arrive/Drop/Hook":12.75,"Live Unload":12.75};
+        var DEFAULT_RATES = {"Arrive/Drop":12.75,"Hook":10.00};
         var PRE_ADH = "-pre-adh-v1";
         function rateNum(v){
           if(v == null || v === "") return null;
@@ -451,41 +451,37 @@
           if(isNaN(n) || n < 0) return null;
           return Math.round(n * 100) / 100;
         }
-        /* If the old rates match, keep that rate. If they differ, keep Arrive.
-           Nothing records which rate was edited last. Live Unload is copied as-is. */
+        /* If Arrive, Drop and Hook, and Live Unload match, keep that rate. Otherwise keep Arrive. */
         function combinedRate(raw){
           var already = rateNum(raw && raw[COMBINED]);
           if(already != null) return already;
-          var old = [];
-          LEGACY_ACTS.forEach(function(k){
-            var n = rateNum(raw && raw[k]);
-            if(n != null) old.push(n);
-          });
-          if(!old.length) return DEFAULT_RATES[COMBINED];
-          if(old.every(function(n){ return n === old[0]; })) return old[0];
           var arrive = rateNum(raw && raw.Arrive);
+          var dropHook = rateNum(raw && raw["Drop and Hook"]);
+          var live = rateNum(raw && raw["Live Unload"]);
+          var parts = [];
+          if(arrive != null) parts.push(arrive);
+          if(dropHook != null) parts.push(dropHook);
+          if(live != null) parts.push(live);
+          if(parts.length && parts.every(function(n){ return n === parts[0]; })) return parts[0];
           if(arrive != null) return arrive;
-          var drop = rateNum(raw && raw["Drop and Hook"]);
-          if(drop == null) drop = rateNum(raw && raw.Drop);
-          if(drop != null) return drop;
-          return old[0];
+          return DEFAULT_RATES[COMBINED];
         }
         function cleanRates(raw){
           var o = {};
           o[COMBINED] = combinedRate(raw);
-          var live = rateNum(raw && raw["Live Unload"]);
-          o["Live Unload"] = live == null ? DEFAULT_RATES["Live Unload"] : live;
+          var hook = rateNum(raw && raw[HOOK]);
+          o[HOOK] = hook == null ? DEFAULT_RATES[HOOK] : hook;
           return o;
         }
         function legacyAct(o){
           if(!o || typeof o !== "object" || Array.isArray(o)) return false;
           if(o[COMBINED] != null && o[COMBINED] !== "") return false;
-          return LEGACY_ACTS.some(function(k){ return o[k] != null && o[k] !== ""; });
+          return o.Arrive != null || o["Drop and Hook"] != null || o.Drop != null || o["Live Unload"] != null || o["Arrive/Drop/Hook"] != null || o["Arrive/Live Unload"] != null;
         }
         function legacyRate(o){
           if(!o || typeof o !== "object" || Array.isArray(o)) return false;
-          if(o[COMBINED] != null && o[COMBINED] !== "") return false;
-          return LEGACY_ACTS.some(function(k){ return rateNum(o[k]) != null; });
+          if(rateNum(o[COMBINED]) != null) return false;
+          return rateNum(o.Arrive) != null || rateNum(o["Drop and Hook"]) != null || rateNum(o["Live Unload"]) != null || rateNum(o["Arrive/Drop/Hook"]) != null || rateNum(o["Arrive/Live Unload"]) != null;
         }
         function hasLegacy(data){
           if(Array.isArray(data)) return data.some(function(t){ return t && (legacyAct(t.activities) || legacyRate(t.rates)); });
@@ -501,7 +497,19 @@
             localStorage.setItem(bk, raw);
           }catch(e){}
         }
+        /* An unpublished preview folded the wrong events. Put that record's pre-migration copy back before folding Arrive/Drop. */
+        function recoverUnpublished(key){
+          try{
+            var backup = localStorage.getItem(key + PRE_ADH);
+            var raw = localStorage.getItem(key);
+            if(backup == null || raw == null) return;
+            if(raw.indexOf("\"" + COMBINED + "\"") >= 0) return;
+            if(raw.indexOf("\"Arrive/Drop/Hook\"") < 0 && raw.indexOf("\"Arrive/Live Unload\"") < 0) return;
+            localStorage.setItem(key, backup);
+          }catch(e){}
+        }
         backupOnce(RATE_KEY);
+        recoverUnpublished(RATE_KEY);
         var RATES = cleanRates(null);
         try{ var rr = localStorage.getItem(RATE_KEY); if(rr) RATES = cleanRates(JSON.parse(rr)); }catch(e){}
         function saveRates(){ try{ localStorage.setItem(RATE_KEY, JSON.stringify(RATES)); }catch(e){} }
@@ -760,17 +768,27 @@
         function cleanActs(raw){
           var o = blankActs();
           if(raw && typeof raw === "object"){
+            o[HOOK] = countNum(raw[HOOK]);
             if(raw[COMBINED] != null && raw[COMBINED] !== "") o[COMBINED] = countNum(raw[COMBINED]);
-            else LEGACY_ACTS.forEach(function(k){ o[COMBINED] += countNum(raw[k]); });
-            o["Live Unload"] = countNum(raw["Live Unload"]);
+            else o[COMBINED] = countNum(raw.Arrive) + countNum(raw["Drop and Hook"]) + countNum(raw.Drop) + countNum(raw["Live Unload"]);
           }
           return o;
         }
         function uid(){
           return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
         }
+        function backupById(){
+          var map = {};
+          try{
+            var raw = localStorage.getItem(KEY + PRE_ADH);
+            var arr = raw ? JSON.parse(raw) : null;
+            if(Array.isArray(arr)) arr.forEach(function(t){ if(t && t.id) map[t.id] = t; });
+          }catch(e){}
+          return map;
+        }
         function load(){
           backupOnce(KEY);
+          var prior = backupById();
           try{
             var raw = localStorage.getItem(KEY);
             if(raw){
@@ -779,11 +797,14 @@
                 trips = parsed.filter(function(t){ return t && typeof t === "object"; });
                 var changed = false;
                 trips.forEach(function(t){
-                  var nextA = cleanActs(t.activities);
-                  var nextR = t.rates ? cleanRates(t.rates) : t.rates;
+                  var srcA = t.activities, srcR = t.rates;
+                  var wrong = srcA && (srcA[COMBINED] == null || srcA[COMBINED] === "") && (srcA["Arrive/Drop/Hook"] != null || srcA["Arrive/Live Unload"] != null) && prior[t.id];
+                  if(wrong){ srcA = prior[t.id].activities; if(prior[t.id].rates) srcR = prior[t.id].rates; }
+                  var nextA = cleanActs(srcA);
+                  var nextR = srcR ? cleanRates(srcR) : srcR;
                   if(JSON.stringify(t.activities) !== JSON.stringify(nextA) || JSON.stringify(t.rates || null) !== JSON.stringify(nextR || null)) changed = true;
                   t.activities = nextA;
-                  if(t.rates) t.rates = nextR;
+                  if(t.rates || (wrong && srcR)) t.rates = nextR;
                 });
                 if(changed) persist();
               }
@@ -825,6 +846,7 @@
         /* ---------- Activity counters ---------- */
         var actRowsEl = document.getElementById("actRows");
         backupOnce(CUR_KEY);
+        recoverUnpublished(CUR_KEY);
         var formActs = cleanActs(lsGet(CUR_KEY, null));
         try{ if(localStorage.getItem(CUR_KEY) != null && localStorage.getItem(CUR_KEY) !== JSON.stringify(formActs)) lsSet(CUR_KEY, formActs); }catch(e){}
         ACTIVITIES.forEach(function(a){
