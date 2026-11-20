@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>AI Trip Logger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4f4f1; --surface:#ffffff; --surface2:#ececea; --ink:#191b1e; --ink2:#4c5157; --ink3:#7a8087;
+    --line:#d9d9d3; --accent:#c77400; --accent-ink:#ffffff; --accent-soft:#fdf0dc;
+    --good:#1e7d46; --bad:#b3352b; --warn-bg:#fdf0dc; --warn-ink:#7a4b00;
+    --shadow:0 1px 3px rgba(20,20,20,.10), 0 4px 14px rgba(20,20,20,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101215; --surface:#1a1d20; --surface2:#23262a; --ink:#f0f0ec; --ink2:#b9bdc2; --ink3:#878d94;
+      --line:#33373c; --accent:#f0a832; --accent-ink:#1a1200; --accent-soft:#3a2c10;
+      --good:#4cc07a; --bad:#f08074; --warn-bg:#3a2c10; --warn-ink:#f5c86e;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+      color-scheme: dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer}
+  input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.5rem .6rem;width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  textarea{line-height:1.4}
+  label{display:block;font-size:.82rem;font-weight:600;color:var(--ink2);margin-bottom:.3rem;letter-spacing:.01em}
+  .wrap{max-width:860px;margin:0 auto;padding:0 14px 90px}
+
+  /* Header */
+  header.top{position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:3px solid var(--accent)}
+  .top-in{max-width:860px;margin:0 auto;padding:10px 14px 0}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand h1{font-family:"Barlow Condensed",sans-serif;font-size:1.65rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0;line-height:1}
+  .brand h1 span{color:var(--accent)}
+  .guide-btn{background:var(--surface);border:1.5px solid var(--accent);color:var(--accent);font-weight:700;border-radius:999px;padding:.35rem .95rem;font-size:.9rem;white-space:nowrap}
+  nav.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:1 0 auto;background:none;border:none;border-bottom:3px solid transparent;color:var(--ink2);font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:1.02rem;letter-spacing:.03em;text-transform:uppercase;padding:.5rem .7rem .55rem;margin-bottom:-3px}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+  main{padding-top:16px}
+  .view{display:none}
+  .view.active{display:block}
+
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;padding:.55rem 1rem;font-size:.95rem;text-decoration:none}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn.danger{color:var(--bad);border-color:var(--bad)}
+  .btn.small{padding:.35rem .7rem;font-size:.88rem;min-height:2.25rem}
+  .btn.block{width:100%}
+  .btn:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row.between{justify-content:space-between}
+  .spacer{flex:1}
+
+  /* Summary strip */
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow)}
+  .stat .k{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)}
+  .stat .v{font-family:"Barlow Condensed",sans-serif;font-size:1.45rem;font-weight:700;line-height:1.1;margin-top:2px}
+  .stat .s{font-size:.8rem;color:var(--ink2)}
+
+  /* Trip cards */
+  .trip{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .trip-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .trip-title{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:.02em;line-height:1.1}
+  .trip-sub{color:var(--ink2);font-size:.88rem;margin-top:2px}
+  .pay-total{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;color:var(--accent);white-space:nowrap;line-height:1.1;text-align:right}
+  .pay-total small{display:block;font-family:"Barlow",sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+  .chip{background:var(--surface2);border-radius:999px;padding:.18rem .6rem;font-size:.8rem;font-weight:600;color:var(--ink2)}
+  .chip b{color:var(--ink)}
+  .paylines{margin:12px 0 0;border-top:1px dashed var(--line);padding-top:10px;font-size:.93rem}
+  .paylines .pl{display:flex;justify-content:space-between;padding:.14rem 0;color:var(--ink2)}
+  .paylines .pl b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .paylines .pl.grand{border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-weight:700}
+  .paylines .pl.grand b{color:var(--accent)}
+  details.stops{margin-top:10px}
+  details.stops summary{cursor:pointer;font-weight:600;color:var(--accent);padding:.3rem 0}
+  table.mini{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:4px}
+  table.mini th{text-align:left;color:var(--ink3);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;padding:.3rem .4rem;border-bottom:1px solid var(--line)}
+  table.mini td{padding:.35rem .4rem;border-bottom:1px solid var(--line);vertical-align:top}
+  table.mini td.num,table.mini th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .stop-note{color:var(--ink2);font-size:.82rem}
+  .trip-actions{display:flex;gap:8px;margin-top:12px}
+
+  .empty{background:var(--surface);border:1.5px dashed var(--line);border-radius:12px;padding:28px 18px;text-align:center;color:var(--ink2)}
+  .empty h2{font-family:"Barlow Condensed",sans-serif;font-size:1.4rem;margin:0 0 6px;color:var(--ink);letter-spacing:.02em}
+  .empty p{margin:0 auto 14px;max-width:44ch}
+
+  /* Forms */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+  .card h2{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin:0 0 4px}
+  .card h3{font-family:"Barlow Condensed",sans-serif;font-size:1.12rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin:18px 0 8px}
+  .card h3:first-of-type{margin-top:6px}
+  .card .hint{color:var(--ink2);font-size:.88rem;margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid .full{grid-column:1/-1}
+  @media (max-width:520px){ .grid{grid-template-columns:1fr 1fr} .grid .wide{grid-column:1/-1} }
+  .field{margin-bottom:2px}
+  .stop-edit{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)}
+  .stop-edit .row{margin-bottom:8px}
+  .timer-banner{display:none;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.92rem}
+  .timer-banner.show{display:block}
+  .timer-live{font-variant-numeric:tabular-nums;font-weight:700}
+  .form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .msg{border-radius:9px;padding:10px 12px;font-size:.93rem;margin-bottom:12px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent)}
+  .msg.err{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+
+  /* Totals */
+  .group{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .group-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .group-title{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;font-weight:700}
+  .group-sub{color:var(--ink2);font-size:.86rem}
+  .group-total{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;font-weight:700;color:var(--accent);white-space:nowrap}
+
+  /* Overlays */
+  .overlay{position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto;display:none}
+  .overlay.open{display:block}
+  .overlay-in{max-width:760px;margin:0 auto;padding:18px 16px 70px}
+  .overlay-bar{position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:3px solid var(--accent);display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:2}
+  .overlay-bar h2{font-family:"Barlow Condensed",sans-serif;font-size:1.5rem;text-transform:uppercase;letter-spacing:.03em;margin:0}
+  .guide-body h3{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;letter-spacing:.02em;margin:26px 0 6px;text-transform:uppercase}
+  .guide-body h3:first-child{margin-top:14px}
+  .guide-body p,.guide-body li{color:var(--ink);font-size:.98rem}
+  .guide-body ul{padding-left:1.25rem;margin:.4rem 0}
+  .guide-body li{margin:.28rem 0}
+  .callout{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:.95rem}
+  .callout b{color:inherit}
+  .prompt-box{width:100%;min-height:300px;font-size:.86rem;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  dialog.confirm{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:20px;max-width:min(92vw,420px);box-shadow:var(--shadow)}
+  dialog.confirm::backdrop{background:rgba(0,0,0,.45)}
+  dialog.confirm h3{margin:0 0 8px;font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
+  dialog.confirm p{color:var(--ink2);margin:0 0 16px}
+
+  /* Print breakdown */
+  .print-sheet{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:22px}
+  .print-sheet h2{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;margin:0}
+  .print-sheet h3{font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.03em}
+  .print-sheet table{width:100%;border-collapse:collapse;font-size:.86rem}
+  .print-sheet th{text-align:left;border-bottom:2px solid var(--ink);padding:.3rem .35rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+  .print-sheet td{border-bottom:1px solid var(--line);padding:.32rem .35rem;vertical-align:top}
+  .print-sheet td.num,.print-sheet th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .print-sheet .tot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none}
+  @media print{
+    body{background:#fff}
+    header.top, .no-print{display:none !important}
+    .overlay{position:static;overflow:visible}
+    .print-sheet{border:none;padding:0}
+  }
+  .foot-note{color:var(--ink3);font-size:.82rem;margin-top:18px;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>AI <span>Trip Logger</span></h1>
+      <button class="guide-btn" id="openGuideBtn" type="button">Setup Guide</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Main">
+      <button role="tab" data-view="trips" aria-selected="true" type="button">Trips</button>
+      <button role="tab" data-view="totals" aria-selected="false" type="button">Totals</button>
+      <button role="tab" data-view="settings" aria-selected="false" type="button">Settings</button>
+      <button role="tab" data-view="data" aria-selected="false" type="button">Data</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+
+  <!-- ============ TRIPS ============ -->
+  <section class="view active" id="view-trips">
+    <div class="strip" id="summaryStrip"></div>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn primary" id="newTripBtn" type="button">+ Log a trip</button>
+      <span class="spacer"></span>
+      <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:.9rem">Show
+        <select id="tripFilter" style="width:auto">
+          <option value="all">All trips</option>
+          <option value="week">This week</option>
+          <option value="period">This pay period</option>
+        </select>
+      </label>
+    </div>
+    <div id="tripList"></div>
+    <div id="tripEditor"></div>
+  </section>
+
+  <!-- ============ TOTALS ============ -->
+  <section class="view" id="view-totals">
+    <div id="totalsBody"></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="view" id="view-settings">
+    <div class="msg" id="settingsMsg" role="status"></div>
+    <form id="settingsForm" autocomplete="off">
+      <div class="card">
+        <h2>Your pay rates</h2>
+        <p class="hint">Enter your own company's numbers. Everything stays on this device, in this browser — nobody else sees it. <b>Every field here is optional too:</b> fill in only the rates your company pays, and leave the rest blank. Pay lines in the app simply show what can be figured from whatever you've entered — blank rates count as $0 and never stop you from saving a trip.</p>
+        <h3>Mileage</h3>
+        <div class="grid">
+          <div class="field"><label for="s-baseRate">Base pay — $ per mile</label><input id="s-baseRate" type="number" step="0.001" min="0" inputmode="decimal" placeholder="Your $ per mile"></div>
+          <div class="field"><label for="s-nightBonus">Night bonus — $ per mile</label><input id="s-nightBonus" type="number" step="0.001" min="0" inputmode="decimal" placeholder="Your $ per mile"></div>
+          <div class="field"><label for="s-nightStart">Night window starts</label><input id="s-nightStart" type="time"></div>
+          <div class="field"><label for="s-nightEnd">Night window ends</label><input id="s-nightEnd" type="time"></div>
+          <div class="field"><label for="s-weekendBonus">Weekend bonus — $ per mile</label><input id="s-weekendBonus" type="number" step="0.001" min="0" inputmode="decimal" placeholder="Your $ per mile"></div>
+          <div class="field"><label for="s-weekendNote">Weekend window (your company's rule)</label><input id="s-weekendNote" type="text" placeholder="e.g. Fri midnight – Sun midnight"></div>
+        </div>
+        <p class="hint" style="margin-top:10px">Mileage pay is figured from each trip's <b>GPS / shift miles</b> — never from route miles. On each trip you can enter how many of those GPS miles ran at night and how many ran on the weekend, and the bonuses are added for those miles.</p>
+        <h3>Activity pay — $ each</h3>
+        <div class="grid" id="activityRateFields"></div>
+        <h3>Detention</h3>
+        <div class="grid">
+          <div class="field"><label for="s-detentionFree">Free minutes at a store</label><input id="s-detentionFree" type="number" step="1" min="0" inputmode="numeric"></div>
+          <div class="field"><label for="s-detentionRate">Detention pay — $ per hour after the free minutes</label><input id="s-detentionRate" type="number" step="0.01" min="0" inputmode="decimal" placeholder="Leave blank if not paid / not known yet"></div>
+        </div>
+        <p class="hint" style="margin-top:10px">Detention minutes on a stop are your total wait at that store. Only the minutes past the free minutes count toward detention pay, and the detention pay line only appears on a trip once you've entered a rate here.</p>
+        <h3>Pay period</h3>
+        <div class="grid">
+          <div class="field"><label for="s-periodWeeks">Pay period length — weeks</label><input id="s-periodWeeks" type="number" step="1" min="1" max="6" inputmode="numeric"></div>
+          <div class="field"><label for="s-weekStart">Week starts on</label>
+            <select id="s-weekStart">
+              <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+              <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option>
+              <option value="6">Saturday</option>
+            </select>
+          </div>
+          <div class="field wide"><label for="s-periodAnchor">First day of a pay period (optional — lines up the period grouping)</label><input id="s-periodAnchor" type="date"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit">Save settings</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ DATA ============ -->
+  <section class="view" id="view-data">
+    <div class="msg" id="dataMsg" role="status"></div>
+    <div class="card">
+      <h2>Back up &amp; restore</h2>
+      <p class="hint">Your trips live in this browser on this device only. Export a backup regularly — if you clear your browser data or change phones without a backup, the log is gone. A weekly save is a good habit.</p>
+      <div class="form-actions">
+        <button class="btn" id="exportCsvBtn" type="button">Export CSV</button>
+        <button class="btn" id="exportJsonBtn" type="button">Export JSON backup</button>
+      </div>
+      <h3>Restore from a JSON backup</h3>
+      <p class="hint">Restoring replaces the trips and settings currently in the app with the ones in the backup file.</p>
+      <div class="form-actions">
+        <label class="btn" for="importFile" style="margin:0">Choose JSON backup…</label>
+        <input id="importFile" type="file" accept=".json,application/json" style="display:none">
+      </div>
+      <h3>Start over</h3>
+      <p class="hint">Erase every trip in the app — for example, after you've printed a pay period and want to begin the next one fresh. Export a backup first. Settings are kept.</p>
+      <div class="form-actions">
+        <button class="btn danger" id="clearTripsBtn" type="button">Erase all trips</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot-note">AI Trip Logger — your trips and rates stay in this browser, on your device.</p>
+</main>
+</div>
+
+<!-- ============ SETUP GUIDE OVERLAY ============ -->
+<div class="overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-label="AI Trip Logger setup guide">
+  <div class="overlay-in">
+    <div class="overlay-bar">
+      <h2>Setup Guide</h2>
+      <button class="btn small" id="closeGuideBtn" type="button">Close</button>
+    </div>
+    <div class="guide-body" id="guideBody"></div>
+    <div class="card" style="margin-top:26px">
+      <h2 style="font-size:1.2rem">Starter prompt for your AI agent</h2>
+      <p class="hint">Copy this and paste it into your AI agent app (ChatGPT, Muse, Gemini, or Grok) to teach it how to log your trips. It's filled in with the numbers from your Settings — anywhere you haven't entered a number yet shows as a blank to fill in.</p>
+      <textarea class="prompt-box" id="starterPrompt" readonly></textarea>
+      <div class="form-actions">
+        <button class="btn primary" id="copyPromptBtn" type="button">Copy starter prompt</button>
+        <span id="copyMsg" style="font-size:.9rem;color:var(--good);font-weight:600"></span>
+      </div>
+      <p class="hint" style="margin-top:10px">Tip: update your Settings first, then come back and copy a fresh prompt so your agent has your current rates.</p>
+    </div>
+    <div class="form-actions" style="margin-top:20px">
+      <button class="btn primary block" id="guideDoneBtn" type="button">Got it — start logging</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRINT OVERLAY ============ -->
+<div class="overlay" id="printOverlay" role="dialog" aria-modal="true" aria-label="Printable breakdown">
+  <div class="overlay-in">
+    <div class="overlay-bar no-print">
+      <h2>Printable breakdown</h2>
+      <button class="btn small" id="closePrintBtn" type="button">Back</button>
+    </div>
+    <p class="hint no-print" style="margin-top:12px">Print this from your browser or device menu (Share → Print, or Ctrl/Cmd + P) to get it on one sheet.</p>
+    <div id="printBody"></div>
+  </div>
+</div>
+
+<dialog class="confirm" id="confirmDialog">
+  <h3 id="confirmTitle">Are you sure?</h3>
+  <p id="confirmText"></p>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn" id="confirmCancel" type="button">Cancel</button>
+    <button class="btn danger" id="confirmOk" type="button">Yes, do it</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+/* ================= Storage ================= */
+var LS_TRIPS = "aitl_trips_v1", LS_SETTINGS = "aitl_settings_v1", LS_SEEN = "aitl_guide_seen_v1";
+function loadJSON(key, fallback){ try{ var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+var ACTIVITIES = [
+  {key:"arrive",     label:"Arrive"},
+  {key:"arriveDrop", label:"Arrive and Drop"},
+  {key:"stop",       label:"Stop"},
+  {key:"stopDrop",   label:"Stop and Drop"},
+  {key:"liveLoad",   label:"Live Load"},
+  {key:"liveUnload", label:"Live Unload"},
+  {key:"layover",    label:"Layover"},
+  {key:"hook",       label:"Hook"}
+];
+
+var DEFAULT_SETTINGS = {
+  baseRate:"", nightBonus:"", nightStart:"", nightEnd:"",
+  weekendBonus:"", weekendNote:"",
+  rates:{ arrive:"", arriveDrop:"", stop:"", stopDrop:"", liveLoad:"", liveUnload:"", layover:"", hook:"" },
+  detentionFree:45, detentionRate:"",
+  periodWeeks:2, weekStart:1, periodAnchor:""
+};
+
+var settings = Object.assign({}, DEFAULT_SETTINGS, loadJSON(LS_SETTINGS, {}));
+settings.rates = Object.assign({}, DEFAULT_SETTINGS.rates, (loadJSON(LS_SETTINGS, {}).rates || {}));
+var trips = loadJSON(LS_TRIPS, []);
+if(!Array.isArray(trips)) trips = [];
+
+/* ================= Helpers ================= */
+function $(id){ return document.getElementById(id); }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function hasVal(v){ return v !== "" && v !== null && v !== undefined && !isNaN(parseFloat(v)); }
+function money(n){ return "$" + n.toFixed(2); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function uid(){ return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmtDate(iso){
+  if(!iso) return "";
+  var p = iso.split("-"); if(p.length !== 3) return iso;
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  return d.toLocaleDateString(undefined, {weekday:"short", month:"short", day:"numeric", year:"numeric"});
+}
+function fmtDateShort(iso){
+  if(!iso) return "";
+  var p = iso.split("-"); if(p.length !== 3) return iso;
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
+}
+function tripLabel(t){
+  var n = (t.tripNumber || "").toString().trim();
+  if(n) return "Trip " + n;
+  if(t.date) return "Trip — " + fmtDateShort(t.date);
+  return "Trip — no date";
+}
+function parseDate(iso){ var p = (iso||"").split("-"); return p.length===3 ? new Date(+p[0], +p[1]-1, +p[2]) : null; }
+function isoOf(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function weekStartOf(iso){
+  var d = parseDate(iso); if(!d) return null;
+  var start = num(settings.weekStart);
+  var diff = (d.getDay() - start + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+function confirmAction(title, text, okLabel){
+  return new Promise(function(resolve){
+    var dlg = $("confirmDialog");
+    $("confirmTitle").textContent = title;
+    $("confirmText").textContent = text;
+    $("confirmOk").textContent = okLabel || "Yes, do it";
+    function done(v){ dlg.removeEventListener("close", onClose); resolve(v); }
+    function onClose(){ resolve(false); }
+    $("confirmOk").onclick = function(){ done(true); dlg.close(); };
+    $("confirmCancel").onclick = function(){ done(false); dlg.close(); };
+    dlg.addEventListener("close", onClose);
+    dlg.showModal();
+  });
+}
+
+/* ================= Pay math ================= */
+function routeMiles(trip){ return (trip.stops||[]).reduce(function(s, st){ return s + num(st.miles); }, 0); }
+function billableDetention(trip){
+  var free = num(settings.detentionFree);
+  return (trip.stops||[]).reduce(function(s, st){ return s + Math.max(0, num(st.detention) - free); }, 0);
+}
+function tripPay(trip){
+  var gps = num(trip.gpsMiles);
+  var mileage = gps * num(settings.baseRate)
+    + num(trip.nightMiles) * num(settings.nightBonus)
+    + num(trip.weekendMiles) * num(settings.weekendBonus);
+  var activity = 0, counts = trip.activities || {};
+  ACTIVITIES.forEach(function(a){ activity += num(counts[a.key]) * num(settings.rates[a.key]); });
+  var detMin = billableDetention(trip);
+  var detPay = hasVal(settings.detentionRate) ? (detMin / 60) * num(settings.detentionRate) : null;
+  return { mileage:mileage, activity:activity, detention:detPay, detentionMinutes:detMin,
+           total: mileage + activity + (detPay || 0) };
+}
+function sumPay(list){
+  var t = { mileage:0, activity:0, detention:0, total:0, gps:0, route:0, detentionMinutes:0, hasDetention:false };
+  list.forEach(function(trip){
+    var p = tripPay(trip);
+    t.mileage += p.mileage; t.activity += p.activity; t.total += p.total;
+    t.gps += num(trip.gpsMiles); t.route += routeMiles(trip); t.detentionMinutes += p.detentionMinutes;
+    if(p.detention !== null){ t.detention += p.detention; t.hasDetention = true; }
+  });
+  return t;
+}
+
+/* ================= Navigation ================= */
+function showView(name){
+  document.querySelectorAll("nav.tabs button").forEach(function(b){
+    b.setAttribute("aria-selected", b.getAttribute("data-view") === name ? "true" : "false");
+  });
+  document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+  $("view-" + name).classList.add("active");
+  if(name === "totals") renderTotals();
+  if(name === "trips") renderTrips();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav.tabs button").forEach(function(b){
+  b.addEventListener("click", function(){ showView(b.getAttribute("data-view")); });
+});
+
+/* ================= Trips list ================= */
+var editingId = null;
+
+function sortedTrips(){
+  return trips.slice().sort(function(a, b){ return (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0); });
+}
+function currentWeekTrips(){
+  if(!trips.length) return [];
+  var latest = sortedTrips()[0].date;
+  var ws = weekStartOf(latest); if(!ws) return [];
+  var we = new Date(ws); we.setDate(we.getDate() + 7);
+  return trips.filter(function(t){ var d = parseDate(t.date); return d && d >= ws && d < we; });
+}
+function periodGroups(list){
+  /* Group trips into pay periods of settings.periodWeeks consecutive weeks. */
+  var weeks = {};
+  list.forEach(function(t){
+    var ws = weekStartOf(t.date); if(!ws) return;
+    var key = isoOf(ws);
+    (weeks[key] = weeks[key] || { start: ws, trips: [] }).trips.push(t);
+  });
+  var keys = Object.keys(weeks).sort();
+  if(!keys.length) return [];
+  var pw = Math.max(1, num(settings.periodWeeks) || 1);
+  var anchor = settings.periodAnchor ? weekStartOf(settings.periodAnchor) : weeks[keys[0]].start;
+  if(!anchor) anchor = weeks[keys[0]].start;
+  var groups = {};
+  keys.forEach(function(k){
+    var ws = weeks[k].start;
+    var idx = Math.floor(Math.round((ws - anchor) / 86400000) / 7 / pw);
+    var pStart = new Date(anchor); pStart.setDate(pStart.getDate() + idx * pw * 7);
+    var pEnd = new Date(pStart); pEnd.setDate(pEnd.getDate() + pw * 7 - 1);
+    var gk = isoOf(pStart);
+    if(!groups[gk]) groups[gk] = { start: pStart, end: pEnd, trips: [] };
+    groups[gk].trips = groups[gk].trips.concat(weeks[k].trips);
+  });
+  return Object.keys(groups).sort().map(function(k){ return groups[k]; });
+}
+function currentPeriodTrips(){
+  var groups = periodGroups(trips);
+  if(!groups.length) return [];
+  var latest = sortedTrips()[0].date;
+  var d = parseDate(latest);
+  for(var i = 0; i < groups.length; i++){
+    var gEnd = new Date(groups[i].end); gEnd.setDate(gEnd.getDate() + 1);
+    if(d >= groups[i].start && d < gEnd) return g.trips;
+  }
+  return groups[groups.length - 1].trips;
+}
+
+function payLinesHTML(p){
+  var h = '<div class="paylines">'
+    + '<div class="pl"><span>Mileage pay (GPS miles)</span><b>' + money(p.mileage) + '</b></div>'
+    + '<div class="pl"><span>Activity pay</span><b>' + money(p.activity) + '</b></div>';
+  if(p.detention !== null && p.detention !== undefined){
+    h += '<div class="pl"><span>Detention pay (' + Math.round(p.detentionMinutes) + ' min past free time)</span><b>' + money(p.detention) + '</b></div>';
+  } else if(p.detentionMinutes > 0){
+    h += '<div class="pl"><span>Detention</span><b>' + Math.round(p.detentionMinutes) + ' min past free time (no rate set)</b></div>';
+  }
+  h += '<div class="pl grand"><span>Total</span><b>' + money(p.total) + '</b></div></div>';
+  return h;
+}
+
+function renderTrips(){
+  var list = sortedTrips();
+  var filter = $("tripFilter").value;
+  var shown = list;
+  if(filter === "week") shown = currentWeekTrips().slice().sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); });
+  if(filter === "period") shown = currentPeriodTrips().slice().sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); });
+
+  var all = sumPay(list), wk = sumPay(currentWeekTrips());
+  $("summaryStrip").innerHTML =
+    '<div class="stat"><div class="k">Trips logged</div><div class="v">' + list.length + '</div><div class="s">' + all.gps.toLocaleString() + ' GPS mi all time</div></div>'
+    + '<div class="stat"><div class="k">This week</div><div class="v">' + money(wk.total) + '</div><div class="s">' + wk.gps.toLocaleString() + ' GPS mi</div></div>'
+    + '<div class="stat"><div class="k">All-time pay</div><div class="v">' + money(all.total) + '</div><div class="s">' + all.route.toLocaleString() + ' route mi</div></div>';
+
+  var box = $("tripList");
+  if(editingId !== null){ box.innerHTML = ""; return; }
+  if(!list.length){
+    box.innerHTML = '<div class="empty"><h2>No trips yet</h2><p>Tap “Log a trip” to enter your first one — date, trip number, trailer, odometer, stops, and activities. New to this? The Setup Guide at the top walks you through running it by voice with an AI agent.</p><button class="btn primary" type="button" onclick="document.getElementById(\'newTripBtn\').click()">Log your first trip</button></div>';
+    return;
+  }
+  if(!shown.length){
+    box.innerHTML = '<div class="empty"><h2>Nothing in this view</h2><p>No trips fall in the selected week or pay period yet.</p></div>';
+    return;
+  }
+  box.innerHTML = shown.map(function(t){
+    var p = tripPay(t);
+    var odo = (hasVal(t.startOdo) && hasVal(t.endOdo)) ? (num(t.endOdo) - num(t.startOdo)) : null;
+    var chips = '<span class="chip">GPS <b>' + num(t.gpsMiles).toLocaleString() + ' mi</b></span>'
+      + '<span class="chip">Route <b>' + routeMiles(t).toLocaleString() + ' mi</b></span>'
+      + '<span class="chip">Stops <b>' + (t.stops || []).length + '</b></span>';
+    if(odo !== null) chips += '<span class="chip">Odometer <b>' + odo.toLocaleString() + ' mi</b></span>';
+    var actChips = ACTIVITIES.filter(function(a){ return num((t.activities || {})[a.key]) > 0; })
+      .map(function(a){ return '<span class="chip">' + esc(a.label) + ' <b>×' + num(t.activities[a.key]) + '</b></span>'; }).join("");
+    var stopsHTML = "";
+    if((t.stops || []).length){
+      stopsHTML = '<details class="stops"><summary>Stops (' + t.stops.length + ')</summary><table class="mini"><thead><tr><th>Store</th><th class="num">Miles</th><th class="num">Detention</th></tr></thead><tbody>'
+        + t.stops.map(function(st){
+            return '<tr><td>' + esc(st.store || "—") + (st.notes ? '<div class="stop-note">' + esc(st.notes) + '</div>' : '')
+              + '</td><td class="num">' + (hasVal(st.miles) ? num(st.miles).toLocaleString() : "—")
+              + '</td><td class="num">' + (hasVal(st.detention) && num(st.detention) > 0 ? Math.round(num(st.detention)) + " min" : "—") + '</td></tr>';
+          }).join("")
+        + '</tbody></table></details>';
+    }
+    return '<article class="trip">'
+      + '<div class="trip-head"><div><div class="trip-title">' + esc(tripLabel(t)) + '</div>'
+      + '<div class="trip-sub">' + (t.date ? esc(fmtDate(t.date)) : 'No date') + (t.trailer ? ' · Trailer ' + esc(t.trailer) : '')
+      + (hasVal(t.startOdo) ? ' · Odo ' + num(t.startOdo).toLocaleString() : '') + (hasVal(t.endOdo) ? ' → ' + num(t.endOdo).toLocaleString() : '') + '</div></div>'
+      + '<div class="pay-total"><small>Trip pay</small>' + money(p.total) + '</div></div>'
+      + '<div class="chips">' + chips + actChips + '</div>'
+      + stopsHTML
+      + (t.notes ? '<p style="margin:10px 0 0;color:var(--ink2);font-size:.92rem">' + esc(t.notes) + '</p>' : '')
+      + payLinesHTML(p)
+      + '<div class="trip-actions"><button class="btn small" type="button" data-edit="' + t.id + '">Edit</button>'
+      + '<button class="btn small danger" type="button" data-del="' + t.id + '">Delete</button></div>'
+      + '</article>';
+  }).join("");
+  box.querySelectorAll("[data-edit]").forEach(function(b){ b.addEventListener("click", function(){ openEditor(b.getAttribute("data-edit")); }); });
+  box.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click", function(){ deleteTrip(b.getAttribute("data-del")); }); });
+}
+$("tripFilter").addEventListener("change", renderTrips);
+
+function deleteTrip(id){
+  var t = trips.filter(function(x){ return x.id === id; })[0];
+  confirmAction("Delete this trip?", (t ? tripLabel(t) : "This trip") + (t && t.date ? " (" + fmtDate(t.date) + ")" : "") + " will be removed from the log. This can't be undone.", "Delete trip").then(function(ok){
+    if(!ok) return;
+    trips = trips.filter(function(x){ return x.id !== id; });
+    saveJSON(LS_TRIPS, trips);
+    renderTrips();
+  });
+}
+
+/* ================= Trip editor ================= */
+var draft = null;
+var timer = { stopIdx: -1, startTs: 0, baseMin: 0, prompted: false, int: null };
+
+function blankTrip(){
+  return { id: uid(), createdAt: Date.now(), date: isoOf(new Date()), tripNumber: "", trailer: "",
+    startOdo: "", endOdo: "", gpsMiles: "", nightMiles: "", weekendMiles: "", notes: "",
+    activities: {}, stops: [] };
+}
+function stopTimerTick(){
+  if(timer.stopIdx < 0 || !draft) return;
+  var elapsed = timer.baseMin + (Date.now() - timer.startTs) / 60000;
+  var input = document.querySelector('[data-stop-det="' + timer.stopIdx + '"]');
+  var live = document.querySelector('[data-timer-live="' + timer.stopIdx + '"]');
+  if(input){ input.value = Math.floor(elapsed); draft.stops[timer.stopIdx].detention = Math.floor(elapsed); }
+  if(live) live.textContent = Math.floor(elapsed) + " min and counting…";
+  var free = num(settings.detentionFree);
+  if(elapsed >= free && !timer.prompted){
+    timer.prompted = true;
+    var banner = document.querySelector('[data-timer-banner="' + timer.stopIdx + '"]');
+    if(banner) banner.classList.add("show");
+  }
+}
+function startDetTimer(idx){
+  stopDetTimer(false);
+  timer.stopIdx = idx;
+  timer.baseMin = num(draft.stops[idx].detention);
+  timer.startTs = Date.now();
+  timer.prompted = timer.baseMin >= num(settings.detentionFree);
+  timer.int = setInterval(stopTimerTick, 1000);
+  renderEditor();
+}
+function stopDetTimer(rerender){
+  if(timer.int) clearInterval(timer.int);
+  timer = { stopIdx: -1, startTs: 0, baseMin: 0, prompted: false, int: null };
+  if(rerender) renderEditor();
+}
+
+function openEditor(id){
+  stopDetTimer(false);
+  if(id){ var found = trips.filter(function(x){ return x.id === id; })[0]; draft = JSON.parse(JSON.stringify(found)); }
+  else draft = blankTrip();
+  editingId = draft.id;
+  renderTrips();
+  renderEditor();
+  $("tripEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderEditor(){
+  var box = $("tripEditor");
+  if(!draft){ box.innerHTML = ""; return; }
+  var isNew = !trips.some(function(x){ return x.id === draft.id; });
+  var stopsHTML = draft.stops.map(function(st, i){
+    var timing = timer.stopIdx === i;
+    return '<div class="stop-edit">'
+      + '<div class="row between"><b>Stop ' + (i + 1) + '</b><button class="btn small danger" type="button" data-delstop="' + i + '">Remove stop</button></div>'
+      + '<div class="grid">'
+      + '<div class="field"><label>Store number</label><input data-stop="store" data-idx="' + i + '" type="text" inputmode="numeric" value="' + esc(st.store) + '" placeholder="Store #"></div>'
+      + '<div class="field"><label>Miles to this stop</label><input data-stop="miles" data-idx="' + i + '" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(st.miles) + '"></div>'
+      + '<div class="field"><label>Detention — total minutes waited</label><input data-stop-det="' + i + '" data-stop="detention" data-idx="' + i + '" type="number" step="1" min="0" inputmode="numeric" value="' + esc(st.detention) + '"></div>'
+      + '<div class="field"><label>Stop notes</label><input data-stop="notes" data-idx="' + i + '" type="text" value="' + esc(st.notes) + '" placeholder="Anything about this stop"></div>'
+      + '</div>'
+      + '<div class="row" style="margin-top:10px">'
+      + (timing
+          ? '<span class="timer-live" data-timer-live="' + i + '">' + Math.floor(num(st.detention)) + ' min and counting…</span><button class="btn small primary" type="button" data-timerstop="' + i + '">Done — stop timer</button>'
+          : '<button class="btn small" type="button" data-timerstart="' + i + '">Start detention timer</button>')
+      + '</div>'
+      + '<div class="timer-banner" data-timer-banner="' + i + '"><b>' + num(settings.detentionFree) + ' minutes are up.</b> Are you still at that location?'
+      + ' <span class="row" style="margin-top:8px"><button class="btn small primary" type="button" data-timeryes="' + i + '">Yes — keep counting</button>'
+      + '<button class="btn small" type="button" data-timerstop="' + i + '">Done — stop the timer</button></span></div>'
+      + '</div>';
+  }).join("");
+
+  var actHTML = ACTIVITIES.map(function(a){
+    return '<div class="field"><label>' + a.label + '</label><input data-act="' + a.key + '" type="number" step="1" min="0" inputmode="numeric" value="' + esc((draft.activities || {})[a.key] || "") + '" placeholder="0"></div>';
+  }).join("");
+
+  box.innerHTML = '<div class="card">'
+    + '<h2>' + (isNew ? "Log a trip" : "Edit trip") + '</h2>'
+    + '<p class="hint"><b>Every field is optional.</b> Fill in only what you have — a trip saves fine with blanks, and you can come back and edit it anytime. Pay is figured from GPS / shift miles below — route miles (the sum of your stop miles) are tracked for your records only.</p>'
+    + '<div class="msg" id="editorMsg" role="status"></div>'
+    + '<div class="grid">'
+    + '<div class="field"><label>Date</label><input id="f-date" type="date" value="' + esc(draft.date) + '"></div>'
+    + '<div class="field"><label>Trip number</label><input id="f-tripNumber" type="text" value="' + esc(draft.tripNumber) + '" placeholder="Trip #"></div>'
+    + '<div class="field"><label>Trailer number</label><input id="f-trailer" type="text" value="' + esc(draft.trailer) + '" placeholder="Trailer #"></div>'
+    + '<div class="field"><label>GPS / shift miles (pay miles)</label><input id="f-gpsMiles" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(draft.gpsMiles) + '"></div>'
+    + '<div class="field"><label>Start odometer</label><input id="f-startOdo" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(draft.startOdo) + '"></div>'
+    + '<div class="field"><label>End odometer</label><input id="f-endOdo" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(draft.endOdo) + '"></div>'
+    + '<div class="field"><label>Of the GPS miles — ran at night</label><input id="f-nightMiles" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(draft.nightMiles) + '" placeholder="0"></div>'
+    + '<div class="field"><label>Of the GPS miles — ran on weekend</label><input id="f-weekendMiles" type="number" step="0.1" min="0" inputmode="decimal" value="' + esc(draft.weekendMiles) + '" placeholder="0"></div>'
+    + '</div>'
+    + '<h3>Stops</h3>'
+    + '<p class="hint">One row per stop, in order. Miles are the miles to that stop — they add up to your route miles. Detention is your total wait at the store; the first ' + num(settings.detentionFree) + ' minutes are free. The timer can count it for you: start it when you arrive, and at the free-minute mark it asks if you\'re still there.</p>'
+    + '<div id="stopsWrap">' + stopsHTML + '</div>'
+    + '<button class="btn" type="button" id="addStopBtn">+ Add a stop</button>'
+    + '<h3>Activities</h3>'
+    + '<div class="grid">' + actHTML + '</div>'
+    + '<div class="field" style="margin-top:12px"><label>Trip notes</label><textarea id="f-notes" rows="2" placeholder="Anything about the whole trip">' + esc(draft.notes) + '</textarea></div>'
+    + '<div class="form-actions">'
+    + '<button class="btn primary" type="button" id="saveTripBtn">' + (isNew ? "Save trip" : "Save changes") + '</button>'
+    + '<button class="btn" type="button" id="cancelEditBtn">Cancel</button>'
+    + '</div></div>';
+
+  /* Wire editor events */
+  function bind(id, key){ var el = $(id); el.addEventListener("input", function(){ draft[key] = el.value; }); }
+  bind("f-date", "date"); bind("f-tripNumber", "tripNumber"); bind("f-trailer", "trailer");
+  bind("f-startOdo", "startOdo"); bind("f-endOdo", "endOdo"); bind("f-gpsMiles", "gpsMiles");
+  bind("f-nightMiles", "nightMiles"); bind("f-weekendMiles", "weekendMiles"); bind("f-notes", "notes");
+  box.querySelectorAll("[data-act]").forEach(function(el){
+    el.addEventListener("input", function(){ draft.activities[el.getAttribute("data-act")] = el.value; });
+  });
+  box.querySelectorAll("[data-stop]").forEach(function(el){
+    el.addEventListener("input", function(){
+      draft.stops[+el.getAttribute("data-idx")][el.getAttribute("data-stop")] = el.value;
+    });
+  });
+  box.querySelectorAll("[data-delstop]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var i = +b.getAttribute("data-delstop");
+      if(timer.stopIdx === i) stopDetTimer(false);
+      draft.stops.splice(i, 1); renderEditor();
+    });
+  });
+  box.querySelectorAll("[data-timerstart]").forEach(function(b){ b.addEventListener("click", function(){ syncEditorInputs(); startDetTimer(+b.getAttribute("data-timerstart")); }); });
+  box.querySelectorAll("[data-timerstop]").forEach(function(b){ b.addEventListener("click", function(){ stopDetTimer(true); }); });
+  box.querySelectorAll("[data-timeryes]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var banner = document.querySelector('[data-timer-banner="' + b.getAttribute("data-timeryes") + '"]');
+      if(banner) banner.classList.remove("show");
+    });
+  });
+  $("addStopBtn").addEventListener("click", function(){ syncEditorInputs(); draft.stops.push({ store: "", miles: "", detention: "", notes: "" }); renderEditor(); });
+  $("cancelEditBtn").addEventListener("click", function(){ stopDetTimer(false); draft = null; editingId = null; renderEditor(); renderTrips(); });
+  $("saveTripBtn").addEventListener("click", saveDraft);
+}
+function syncEditorInputs(){
+  if(!draft) return;
+  var map = { "f-date":"date", "f-tripNumber":"tripNumber", "f-trailer":"trailer", "f-startOdo":"startOdo", "f-endOdo":"endOdo", "f-gpsMiles":"gpsMiles", "f-nightMiles":"nightMiles", "f-weekendMiles":"weekendMiles", "f-notes":"notes" };
+  Object.keys(map).forEach(function(id){ var el = $(id); if(el) draft[map[id]] = el.value; });
+  document.querySelectorAll("[data-act]").forEach(function(el){ draft.activities[el.getAttribute("data-act")] = el.value; });
+  document.querySelectorAll("[data-stop]").forEach(function(el){ draft.stops[+el.getAttribute("data-idx")][el.getAttribute("data-stop")] = el.value; });
+}
+function saveDraft(){
+  /* Every field is optional — a trip saves with whatever the driver filled in. */
+  syncEditorInputs();
+  stopDetTimer(false);
+  var idx = trips.findIndex(function(x){ return x.id === draft.id; });
+  var clean = JSON.parse(JSON.stringify(draft));
+  if(idx >= 0) trips[idx] = clean; else trips.push(clean);
+  saveJSON(LS_TRIPS, trips);
+  draft = null; editingId = null;
+  renderEditor(); renderTrips();
+  window.scrollTo(0, 0);
+}
+$("newTripBtn").addEventListener("click", function(){ openEditor(null); });
+
+/* ================= Totals ================= */
+function sumLines(list){
+  var s = sumPay(list);
+  return { mileage: s.mileage, activity: s.activity, detention: s.hasDetention ? s.detention : null,
+           detentionMinutes: s.detentionMinutes, total: s.total };
+}
+function weekGroups(list){
+  var weeks = {};
+  list.forEach(function(t){
+    var ws = weekStartOf(t.date); if(!ws) return;
+    var key = isoOf(ws);
+    (weeks[key] = weeks[key] || { start: ws, trips: [] }).trips.push(t);
+  });
+  return Object.keys(weeks).sort().reverse().map(function(k){ return weeks[k]; });
+}
+function groupCardHTML(title, sub, list, printKind, printIdx){
+  var s = sumPay(list);
+  return '<div class="group"><div class="group-head"><div><div class="group-title">' + esc(title) + '</div>'
+    + '<div class="group-sub">' + esc(sub) + '</div></div>'
+    + '<div class="group-total">' + money(s.total) + '</div></div>'
+    + '<div class="chips"><span class="chip">' + list.length + ' trip' + (list.length === 1 ? "" : "s") + '</span>'
+    + '<span class="chip">GPS <b>' + s.gps.toLocaleString() + ' mi</b></span>'
+    + '<span class="chip">Route <b>' + s.route.toLocaleString() + ' mi</b></span>'
+    + (s.detentionMinutes > 0 ? '<span class="chip">Detention <b>' + Math.round(s.detentionMinutes) + ' min</b> past free time</span>' : '')
+    + '</div>'
+    + payLinesHTML(sumLines(list))
+    + '<div class="trip-actions"><button class="btn small" type="button" data-print="' + printKind + '" data-idx="' + printIdx + '">Printable breakdown</button></div></div>';
+}
+var printStore = [];
+function renderTotals(){
+  var box = $("totalsBody");
+  printStore = [];
+  if(!trips.length){
+    box.innerHTML = '<div class="empty"><h2>No totals yet</h2><p>Once you\'ve logged some trips, your weekly totals and pay-period totals show up here, with a printable breakdown for each.</p></div>';
+    return;
+  }
+  var html = '<h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.45rem;text-transform:uppercase;letter-spacing:.03em;margin:2px 0 12px">Pay periods</h2>';
+  var periods = periodGroups(trips).slice().reverse();
+  if(periods.length){
+    periods.forEach(function(g){
+      var idx = printStore.push({ title: "Pay period " + fmtDateShort(isoOf(g.start)) + " – " + fmtDateShort(isoOf(g.end)), trips: g.trips }) - 1;
+      html += groupCardHTML("Pay period " + fmtDateShort(isoOf(g.start)) + " – " + fmtDateShort(isoOf(g.end)),
+        num(settings.periodWeeks) + "-week period · weeks start " + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][num(settings.weekStart)],
+        g.trips, "period", idx);
+    });
+  } else {
+    html += '<div class="empty"><h2>No dated trips</h2><p>Pay periods are grouped by trip date. Trips without a date still save and count below, but can\'t be placed in a period until they have a date.</p></div>';
+  }
+  html += '<h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.45rem;text-transform:uppercase;letter-spacing:.03em;margin:20px 0 12px">Weeks</h2>';
+  var weeks = weekGroups(trips);
+  weeks.forEach(function(g){
+    var end = new Date(g.start); end.setDate(end.getDate() + 6);
+    var idx = printStore.push({ title: "Week of " + fmtDateShort(isoOf(g.start)) + " – " + fmtDateShort(isoOf(end)), trips: g.trips }) - 1;
+    html += groupCardHTML("Week of " + fmtDateShort(isoOf(g.start)), fmtDateShort(isoOf(g.start)) + " – " + fmtDateShort(isoOf(end)), g.trips, "week", idx);
+  });
+  var undated = trips.filter(function(t){ return !parseDate(t.date); });
+  if(undated.length){
+    var idx2 = printStore.push({ title: "Trips without a date", trips: undated }) - 1;
+    html += groupCardHTML("Trips without a date", "Add a date to a trip to place it in a week and pay period.", undated, "undated", idx2);
+  }
+  box.innerHTML = html;
+  box.querySelectorAll("[data-print]").forEach(function(b){
+    b.addEventListener("click", function(){ openPrint(+b.getAttribute("data-idx")); });
+  });
+}
+
+/* ================= Printable breakdown ================= */
+function openPrint(idx){
+  var entry = printStore[idx]; if(!entry) return;
+  var list = entry.trips.slice().sort(function(a, b){ return (a.date || "").localeCompare(b.date || ""); });
+  var rows = list.map(function(t){
+    var p = tripPay(t);
+    var stops = (t.stops || []).map(function(st){
+      return esc(st.store || "—") + " (" + (hasVal(st.miles) ? num(st.miles).toLocaleString() + " mi" : "—")
+        + (hasVal(st.detention) && num(st.detention) > 0 ? ", " + Math.round(num(st.detention)) + " min detention" : "") + ")"
+        + (st.notes ? " — " + esc(st.notes) : "");
+    }).join("<br>");
+    var acts = ACTIVITIES.filter(function(a){ return num((t.activities || {})[a.key]) > 0; })
+      .map(function(a){ return esc(a.label) + " ×" + num(t.activities[a.key]); }).join(", ");
+    return '<tr><td>' + (t.date ? esc(fmtDateShort(t.date)) : "—") + '</td><td>' + esc(tripLabel(t).replace(/^Trip /, ""))
+      + (t.trailer ? '<br>Trailer ' + esc(t.trailer) : '') + (acts ? '<br>' + acts : '') + (t.notes ? '<br>' + esc(t.notes) : '') + '</td>'
+      + '<td>' + (stops || "—") + '</td>'
+      + '<td class="num">' + num(t.gpsMiles).toLocaleString() + '</td>'
+      + '<td class="num">' + routeMiles(t).toLocaleString() + '</td>'
+      + '<td class="num">' + money(p.mileage) + '</td><td class="num">' + money(p.activity) + '</td>'
+      + '<td class="num">' + (p.detention !== null ? money(p.detention) : "—") + '</td>'
+      + '<td class="num"><b>' + money(p.total) + '</b></td></tr>';
+  }).join("");
+  var s = sumPay(list), sl = sumLines(list);
+  $("printBody").innerHTML = '<div class="print-sheet"><h2>AI Trip Logger — ' + esc(entry.title) + '</h2>'
+    + '<p style="margin:4px 0 0;color:var(--ink2);font-size:.88rem">' + list.length + ' trip' + (list.length === 1 ? "" : "s")
+    + ' · GPS / shift miles are the pay miles · Printed ' + new Date().toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"}) + '</p>'
+    + '<table><thead><tr><th>Date</th><th>Trip</th><th>Stops</th><th class="num">GPS mi</th><th class="num">Route mi</th><th class="num">Mileage pay</th><th class="num">Activity pay</th><th class="num">Detention pay</th><th class="num">Total</th></tr></thead>'
+    + '<tbody>' + rows
+    + '<tr class="tot"><td colspan="3">Totals</td><td class="num">' + s.gps.toLocaleString() + '</td><td class="num">' + s.route.toLocaleString() + '</td>'
+    + '<td class="num">' + money(sl.mileage) + '</td><td class="num">' + money(sl.activity) + '</td>'
+    + '<td class="num">' + (sl.detention !== null ? money(sl.detention) : "—") + '</td><td class="num">' + money(sl.total) + '</td></tr>'
+    + '</tbody></table>'
+    + (sl.detentionMinutes > 0 ? '<p style="font-size:.86rem;color:var(--ink2)">Detention: ' + Math.round(sl.detentionMinutes) + ' minutes past the free ' + num(settings.detentionFree) + ' minutes per stop' + (sl.detention === null ? ' (no detention rate set, so no detention pay is figured).' : '.') + '</p>' : '')
+    + '</div>';
+  $("printOverlay").classList.add("open");
+}
+$("closePrintBtn").addEventListener("click", function(){ $("printOverlay").classList.remove("open"); });
+
+/* ================= Settings ================= */
+function buildActivityRateFields(){
+  $("activityRateFields").innerHTML = ACTIVITIES.map(function(a){
+    var note = a.key === "layover" ? "Layover pay — $ each" : a.key === "hook" ? "Hook pay — $ each" : a.label + " — $ each";
+    return '<div class="field"><label for="r-' + a.key + '">' + note + '</label><input id="r-' + a.key + '" type="number" step="0.01" min="0" inputmode="decimal" placeholder="Blank = not paid"></div>';
+  }).join("");
+}
+function fillSettingsForm(){
+  $("s-baseRate").value = settings.baseRate; $("s-nightBonus").value = settings.nightBonus;
+  $("s-nightStart").value = settings.nightStart; $("s-nightEnd").value = settings.nightEnd;
+  $("s-weekendBonus").value = settings.weekendBonus; $("s-weekendNote").value = settings.weekendNote;
+  ACTIVITIES.forEach(function(a){ $("r-" + a.key).value = settings.rates[a.key]; });
+  $("s-detentionFree").value = settings.detentionFree; $("s-detentionRate").value = settings.detentionRate;
+  $("s-periodWeeks").value = settings.periodWeeks; $("s-weekStart").value = String(settings.weekStart);
+  $("s-periodAnchor").value = settings.periodAnchor || "";
+}
+$("settingsForm").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  settings.baseRate = $("s-baseRate").value; settings.nightBonus = $("s-nightBonus").value;
+  settings.nightStart = $("s-nightStart").value; settings.nightEnd = $("s-nightEnd").value;
+  settings.weekendBonus = $("s-weekendBonus").value; settings.weekendNote = $("s-weekendNote").value;
+  ACTIVITIES.forEach(function(a){ settings.rates[a.key] = $("r-" + a.key).value; });
+  settings.detentionFree = $("s-detentionFree").value === "" ? 45 : $("s-detentionFree").value;
+  settings.detentionRate = $("s-detentionRate").value;
+  settings.periodWeeks = $("s-periodWeeks").value === "" ? 2 : $("s-periodWeeks").value;
+  settings.weekStart = $("s-weekStart").value;
+  settings.periodAnchor = $("s-periodAnchor").value;
+  saveJSON(LS_SETTINGS, settings);
+  var m = $("settingsMsg");
+  m.className = "msg show ok";
+  m.textContent = "Settings saved on this device. Trip pay is re-figured with your new numbers — and the starter prompt in the Setup Guide now uses them too.";
+  renderTrips();
+});
+
+/* ================= Data tools ================= */
+function download(filename, text, type){
+  var blob = new Blob([text], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+function csvCell(v){ var s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function stamp(){ return isoOf(new Date()); }
+$("exportCsvBtn").addEventListener("click", function(){
+  var head = ["Date","Trip number","Trailer","Start odometer","End odometer","GPS / shift miles","Night miles","Weekend miles","Route miles",
+    "Store","Stop miles","Detention minutes (total wait)","Detention minutes past free","Stop notes"]
+    .concat(ACTIVITIES.map(function(a){ return a.label; }))
+    .concat(["Mileage pay","Activity pay","Detention pay","Trip total","Trip notes"]);
+  var lines = [head.map(csvCell).join(",")];
+  sortedTrips().forEach(function(t){
+    var p = tripPay(t);
+    var base = [t.date || "", t.tripNumber || "", t.trailer || "", t.startOdo || "", t.endOdo || "", num(t.gpsMiles), num(t.nightMiles), num(t.weekendMiles), routeMiles(t)];
+    var tail = ACTIVITIES.map(function(a){ return num((t.activities || {})[a.key]); })
+      .concat([p.mileage.toFixed(2), p.activity.toFixed(2), p.detention === null ? "" : p.detention.toFixed(2), p.total.toFixed(2), t.notes || ""]);
+    var stops = (t.stops && t.stops.length) ? t.stops : [null];
+    stops.forEach(function(st, i){
+      var stopCols = st ? [st.store || "", hasVal(st.miles) ? num(st.miles) : "", hasVal(st.detention) ? Math.round(num(st.detention)) : "",
+        st ? Math.max(0, num(st.detention) - num(settings.detentionFree)) : "", st.notes || ""] : ["", "", "", "", ""];
+      var row = base.concat(stopCols).concat(i === 0 ? tail : tail.map(function(){ return ""; }));
+      lines.push(row.map(csvCell).join(","));
+    });
+  });
+  download("ai-trip-logger-" + stamp() + ".csv", lines.join("\n"), "text/csv");
+  dataMsg("CSV exported — one row per stop, with the trip's pay on its first row.");
+});
+$("exportJsonBtn").addEventListener("click", function(){
+  download("ai-trip-logger-backup-" + stamp() + ".json",
+    JSON.stringify({ app: "AI Trip Logger", version: 1, exportedAt: new Date().toISOString(), settings: settings, trips: trips }, null, 2),
+    "application/json");
+  dataMsg("JSON backup exported. Keep it somewhere safe — it's the file you restore from.");
+});
+function dataMsg(text, isErr){
+  var m = $("dataMsg");
+  m.className = "msg show " + (isErr ? "err" : "ok");
+  m.textContent = text;
+}
+$("importFile").addEventListener("change", function(){
+  var file = $("importFile").files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var data = JSON.parse(reader.result);
+      var newTrips = Array.isArray(data) ? data : data.trips;
+      if(!Array.isArray(newTrips)) throw new Error("no trips");
+      confirmAction("Restore this backup?", "This replaces the " + trips.length + " trip(s) currently in the app with the " + newTrips.length + " trip(s) in the backup" + (data.settings ? ", and restores its settings too" : "") + ".", "Restore backup").then(function(ok){
+        if(!ok) return;
+        trips = newTrips.map(function(t){
+          t.id = t.id || uid(); t.stops = Array.isArray(t.stops) ? t.stops : []; t.activities = t.activities || {};
+          return t;
+        });
+        if(data.settings){
+          settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
+          settings.rates = Object.assign({}, DEFAULT_SETTINGS.rates, data.settings.rates || {});
+          saveJSON(LS_SETTINGS, settings);
+          fillSettingsForm();
+        }
+        saveJSON(LS_TRIPS, trips);
+        draft = null; editingId = null; renderEditor(); renderTrips();
+        dataMsg("Backup restored — " + trips.length + " trip(s) now in the log.");
+      });
+    }catch(e){
+      dataMsg("That file doesn't look like an AI Trip Logger JSON backup. Nothing was changed.", true);
+    }
+    $("importFile").value = "";
+  };
+  reader.readAsText(file);
+});
+$("clearTripsBtn").addEventListener("click", function(){
+  if(!trips.length){ dataMsg("There are no trips to erase."); return; }
+  confirmAction("Erase all trips?", "Every trip in the log will be deleted and the app starts fresh. Do this only after you've exported a backup and printed what you need. Settings are kept.", "Erase all trips").then(function(ok){
+    if(!ok) return;
+    trips = []; saveJSON(LS_TRIPS, trips);
+    draft = null; editingId = null; renderEditor(); renderTrips();
+    dataMsg("All trips erased. The log is blank and ready for the next period.");
+  });
+});
+
+/* ================= Setup guide ================= */
+function fmtTime(t){ if(!t) return ""; var p = t.split(":"); var h = +p[0], m = p[1]; var ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return h + ":" + m + " " + ap; }
+function buildGuide(){
+  var free = num(settings.detentionFree);
+  $("guideBody").innerHTML =
+    '<h3>What this app does</h3>'
+    + '<p>AI Trip Logger keeps your trip log and figures your pay as you go: every trip, every stop, your activities, your detention, and your mileage pay — totaled by week and by pay period, with a printable breakdown when you need one. It works two ways: type trips in by hand here, and/or run it by voice through an AI agent app on your phone (that\'s the setup this guide walks you through).</p>'
+    + '<h3>What you need</h3><ul>'
+    + '<li><b>Your phone</b> — iPhone or Android.</li>'
+    + '<li><b>One AI agent app</b> — ChatGPT, Muse, Gemini, or Grok. This is the app you\'ll talk to.</li>'
+    + '<li><b>Voice mode</b> in that app turned on, so you can dictate instead of typing.</li>'
+    + '<li><b>Your own pay numbers</b> — your base rate per mile, any night and weekend bonuses, what each activity pays, and your detention rule. You enter them once, in the Settings tab of this app.</li>'
+    + '<li><b>Hands-free gear</b> — a headset or your truck\'s Bluetooth, so logging never means holding the phone.</li></ul>'
+    + '<h3>iPhone setup</h3>'
+    + '<div class="callout"><b>Straight talk: Siri alone cannot do this whole job.</b> Siri can\'t hold the context of a trip across a whole shift, can\'t do the pay math, and can\'t write entries into a trip log. You need a real AI agent app doing the logging — Siri\'s only role is launching it.</div>'
+    + '<ul><li>Install <b>ChatGPT, Muse, Gemini, or Grok</b> from the App Store and sign in.</li>'
+    + '<li>Open the app, start a chat, and turn on its <b>voice mode</b> (the microphone / voice button in the chat).</li>'
+    + '<li>Paste in the <b>starter prompt</b> at the bottom of this guide — it teaches the agent your pay rates and how you want trips logged.</li>'
+    + '<li>Optional: use <b>Siri or a Shortcut</b> just to open your agent app hands-free ("Hey Siri, open Muse"), then talk to the agent itself.</li></ul>'
+    + '<h3>Android setup</h3><ul>'
+    + '<li>Install <b>Gemini, Muse, ChatGPT, or Grok</b> from the Play Store and sign in.</li>'
+    + '<li>Open the app and turn on its <b>voice mode</b>.</li>'
+    + '<li>Where your phone allows it, set your chosen app as the <b>default assistant</b> (usually under Settings → Apps → Default apps → Digital assistant), so your steering-wheel or long-press button opens it.</li>'
+    + '<li>Paste in the <b>starter prompt</b> below so the agent knows your rates and routine.</li></ul>'
+    + '<p style="color:var(--ink2);font-size:.9rem">Exact menu names and button places vary by phone model and app version — if a step doesn\'t match your screen word for word, look for the same thing under a slightly different name.</p>'
+    + '<h3>Put your pay numbers in first</h3>'
+    + '<p>Open the <b>Settings</b> tab in this app and enter your own company\'s numbers: base pay per mile, night bonus and the night hours window, weekend bonus and your weekend window, pay for each activity (Arrive, Arrive and Drop, Stop, Stop and Drop, Live Load, Live Unload), layover pay, hook pay, and your detention free minutes. Every field is optional — fill in what your company pays and leave the rest blank. Then reopen this guide and copy a fresh starter prompt, so your agent is working from the same numbers.</p>'
+    + '<h3>How a trip runs, day to day</h3><ul>'
+    + '<li><b>Starting out:</b> tell your agent the trip number, trailer number, and starting odometer — by voice, hands-free. It opens the trip.</li>'
+    + '<li><b>At each stop:</b> report it as it happens — the store number, the miles, and what you did there (Arrive, Stop, Live Load, and so on). Report each stop when you\'re there, not from memory at the end of the day.</li>'
+    + '<li><b>Read-back before saving:</b> the agent reads the entry back to you before it\'s saved. Listen, fix anything wrong, then say yes.</li>'
+    + '<li><b>End of trip:</b> give the ending odometer and your GPS / shift miles. Mileage pay is figured from GPS / shift miles — never from route miles. Tell the agent how many of those miles ran at night and how many on the weekend so your bonuses land.</li>'
+    + '<li>You can also type any of this straight into the Trips tab yourself — every field is optional there too.</li></ul>'
+    + '<h3>The detention rule</h3>'
+    + '<p>The first <b>' + free + ' minutes</b> at a store are free (that number is yours to change in Settings). When you arrive, start the wait — in this app there\'s a detention timer on each stop, and with your agent you just say you\'ve arrived. At the ' + free + '-minute mark, you\'ll be asked: <b>"Are you still at that location?"</b> Say yes and detention keeps counting from that mark; it stops when you say you\'re done. Only the minutes past the free time count toward detention pay, and detention pay only shows once you\'ve entered your detention rate in Settings.</p>'
+    + '<h3>Weekly saves &amp; the pay-period total</h3><ul>'
+    + '<li>Once a week, export a save of your log (Data tab → Export CSV and Export JSON backup) and keep it somewhere safe — a cloud drive folder works well. The CSV is the readable sheet; the JSON is the full backup you can restore from.</li>'
+    + '<li>At the end of each pay period, open the Totals tab and use the <b>printable breakdown</b> for that period — everything from the whole period on one sheet to print and keep.</li></ul>'
+    + '<h3>Clearing a period</h3>'
+    + '<p>Only clear a pay period out of the app <b>after you\'ve printed it</b> and saved your exports. If you work through an agent, have it ask you first — "Have you printed this period?" — and it should only clear anything when you say yes. No yes, nothing gets deleted. That rule protects you from losing a period you still need.</p>'
+    + '<h3>Safety &amp; privacy</h3><ul>'
+    + '<li><b>Log only when parked or fully hands-free.</b> No exceptions — the log can wait thirty seconds, the road can\'t.</li>'
+    + '<li><b>Never post your live location</b> — not in posts, messages, or anywhere public.</li>'
+    + '<li><b>Your rates and trips are your business.</b> In this app they live only in this browser on your phone. In your agent app, keep them in your own account, and don\'t share your starter prompt with your real numbers in it.</li></ul>';
+}
+function buildStarterPrompt(){
+  function v(x){ return (x === "" || x === null || x === undefined) ? "____" : x; }
+  function rate(key){ return v(settings.rates[key]); }
+  var nightWindow = (settings.nightStart || settings.nightEnd)
+    ? (fmtTime(settings.nightStart) || "____") + " to " + (fmtTime(settings.nightEnd) || "____") : "____";
+  var lines = [
+    "You are my trip-logging assistant for my trucking job. I will dictate trip information to you by voice while I work, and you will keep my trip log and figure my pay. Follow these rules:",
+    "",
+    "MY PAY (my own company's rates):",
+    "- Base pay: $" + v(settings.baseRate) + " per mile",
+    "- Night bonus: $" + v(settings.nightBonus) + " per mile, for miles run during my night window: " + nightWindow,
+    "- Weekend bonus: $" + v(settings.weekendBonus) + " per mile, for miles run during my weekend window: " + (settings.weekendNote ? settings.weekendNote : "____"),
+    "- Arrive: $" + rate("arrive") + " each",
+    "- Arrive and Drop: $" + rate("arriveDrop") + " each",
+    "- Stop: $" + rate("stop") + " each",
+    "- Stop and Drop: $" + rate("stopDrop") + " each",
+    "- Live Load: $" + rate("liveLoad") + " each",
+    "- Live Unload: $" + rate("liveUnload") + " each",
+    "- Layover: $" + rate("layover") + " each",
+    "- Hook: $" + rate("hook") + " each",
+    "- Detention: the first " + v(settings.detentionFree) + " minutes at a store are free." + (hasVal(settings.detentionRate) ? " After that, detention pays $" + settings.detentionRate + " per hour." : " Detention pay rate: ____ (log the minutes; I'll give you the rate when I have it.)"),
+    "- My pay period is " + v(settings.periodWeeks) + " week(s) long.",
+    "",
+    "HOW TO LOG MY TRIPS:",
+    "1. When I start a trip, I will give you the trip number, trailer number, and starting odometer. Open a new trip with those.",
+    "2. I report each stop as it happens: store number, miles to that stop, what I did there, and any notes. Add each stop to the open trip.",
+    "3. ALWAYS read the entry back to me before you save it, and only save it after I confirm.",
+    "4. Mileage pay is figured from my GPS / shift miles for the trip — NEVER from route miles. Ask me for the GPS / shift miles, and how many of them ran at night and how many on the weekend, so the bonuses are figured right.",
+    "5. Keep a running pay figure for each trip as separate lines: mileage pay, activity pay, detention pay (only if I have given you a detention rate), and the trip total.",
+    "",
+    "DETENTION:",
+    "When I say I've arrived at a store, note the time. At " + v(settings.detentionFree) + " minutes, ask me: \"Are you still at that location?\" If I say yes, detention time counts from that mark until I tell you I'm done. Log the total wait and the minutes past the free time on that stop.",
+    "",
+    "WEEKLY SAVES AND PAY PERIODS:",
+    "Remind me once a week to save my log, and at the end of each pay period show me the full period total with every trip on it so I can print it. NEVER clear or delete a pay period until I tell you I have printed it — ask me first, and only go ahead when I say yes.",
+    "",
+    "SAFETY AND PRIVACY:",
+    "I log only when parked or fully hands-free — if I sound rushed, remind me the log can wait. Never share my location, my rates, or my trips with anyone.",
+    "",
+    "To start: confirm you understand, repeat my pay rates back to me so I can check them, and ask me for my first trip number, trailer, and odometer."
+  ];
+  return lines.join("\n");
+}
+function openGuide(){
+  buildGuide();
+  $("starterPrompt").value = buildStarterPrompt();
+  $("copyMsg").textContent = "";
+  $("guideOverlay").classList.add("open");
+}
+function closeGuide(){
+  $("guideOverlay").classList.remove("open");
+  try{ localStorage.setItem(LS_SEEN, "1"); }catch(e){}
+}
+$("openGuideBtn").addEventListener("click", openGuide);
+$("closeGuideBtn").addEventListener("click", closeGuide);
+$("guideDoneBtn").addEventListener("click", closeGuide);
+$("copyPromptBtn").addEventListener("click", function(){
+  var ta = $("starterPrompt");
+  function done(){ $("copyMsg").textContent = "Copied — paste it into your agent app."; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(done, function(){ ta.select(); document.execCommand("copy"); done(); });
+  } else { ta.select(); document.execCommand("copy"); done(); }
+});
+
+/* ================= Init ================= */
+buildActivityRateFields();
+fillSettingsForm();
+renderTrips();
+if(!loadJSON(LS_SEEN, "")){ openGuide(); }
+</script>
+</body>
+</html>
